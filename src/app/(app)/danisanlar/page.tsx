@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, UserPlus, Users } from "lucide-react";
+import { Archive, ChevronRight, UserPlus, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { ApplicationsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
+import { countArchivedClients } from "@/db/clients";
 import { listClients } from "@/db/queries";
 import { formatTRY } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Danışanlar" };
 
 export default async function ClientsPage() {
-  const { clients, pending } = await withTrainer(async (tx, trainerId) => ({
+  const { clients, pending, archived } = await withTrainer(async (tx, trainerId) => ({
     clients: await listClients(tx, trainerId),
     pending: await countPendingApplications(tx, trainerId),
+    archived: await countArchivedClients(tx, trainerId),
   }));
 
   return (
@@ -67,6 +69,16 @@ export default async function ClientsPage() {
             );
           })}
         </ul>
+      )}
+
+      {archived > 0 && (
+        <Link
+          href="/danisanlar/arsiv"
+          className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <Archive className="size-4" aria-hidden />
+          Arşivlenen danışanlar ({archived})
+        </Link>
       )}
     </>
   );

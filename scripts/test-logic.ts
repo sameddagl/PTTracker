@@ -19,6 +19,7 @@ import {
 import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
 import { bookSlot, cancelBooking, getBookingView, replaceAvailabilityRules, upcomingForClient } from "../src/db/booking";
 import { computeSlots, toHHMM } from "../src/lib/slots";
+import { archiveClient, countUpcomingLessons, deleteClient, listArchivedClients, restoreClient } from "../src/db/clients";
 import { approveApplication, countPendingApplications, rejectApplication } from "../src/db/applications";
 import { createIntakeField, ensureDefaultIntakeFields, listIntakeFields, toDef, updateIntakeField } from "../src/db/intake";
 import { DEFAULT_INTAKE_FIELDS, answerName, formatAnswer, parseAnswer } from "../src/lib/intake";
@@ -51,6 +52,7 @@ import {
   revokePortalLinks,
   tokenFor,
 } from "../src/db/portal";
+import { listClients } from "../src/db/queries";
 import * as schema from "../src/db/schema";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -749,6 +751,56 @@ async function main() {
   assert.deepEqual([c2.ok, c2.late, c2.makeupUsed], [true, true, true], "1 makeup allowance forgives it");
   await asTrainer((tx) => tx.update(schema.trainers).set({ lateCancelHours: 24 }).where(eq(schema.trainers.id, T)));
   console.log("booking: slots from weekly hours, double booking and non-private packages refused, cancel in time / late");
+
+  // ---- Archive, restore and erase a client ----
+    const [leaver, stayer] = await asTrainer((tx) =>
+    tx
+      .insert(schema.clients)
+      .values([
+        { trainerId: T, fullName: "Ayrılan" },
+        { trainerId: T, fullName: "Kalan" },
+      ])
+      .returning({ id: schema.clients.id }),
+  );
+  const lessonOn = (date: string, clientIds: string[], status: "scheduled" | "attended" = "scheduled") =>
+    asTrainer((tx) =>
+      createLessons(tx, trainer, { repeat: null, date, time: "08:00", durationMinutes: 50, sessionType: "private", clientIds, status, note: null }),
+    );
+  const pastSolo = await lessonOn(addDays(todayTR, -3), [leaver.id], "attended");
+  const futureSolo = await lessonOn(addDays(todayTR, 3), [leaver.id]);
+  const futureShared = await lessonOn(addDays(todayTR, 4), [leaver.id, stayer.id]);
+  await asTrainer((tx) => createPortalLink(tx, T, leaver.id));
+  assert.equal(await asTrainer((tx) => countUpcomingLessons(tx, leaver.id)), 2);
+
+  assert.equal(await asTrainer((tx) => deleteClient(tx, T, leaver.id)), false, "only archived clients can be erased");
+  assert.ok(await asTrainer((tx) => archiveClient(tx, T, leaver.id)));
+  assert.equal(await asTrainer((tx) => archiveClient(tx, T, leaver.id)), false, "archiving twice is a no-op");
+  const statusOf = async (id: string) =>
+    (await asTrainer((tx) => tx.select({ s: schema.lessons.status }).from(schema.lessons).where(eq(schema.lessons.id, id))))[0]?.s;
+  const peopleIn = async (id: string) =>
+    (await asTrainer((tx) => tx.select().from(schema.lessonAttendees).where(eq(schema.lessonAttendees.lessonId, id)))).map(
+      (a) => a.clientId,
+    );
+  assert.equal(await statusOf(futureSolo), undefined, "their own future lesson is removed");
+  assert.equal(await statusOf(futureShared), "scheduled", "a shared lesson stays for the others");
+  assert.deepEqual(await peopleIn(futureShared), [stayer.id]);
+  assert.deepEqual(await peopleIn(pastSolo), [leaver.id], "history is kept");
+  assert.equal(await asTrainer((tx) => getActivePortalLink(tx, leaver.id)), null, "portal link revoked");
+  assert.ok(!(await asTrainer((tx) => listClients(tx, T))).some((c) => c.id === leaver.id), "hidden from the client list");
+  assert.deepEqual(
+    (await asTrainer((tx) => listArchivedClients(tx, T))).map((c) => c.id),
+    [leaver.id],
+  );
+
+  assert.ok(await asTrainer((tx) => restoreClient(tx, T, leaver.id)));
+  assert.ok((await asTrainer((tx) => listClients(tx, T))).some((c) => c.id === leaver.id), "restored");
+  await asTrainer((tx) => archiveClient(tx, T, leaver.id));
+  assert.ok(await asTrainer((tx) => deleteClient(tx, T, leaver.id)));
+  assert.equal(await statusOf(pastSolo), undefined, "lessons only they were in are removed");
+  assert.deepEqual(await peopleIn(futureShared), [stayer.id], "shared lessons remain");
+  const left = await asTrainer((tx) => tx.select().from(schema.clients).where(eq(schema.clients.id, leaver.id)));
+  assert.equal(left.length, 0);
+  console.log("clients: archive drops future bookings and the portal link, restore, erase only after archiving");
 
   // ---- Public page slugs ----
   assert.equal(toSlug("Çağla Işık Öztürk"), "cagla-isik-ozturk");

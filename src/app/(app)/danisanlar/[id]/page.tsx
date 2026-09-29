@@ -2,7 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
-import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus, ShieldCheck, Wallet } from "lucide-react";
+import {
+  CalendarPlus,
+  ChevronLeft,
+  History,
+  MessageCircle,
+  Package,
+  PackagePlus,
+  Pencil,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +37,7 @@ import { formatAnswer } from "@/lib/intake";
 import { installmentPlan, installmentStates, nextPayable } from "@/lib/installments";
 import { portalUrl } from "@/lib/portal";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
+import { ArchivedBanner } from "./archived-banner";
 import { PortalCard } from "./portal-card";
 
 export const metadata: Metadata = { title: "Danışan" };
@@ -111,44 +122,58 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
   return (
     <>
       <Link
-        href="/danisanlar"
+        href={client.archivedAt ? "/danisanlar/arsiv" : "/danisanlar"}
         className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden />
-        Danışanlar
+        {client.archivedAt ? "Arşiv" : "Danışanlar"}
       </Link>
       <PageHeader
         title={client.fullName}
         description={[formatPhone(client.phone), client.goals].filter(Boolean).join(" · ") || undefined}
+        action={
+          !client.archivedAt && (
+            <Button asChild variant="outline">
+              <Link href={`/danisanlar/${client.id}/duzenle`}>
+                <Pencil />
+                Düzenle
+              </Link>
+            </Button>
+          )
+        }
       />
-      <div className="mb-8 flex flex-wrap gap-2">
-        <Button asChild>
-          <Link href={`/danisanlar/${client.id}/paket-sat`}>
-            <PackagePlus />
-            Paket sat
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
-            <CalendarPlus />
-            Ders ekle
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
-            <Wallet />
-            Ödeme al{totalDue > 0 && ` · ${formatTRY(totalDue)}`}
-          </Link>
-        </Button>
-        {wa && (
-          <Button asChild variant="outline">
-            <a href={wa} target="_blank" rel="noopener noreferrer">
-              <MessageCircle />
-              WhatsApp
-            </a>
+      {client.archivedAt ? (
+        <ArchivedBanner clientId={client.id} name={client.fullName} archivedOn={formatDayMonth(client.archivedAt, timezone)} />
+      ) : (
+        <div className="mb-8 flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href={`/danisanlar/${client.id}/paket-sat`}>
+              <PackagePlus />
+              Paket sat
+            </Link>
           </Button>
-        )}
-      </div>
+          <Button asChild variant="outline">
+            <Link href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
+              <CalendarPlus />
+              Ders ekle
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
+              <Wallet />
+              Ödeme al{totalDue > 0 && ` · ${formatTRY(totalDue)}`}
+            </Link>
+          </Button>
+          {wa && (
+            <Button asChild variant="outline">
+              <a href={wa} target="_blank" rel="noopener noreferrer">
+                <MessageCircle />
+                WhatsApp
+              </a>
+            </Button>
+          )}
+        </div>
+      )}
 
       <section aria-labelledby="packages-heading" className="mb-8">
         <h2 id="packages-heading" className="mb-3 text-sm font-medium text-muted-foreground">
@@ -192,15 +217,21 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         )}
       </section>
 
-      <div className="mb-8">
-        <PortalCard
-          clientId={client.id}
-          clientName={client.fullName}
-          phone={client.phone}
-          url={portal ? portalUrl(portal.token) : null}
-          lastOpened={portal?.lastUsedAt ? `${formatDayMonth(portal.lastUsedAt, timezone)} ${formatTime(portal.lastUsedAt, timezone)}` : null}
-        />
-      </div>
+      {!client.archivedAt && (
+        <div className="mb-8">
+          <PortalCard
+            clientId={client.id}
+            clientName={client.fullName}
+            phone={client.phone}
+            url={portal ? portalUrl(portal.token) : null}
+            lastOpened={
+              portal?.lastUsedAt
+                ? `${formatDayMonth(portal.lastUsedAt, timezone)} ${formatTime(portal.lastUsedAt, timezone)}`
+                : null
+            }
+          />
+        </div>
+      )}
 
       {upcoming.length > 0 && (
         <section aria-labelledby="upcoming-heading" className="mb-8">
