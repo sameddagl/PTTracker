@@ -48,32 +48,20 @@ export default async function SettingsPage() {
           </div>
         </section>
 
-        {pageUrl ? (
-          <section aria-labelledby="page-heading" className="rounded-2xl bg-lime p-5 text-lime-foreground">
-            <p id="page-heading" className="text-sm font-medium opacity-75">
-              Sayfan yayında
-            </p>
-            <p className="mt-1 truncate text-lg font-semibold">{pageUrl.replace(/^https?:\/\//, "")}</p>
-            <p className="mt-1 text-sm opacity-75">Instagram bio&apos;na koy; danışanlar paket seçip buradan kayıt olur.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild className="bg-lime-foreground text-lime hover:bg-lime-foreground/85">
-                <a href={pageUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink />
-                  Sayfamı aç
-                </a>
-              </Button>
-              <CopyButton text={pageUrl} variant="outline" className="border-lime-foreground/20 bg-transparent hover:bg-lime-foreground/10" />
-            </div>
-          </section>
-        ) : (
-          <Link href="/ayarlar/profil" className="flex items-center gap-4 rounded-2xl border border-dashed bg-card/50 p-5 hover:bg-card">
-            <Globe className="size-5 text-muted-foreground" aria-hidden />
+        {pageUrl && (
+          <section aria-label="Sayfan" className="flex items-center gap-3 surface py-2 pr-2 pl-4">
+            <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block font-medium">Sayfan henüz yayında değil</span>
-              <span className="block text-sm text-muted-foreground">Adresini seç ve yayınla; linkini Instagram&apos;da paylaş.</span>
+              <span className="block text-xs text-muted-foreground">Sayfan yayında</span>
+              <span className="block truncate text-sm font-medium">{pageUrl.replace(/^https?:\/\//, "")}</span>
             </span>
-            <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-          </Link>
+            <CopyButton text={pageUrl} label="" size="icon" variant="ghost" aria-label="Linki kopyala" />
+            <Button asChild size="icon" variant="ghost">
+              <a href={pageUrl} target="_blank" rel="noopener noreferrer" aria-label="Sayfamı aç">
+                <ExternalLink />
+              </a>
+            </Button>
+          </section>
         )}
 
         <ul className="divide-y overflow-hidden surface">
