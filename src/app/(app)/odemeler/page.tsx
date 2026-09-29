@@ -153,12 +153,12 @@ function DebtorRow({ debtor: d, portalToken }: { debtor: Debtor; portalToken?: s
   const pkg = d.packages.length === 1 ? `&paket=${d.packages[0].id}` : "";
 
   return (
-    <li className="flex items-center gap-2 py-2.5 pr-2 pl-4">
+    <li className="flex items-center gap-2 py-3 pr-2 pl-4">
       <div className="min-w-0 flex-1">
         <Link href={`/danisanlar/${d.clientId}`} className="block truncate font-medium hover:underline">
           {d.fullName}
         </Link>
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="line-clamp-2 text-xs text-muted-foreground">
           {d.overdue > 0 && <span className="font-medium text-destructive">{formatTRY(d.overdue)} vadesi gelmiş · </span>}
           {d.packages.map((p) => p.name).join(", ")}
         </p>

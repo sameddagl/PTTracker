@@ -44,7 +44,7 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5" noValidate>
       <Field id="slug" label="Sayfa adresin" error={e.slug ?? liveSlugError ?? undefined}>
         <div className="flex items-center rounded-lg border focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
-          <span className="shrink-0 pl-2.5 text-sm text-muted-foreground">{host}/</span>
+          <span className="shrink-0 pl-3 text-sm text-muted-foreground">{host}/</span>
           <input
             id="slug"
             name="slug"
@@ -54,7 +54,7 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
             autoCorrect="off"
             spellCheck={false}
             maxLength={30}
-            className="h-10 min-w-0 flex-1 bg-transparent pr-2.5 text-base outline-none md:h-8 md:text-sm"
+            className="h-11 min-w-0 flex-1 bg-transparent pr-3 text-base outline-none md:h-9 md:text-sm"
           />
         </div>
       </Field>
@@ -67,7 +67,7 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
           onChange={(ev) => setEnabled(ev.target.checked)}
           className="mt-0.5 size-4 accent-[var(--primary)]"
         />
-        <span className="flex flex-col gap-0.5">
+        <span className="flex flex-col gap-1">
           <span className="text-sm font-medium">Sayfam yayında</span>
           <span className="text-xs text-muted-foreground">
             Açıkken linki bilen herkes profilini ve paketlerini görebilir. Instagram bio&apos;na bu linki koy.

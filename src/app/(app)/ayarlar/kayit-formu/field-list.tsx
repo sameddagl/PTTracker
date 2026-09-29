@@ -20,7 +20,7 @@ export function FieldList({ fields }: { fields: (EditableField & { id: string })
     <div className="flex flex-col gap-3">
       <ul className="divide-y rounded-xl border">
         {FIXED.map((label) => (
-          <li key={label} className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground">
+          <li key={label} className="flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground">
             <Lock className="size-3.5" aria-hidden />
             <span className="flex-1">{label}</span>
             <span className="text-xs">her formda</span>

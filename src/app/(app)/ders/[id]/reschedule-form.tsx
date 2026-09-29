@@ -68,9 +68,9 @@ export function RescheduleForm({
       </div>
 
       {state.conflicts && state.conflicts.length > 0 && (
-        <div ref={conflictRef} tabIndex={-1} role="alert" className="flex flex-col gap-2 rounded-lg border border-amber-500/50 outline-none bg-amber-500/10 p-3 text-sm">
+        <div ref={conflictRef} tabIndex={-1} role="alert" className="flex flex-col gap-2 rounded-lg border border-warning/50 outline-none bg-warning/10 p-3 text-sm">
           <p className="flex items-center gap-2 font-medium">
-            <AlertTriangle className="size-4 text-amber-500" aria-hidden />
+            <AlertTriangle className="size-4 text-warning" aria-hidden />
             Bu saatte başka dersin var
           </p>
           <ul className="text-muted-foreground">

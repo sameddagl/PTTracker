@@ -8,7 +8,8 @@ export function useScrollIntoView<T extends HTMLElement>(trigger: unknown) {
   const ref = useRef<T>(null);
   useEffect(() => {
     if (!trigger || !ref.current) return;
-    ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    ref.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
     ref.current.focus({ preventScroll: true });
   }, [trigger]);
   return ref;

@@ -210,7 +210,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           <ul className="divide-y rounded-xl border">
             {upcoming.map((h) => (
               <li key={h.id}>
-                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50">
+                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
                   <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
                   <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
                   <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
@@ -231,7 +231,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           <ul className="divide-y rounded-xl border">
             {history.map((h) => (
               <li key={h.id}>
-                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50">
+                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
                   <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
                   <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
                   <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
@@ -253,7 +253,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           </h2>
           <ul className="divide-y rounded-xl border">
             {paymentHistory.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+              <li key={p.id} className="flex items-center gap-3 px-4 py-3 text-sm">
                 <span className="w-16 shrink-0 tabular-nums">{formatShortDate(p.paidOn)}</span>
                 <span className="min-w-0 flex-1 truncate text-muted-foreground">
                   {PAYMENT_METHOD_LABELS[p.method]}
@@ -275,7 +275,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
               {latestAnswers.map((a) => (
                 <div key={a.id}>
-                  <dt className="flex items-center gap-1.5 text-muted-foreground">
+                  <dt className="flex items-center gap-2 text-muted-foreground">
                     {a.label}
                     {a.isHealth && <ShieldCheck className="size-3.5 text-primary" aria-label="Sağlık bilgisi" />}
                   </dt>
@@ -295,7 +295,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           <CardContent className="flex flex-col gap-3 text-sm">
             {client.notes && <p className="whitespace-pre-wrap">{client.notes}</p>}
             {client.healthNotes && (
-              <p className="whitespace-pre-wrap rounded-md bg-amber-500/10 px-3 py-2">
+              <p className="whitespace-pre-wrap rounded-md bg-warning/10 px-3 py-2">
                 <span className="font-medium">Sağlık: </span>
                 {client.healthNotes}
               </p>

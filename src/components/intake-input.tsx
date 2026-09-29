@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { answerName, type IntakeFieldDef } from "@/lib/intake";
 
 const chip =
-  "flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
+  "flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-4 py-2 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
 
 /** One trainer-defined question, rendered for its type. */
 export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: string }; error?: string }) {

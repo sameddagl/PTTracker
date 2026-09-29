@@ -18,7 +18,7 @@ type SessionType = keyof typeof SESSION_TYPE_LABELS;
 const typeForCount = (n: number): SessionType => (n <= 1 ? "private" : n === 2 ? "duet" : n === 3 ? "trio" : "group");
 
 const chip =
-  "flex cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
+  "flex min-h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
 
 export function LessonForm({
   clients,
@@ -100,7 +100,7 @@ export function LessonForm({
         <ul className="max-h-64 divide-y overflow-y-auto rounded-lg border">
           {visible.map((c) => (
             <li key={c.id}>
-              <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-muted/50">
+              <label className="flex cursor-pointer items-center gap-3 px-3 py-3 hover:bg-muted/50">
                 <input
                   type="checkbox"
                   checked={selected.includes(c.id)}
@@ -167,7 +167,7 @@ export function LessonForm({
           <>
             <div role="group" aria-label="Günler" className="grid grid-cols-7 gap-1">
               {WEEKDAY_LABELS.map((label, i) => (
-                <label key={label} className={cn(chip, "h-10 text-xs")}>
+                <label key={label} className={cn(chip, "h-11 text-xs")}>
                   <input
                     type="checkbox"
                     name="weekdays"
@@ -216,7 +216,7 @@ export function LessonForm({
                 ["attended", "Yapıldı", "Geldi olarak işle, paketten düş"],
               ] as const
             ).map(([value, label, hint]) => (
-              <label key={value} className={cn(chip, "flex-col items-start gap-0.5 px-3 py-2.5")}>
+              <label key={value} className={cn(chip, "flex-col items-start gap-1 px-3 py-3")}>
                 <input
                   type="radio"
                   name="status"
@@ -231,7 +231,7 @@ export function LessonForm({
             ))}
           </div>
           {isPast && status === "scheduled" && (
-            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">Geçmiş tarihli bir dersi planlıyorsun.</p>
+            <p className="mt-2 text-sm text-warning-strong">Geçmiş tarihli bir dersi planlıyorsun.</p>
           )}
         </fieldset>
       )}
@@ -243,9 +243,9 @@ export function LessonForm({
       </Field>
 
       {state.conflicts && state.conflicts.length > 0 && (
-        <div ref={conflictRef} tabIndex={-1} role="alert" className="flex flex-col gap-3 rounded-xl border border-amber-500/50 outline-none bg-amber-500/10 p-4">
+        <div ref={conflictRef} tabIndex={-1} role="alert" className="flex flex-col gap-3 rounded-xl border border-warning/50 outline-none bg-warning/10 p-4">
           <p className="flex items-center gap-2 text-sm font-medium">
-            <AlertTriangle className="size-4 text-amber-500" aria-hidden />
+            <AlertTriangle className="size-4 text-warning" aria-hidden />
             Bu saatte başka dersin var
           </p>
           <ul className="flex flex-col gap-1 text-sm text-muted-foreground">

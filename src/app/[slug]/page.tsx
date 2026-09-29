@@ -89,7 +89,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
           )}
 
           {trainer.specialties.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Uzmanlık alanları">
+            <ul className="mt-4 flex flex-wrap gap-2" aria-label="Uzmanlık alanları">
               {trainer.specialties.map((s) => (
                 <li key={s} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                   {s}
@@ -103,7 +103,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
       </header>
 
       <section aria-labelledby="packages-heading" className="mt-10 px-4">
-        <h2 id="packages-heading" className="mb-4 text-lg font-semibold">
+        <h2 id="packages-heading" className="mb-4 text-xl font-semibold">
           Paketler
         </h2>
         {packages.length === 0 ? (
@@ -156,7 +156,7 @@ function PackageCard({ slug, pkg: p }: { slug: string; pkg: PublicPage["packages
       </div>
       {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
       {p.features.length > 0 && (
-        <ul className="flex flex-col gap-1.5 text-sm">
+        <ul className="flex flex-col gap-2 text-sm">
           {p.features.map((f) => (
             <li key={f} className="flex gap-2">
               <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />

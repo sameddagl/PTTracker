@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[220px_1fr]">
       <aside className="hidden border-r bg-muted/30 p-4 md:flex md:flex-col md:gap-6">
-        <Link href="/bugun" className="px-3 text-lg font-semibold tracking-tight">
+        <Link href="/bugun" className="px-3 text-xl font-semibold tracking-tight">
           {APP_NAME}
         </Link>
         <SideNav badges={badges} />

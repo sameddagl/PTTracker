@@ -140,7 +140,7 @@ function AlertRow({ alert: a, portalToken }: { alert: PackageAlert; portalToken?
     <li>
       <Card className="py-3">
         <CardContent className="flex items-center gap-3 px-4">
-          <AlertTriangle className="size-4 shrink-0 text-amber-500" aria-hidden />
+          <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden />
           <div className="min-w-0 flex-1">
             <Link href={`/danisanlar/${a.clientId}`} className="block truncate font-medium hover:underline">
               {a.clientName}

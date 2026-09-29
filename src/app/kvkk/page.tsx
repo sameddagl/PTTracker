@@ -12,7 +12,7 @@ export default function KvkkPage() {
         {APP_NAME}
       </Link>
       <h1 className="mt-8 mb-2 text-2xl font-semibold">KVKK Aydınlatma Metni</h1>
-      <p className="mb-6 rounded-md bg-amber-500/10 px-3 py-2">
+      <p className="mb-6 rounded-md bg-warning/10 px-3 py-2">
         Taslak metindir; hukuki inceleme sonrası güncellenecektir.
       </p>
       <div className="flex flex-col gap-4 text-muted-foreground">

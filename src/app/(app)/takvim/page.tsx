@@ -91,7 +91,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
                   aria-current={d === selected ? "date" : undefined}
                   aria-label={`${dayLong(d)}, ${count} ders`}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-lg py-2 text-xs transition-colors",
+                    "flex flex-col items-center gap-1 rounded-lg py-2 text-xs transition-colors",
                     d === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                     d === today && d !== selected && "text-primary",
                   )}
@@ -207,7 +207,7 @@ function WeekGrid({
       <div className="grid grid-cols-[3rem_repeat(7,1fr)]">
         <div>
           {hours.map((h) => (
-            <div key={h} style={{ height: HOUR_PX }} className="pr-2 text-right text-[11px] text-muted-foreground tabular-nums">
+            <div key={h} style={{ height: HOUR_PX }} className="pr-2 text-right text-xs text-muted-foreground tabular-nums">
               <span className="relative -top-2">{h > firstHour ? `${String(h).padStart(2, "0")}:00` : ""}</span>
             </div>
           ))}
@@ -238,7 +238,7 @@ function WeekGrid({
                   href={`/ders/${l.lessonId}`}
                   title={`${minutesToTime(l.startMinute)} ${lessonTitle(l)}`}
                   className={cn(
-                    "absolute overflow-hidden rounded-md border px-1.5 py-1 text-[11px] leading-tight transition-colors",
+                    "absolute overflow-hidden rounded-md border px-2 py-1 text-xs leading-tight transition-colors",
                     TONE_CLASSES[tone],
                   )}
                   style={{

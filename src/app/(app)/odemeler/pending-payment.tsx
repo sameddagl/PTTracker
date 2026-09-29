@@ -38,7 +38,7 @@ export function PendingPaymentCard({
           </p>
           {p.note && <p className="mt-1 text-sm">{p.note}</p>}
         </div>
-        <p className="shrink-0 text-lg font-semibold tabular-nums">{formatTRY(p.amount)}</p>
+        <p className="shrink-0 text-xl font-semibold tabular-nums">{formatTRY(p.amount)}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {p.receiptType ? (

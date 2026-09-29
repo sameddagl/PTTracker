@@ -57,7 +57,7 @@ export function BookingPanel({
             <p className="text-sm text-muted-foreground">Önümüzdeki günlerde boş saat yok.</p>
           ) : (
             <>
-              <ol className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" aria-label="Günler">
+              <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" aria-label="Günler">
                 {days.map((d) => (
                   <li key={d.date}>
                     <button
@@ -74,7 +74,7 @@ export function BookingPanel({
                       )}
                     >
                       <span className={d.date === day ? "" : "text-muted-foreground"}>{WEEKDAY_LABELS[isoWeekday(d.date) - 1]}</span>
-                      <span className="text-lg font-semibold tabular-nums">{dayOfMonth(d.date)}</span>
+                      <span className="text-xl font-semibold tabular-nums">{dayOfMonth(d.date)}</span>
                       <span className={d.date === day ? "" : "text-muted-foreground"}>{monthShort(d.date)}</span>
                     </button>
                   </li>

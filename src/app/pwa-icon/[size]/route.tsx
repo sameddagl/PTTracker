@@ -15,7 +15,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/pwa-icon/[size]">) 
   const stroke = size * 0.09;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: "#0f766e" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#2563eb" }}>
         <svg viewBox="0 0 64 64" width={size} height={size}>
           <path
             d="M20 34l8 8 16-18"

@@ -63,7 +63,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
           onChange={(ev) => setEnabled(ev.target.checked)}
           className="mt-0.5 size-4 accent-[var(--primary)]"
         />
-        <span className="flex flex-col gap-0.5">
+        <span className="flex flex-col gap-1">
           <span className="text-sm font-medium">Danışanlar randevu alabilsin</span>
           <span className="text-xs text-muted-foreground">
             Birebir paketi olan danışanlar kendi sayfalarından aşağıdaki saatlerde boş olan saatleri görüp ders alabilir.

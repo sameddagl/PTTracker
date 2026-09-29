@@ -40,7 +40,7 @@ export function NativeSelect({ className, children, ...props }: ComponentProps<"
     <div className="relative">
       <select
         className={cn(
-          "h-10 w-full appearance-none rounded-lg border border-input bg-transparent py-1 pr-9 pl-2.5 text-base outline-none transition-colors md:h-8 md:text-sm dark:bg-input/30",
+          "h-11 w-full appearance-none rounded-lg border border-input bg-transparent py-1 pr-9 pl-3 text-base outline-none transition-colors md:h-9 md:text-sm dark:bg-input/30",
           "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
           className,
         )}
@@ -59,7 +59,7 @@ export function NativeSelect({ className, children, ...props }: ComponentProps<"
 export function FormError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+    <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive-strong">
       {message}
     </p>
   );

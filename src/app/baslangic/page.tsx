@@ -15,7 +15,7 @@ export default async function OnboardingPage() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-muted/40 px-4 py-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <p className="text-center text-lg font-semibold tracking-tight">{APP_NAME}</p>
+        <p className="text-center text-xl font-semibold tracking-tight">{APP_NAME}</p>
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">Seni tanıyalım</CardTitle>

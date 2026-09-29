@@ -72,7 +72,7 @@ export default async function ApplicationsPage() {
           <ul className="divide-y rounded-xl border">
             {decided.map((a) => (
               <li key={a.id}>
-                <Link href={`/danisanlar/basvurular/${a.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50">
+                <Link href={`/danisanlar/basvurular/${a.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{a.clientName}</p>
                     <p className="truncate text-xs text-muted-foreground">{a.packageName}</p>

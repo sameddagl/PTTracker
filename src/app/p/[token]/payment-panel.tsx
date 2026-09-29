@@ -16,8 +16,8 @@ export type PackagePlan = { id: string; name: string; code: string; states: Inst
 type Rejected = { id: string; amount: string; paidOn: string; rejectReason: string | null };
 
 const STATUS: Record<InstallmentState["status"], { label: string; className: string }> = {
-  paid: { label: "Ödendi", className: "text-emerald-600 dark:text-emerald-400" },
-  pending: { label: "Onay bekliyor", className: "text-amber-600 dark:text-amber-400" },
+  paid: { label: "Ödendi", className: "text-success-strong" },
+  pending: { label: "Onay bekliyor", className: "text-warning-strong" },
   due: { label: "Bugün", className: "text-foreground font-medium" },
   overdue: { label: "Gecikti", className: "text-destructive font-medium" },
   upcoming: { label: "Ödenecek", className: "text-muted-foreground" },
@@ -134,7 +134,7 @@ export function PaymentPanel({
 
               <ol className="flex flex-col divide-y rounded-xl border text-sm">
                 {p.states.map((s) => (
-                  <li key={s.seq} className={cn("flex items-center gap-3 px-3 py-2.5", next?.seq === s.seq && "bg-primary/5")}>
+                  <li key={s.seq} className={cn("flex items-center gap-3 px-3 py-3", next?.seq === s.seq && "bg-primary/5")}>
                     <span className="min-w-0 flex-1">
                       <span className="block">{multi ? `${s.seq}. taksit` : "Paket ücreti"}</span>
                       <span className="block text-xs text-muted-foreground">
@@ -176,7 +176,7 @@ export function PaymentPanel({
                         <span className="font-semibold tabular-nums">{formatTRY(next.remaining)}</span>
                       </p>
                       <Field id="receipt" label="Dekont" hint="isteğe bağlı · fotoğraf ya da PDF" error={e.receipt}>
-                        <Input id="receipt" name="receipt" type="file" accept="image/*,application/pdf" className="py-1.5" />
+                        <Input id="receipt" name="receipt" type="file" accept="image/*,application/pdf" className="py-2" />
                       </Field>
                       <Field id="note" label="Not" hint="isteğe bağlı">
                         <Input id="note" name="note" maxLength={300} />

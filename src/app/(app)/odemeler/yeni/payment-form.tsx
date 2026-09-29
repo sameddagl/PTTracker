@@ -116,11 +116,11 @@ export function PaymentForm({
 
       <fieldset>
         <legend className="mb-2 text-sm font-medium">Yöntem</legend>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-2">
           {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
             <label
               key={value}
-              className="flex h-10 cursor-pointer items-center justify-center rounded-lg border text-xs font-medium transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:text-sm"
+              className="flex h-11 cursor-pointer items-center justify-center rounded-lg border text-xs font-medium transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:text-sm"
             >
               <input
                 type="radio"

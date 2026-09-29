@@ -61,10 +61,10 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
       </header>
 
       {yeni && (
-        <Card className="border-emerald-600/40 bg-emerald-600/10">
+        <Card className="border-success/40 bg-success/10">
           <CardContent className="flex flex-col gap-3">
             <p className="flex items-center gap-2 font-semibold">
-              <CheckCircle2 className="size-5 text-emerald-600" aria-hidden />
+              <CheckCircle2 className="size-5 text-success" aria-hidden />
               Başvurun alındı
             </p>
             <p className="text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
       {pending && (
         <Card>
           <CardContent className="flex items-center gap-3">
-            <Hourglass className="size-5 shrink-0 text-amber-500" aria-hidden />
+            <Hourglass className="size-5 shrink-0 text-warning" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="font-medium">{application.packageName}</p>
               <p className="text-sm text-muted-foreground">Eğitmenin onayı bekleniyor. Onaylanınca sana haber vereceğiz.</p>
@@ -115,8 +115,8 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
                 {p.state === "frozen" && <span className="text-xs text-muted-foreground">Donduruldu</span>}
               </div>
               <div className="flex items-end gap-2">
-                <span className="text-5xl font-semibold tabular-nums">{p.remaining}</span>
-                <span className="pb-1.5 text-muted-foreground">/ {p.total} ders kaldı</span>
+                <span className="text-3xl font-semibold tabular-nums">{p.remaining}</span>
+                <span className="pb-2 text-muted-foreground">/ {p.total} ders kaldı</span>
               </div>
               <div
                 className="h-2 overflow-hidden rounded-full bg-muted"
@@ -190,7 +190,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           </h2>
           <ul className="divide-y rounded-lg border text-sm">
             {recent.map((l) => (
-              <li key={l.id} className="flex items-center gap-3 px-4 py-2.5">
+              <li key={l.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="w-14 tabular-nums">{formatDayMonth(l.startsAt, tz)}</span>
                 <span className="flex-1 text-muted-foreground tabular-nums">{formatTime(l.startsAt, tz)}</span>
                 <span className={l.status === "attended" ? "" : "text-muted-foreground"}>

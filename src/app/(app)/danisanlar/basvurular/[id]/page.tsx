@@ -68,10 +68,10 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
       />
 
       {onaylandi && app.status === "approved" && (
-        <Card className="mb-6 border-emerald-600/40 bg-emerald-600/10">
+        <Card className="mb-6 border-success/40 bg-success/10">
           <CardContent className="flex flex-col gap-3">
             <p className="flex items-center gap-2 font-medium">
-              <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />
+              <CheckCircle2 className="size-4 text-success" aria-hidden />
               Onaylandı.{" "}
               {onaylandi === "eposta" ? "Danışana e-posta gönderildi." : "WhatsApp'tan haber vermeyi unutma."}
             </p>
@@ -104,7 +104,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
                 {SESSION_TYPE_LABELS[app.sessionType]} · {app.sessionCount} ders
               </p>
             </div>
-            {app.packagePrice && <p className="text-lg font-semibold tabular-nums">{formatTRY(app.packagePrice)}</p>}
+            {app.packagePrice && <p className="text-xl font-semibold tabular-nums">{formatTRY(app.packagePrice)}</p>}
           </CardContent>
         </Card>
 
@@ -151,7 +151,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
                 <dl className="flex flex-col gap-3 text-sm">
                   {answers.map((a) => (
                     <div key={a.id}>
-                      <dt className="flex items-center gap-1.5 text-muted-foreground">
+                      <dt className="flex items-center gap-2 text-muted-foreground">
                         {a.label}
                         {a.isHealth && <ShieldCheck className="size-3.5 text-primary" aria-label="Sağlık bilgisi" />}
                       </dt>
@@ -166,7 +166,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
                   <p className="whitespace-pre-wrap">{app.message}</p>
                 </div>
               )}
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="size-3.5" aria-hidden />
                 {hasHealthConsent ? "Sağlık bilgileri için açık rıza verdi." : "Sağlık bilgileri için rıza vermedi; bu sorular atlandı."}
               </p>

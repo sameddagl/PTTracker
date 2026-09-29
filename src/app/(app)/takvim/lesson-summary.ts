@@ -12,8 +12,8 @@ export function lessonTone(l: CalendarLesson): LessonTone {
 
 export const TONE_CLASSES: Record<LessonTone, string> = {
   planned: "border-primary/40 bg-primary/10 hover:bg-primary/15",
-  done: "border-emerald-600/40 bg-emerald-600/10 hover:bg-emerald-600/15",
-  missed: "border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15",
+  done: "border-success/40 bg-success/10 hover:bg-success/15",
+  missed: "border-warning/40 bg-warning/10 hover:bg-warning/15",
   cancelled: "border-border bg-muted/40 text-muted-foreground line-through hover:bg-muted/60",
 };
 

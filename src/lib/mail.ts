@@ -28,14 +28,14 @@ const escape = (s: string) =>
 
 /** A plain, mobile-friendly email with one call-to-action button. */
 export function layout({ heading, lines, cta, footer }: { heading: string; lines: string[]; cta?: { label: string; url: string }; footer?: string }) {
-  const html = `<!doctype html><html lang="tr"><body style="margin:0;background:#f5f5f4;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1c1917">
-<div style="max-width:480px;margin:0 auto;padding:32px 20px">
-<div style="background:#fff;border-radius:16px;padding:28px 24px">
-<h1 style="margin:0 0 16px;font-size:20px">${escape(heading)}</h1>
-${lines.map((l) => `<p style="margin:0 0 12px;font-size:15px;line-height:1.5">${escape(l)}</p>`).join("")}
-${cta ? `<p style="margin:24px 0 8px"><a href="${escape(cta.url)}" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600">${escape(cta.label)}</a></p><p style="margin:0;font-size:12px;color:#78716c;word-break:break-all">${escape(cta.url)}</p>` : ""}
+  const html = `<!doctype html><html lang="tr"><body style="margin:0;background:#f3f4f6;font-family:Roboto,-apple-system,Segoe UI,sans-serif;color:#111827">
+<div style="max-width:480px;margin:0 auto;padding:32px 16px">
+<div style="background:#fff;border-radius:16px;padding:24px">
+<h1 style="margin:0 0 16px;font-size:20px;font-family:Poppins,Roboto,sans-serif">${escape(heading)}</h1>
+${lines.map((l) => `<p style="margin:0 0 12px;font-size:16px;line-height:1.5">${escape(l)}</p>`).join("")}
+${cta ? `<p style="margin:24px 0 8px"><a href="${escape(cta.url)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600">${escape(cta.label)}</a></p><p style="margin:0;font-size:12px;color:#4b5563;word-break:break-all">${escape(cta.url)}</p>` : ""}
 </div>
-<p style="margin:16px 0 0;font-size:12px;color:#78716c;text-align:center">${escape(footer ?? APP_NAME)}</p>
+<p style="margin:16px 0 0;font-size:12px;color:#4b5563;text-align:center">${escape(footer ?? APP_NAME)}</p>
 </div></body></html>`;
   const text = [heading, "", ...lines, ...(cta ? ["", `${cta.label}: ${cta.url}`] : [])].join("\n");
   return { html, text };

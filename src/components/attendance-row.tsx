@@ -10,9 +10,9 @@ import { markAttendanceAction } from "@/app/(app)/bugun/actions";
 type Status = CalendarAttendee["status"];
 
 const OPTIONS: { status: Status; label: string; active: string }[] = [
-  { status: "attended", label: "Geldi", active: "border-emerald-600 bg-emerald-600 text-white" },
-  { status: "no_show", label: "Gelmedi", active: "border-destructive bg-destructive text-white" },
-  { status: "late_cancel", label: "Geç iptal", active: "border-amber-500 bg-amber-500 text-white" },
+  { status: "attended", label: "Geldi", active: "border-success-strong bg-success-strong text-background" },
+  { status: "no_show", label: "Gelmedi", active: "border-destructive bg-destructive text-background" },
+  { status: "late_cancel", label: "Geç iptal", active: "border-warning-strong bg-warning-strong text-background" },
   { status: "cancelled", label: "İptal", active: "border-foreground/40 bg-muted text-foreground" },
 ];
 
@@ -55,7 +55,7 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
           {remaining === null ? "Paketsiz" : `${remaining} ders kaldı`}
         </span>
       </div>
-      <div role="group" aria-label={`${attendee.name} yoklama`} className="grid grid-cols-4 gap-1.5">
+      <div role="group" aria-label={`${attendee.name} yoklama`} className="grid grid-cols-4 gap-2">
         {OPTIONS.map((o) => {
           const active = optimistic === o.status;
           return (
@@ -66,7 +66,7 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
               aria-pressed={active}
               disabled={pending}
               className={cn(
-                "h-10 rounded-lg border text-xs font-medium transition-colors disabled:opacity-70 sm:text-sm",
+                "h-11 rounded-lg border text-xs font-medium transition-colors disabled:opacity-70 sm:text-sm",
                 active ? o.active : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
