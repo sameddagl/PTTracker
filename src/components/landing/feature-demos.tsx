@@ -1,5 +1,6 @@
 import { Check, CheckCheck, FileText, Lock, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { APP_DOMAIN } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 /*
@@ -59,7 +60,7 @@ export function PublicPageDemo() {
     <div className="flex w-full flex-col items-center gap-3">
       <div className="flex h-9 items-center gap-2 rounded-full border bg-card px-4 text-sm shadow-card">
         <Lock className="size-3.5 text-muted-foreground" />
-        <span className="text-muted-foreground">pttracker.app/</span>
+        <span className="text-muted-foreground">{APP_DOMAIN}/</span>
         <span className="-ml-2 font-medium">elif-pilates</span>
       </div>
       <div className={cn(panel, "flex w-full items-center gap-3 p-3")}>

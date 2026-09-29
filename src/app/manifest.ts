@@ -10,8 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/bugun",
     scope: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#2563eb",
+    background_color: "#f5f5f7",
+    theme_color: "#1d1d1f",
     icons: [
       { src: "/pwa-icon/192", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png", purpose: "any" },

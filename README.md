@@ -1,4 +1,4 @@
-# PTTracker
+# Stüdyom
 
 PT ve pilates eğitmenleri için danışan, paket, ders ve ödeme takibi. Mobil öncelikli bir PWA.
 Pazar araştırması ve ürün kararları için [PAZAR_ARASTIRMASI.md](PAZAR_ARASTIRMASI.md).

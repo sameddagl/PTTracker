@@ -12,15 +12,15 @@ export async function GET(_req: Request, ctx: RouteContext<"/pwa-icon/[size]">) 
   const size = Number((await ctx.params).size);
   if (!SIZES.includes(size as (typeof SIZES)[number])) return new Response("Not found", { status: 404 });
 
-  const stroke = size * 0.09;
+  const stroke = size * 0.075;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: "#2563eb" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#c6f24e" }}>
         <svg viewBox="0 0 64 64" width={size} height={size}>
           <path
-            d="M20 34l8 8 16-18"
+            d="M12 32h8l6-18 12 36 6-18h8"
             fill="none"
-            stroke="#fff"
+            stroke="#1d1d1f"
             strokeWidth={(stroke / size) * 64}
             strokeLinecap="round"
             strokeLinejoin="round"

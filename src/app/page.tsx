@@ -11,120 +11,159 @@ import {
 } from "@/components/landing/feature-demos";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
 import { Button } from "@/components/ui/button";
-import { APP_NAME } from "@/lib/config";
+import { APP_NAME, siteUrl } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
+const TITLE = `${APP_NAME} · Pilates ve PT için Danışan ve Seans Takibi`;
+const DESCRIPTION =
+  "Pilates ve PT eğitmenleri için danışan takip programı: seans paketi, yoklama, randevu ve ödemeler tek yerde. Excel ve WhatsApp karmaşasına son. Beta ücretsiz.";
+
 export const metadata: Metadata = {
-  title: { absolute: `${APP_NAME} · PT ve pilates eğitmenleri için danışan ve paket takibi` },
-  description:
-    "Derslerini, paketlerini ve ödemelerini tek uygulamadan yönet. Excel ve WhatsApp karmaşasına son. Beta döneminde eğitmenler için ücretsiz.",
-  openGraph: {
-    title: `${APP_NAME} · Danışan, paket ve ödeme takibi`,
-    description:
-      "PT ve pilates eğitmenleri için. Danışanların uygulama indirmez; kendi linkinden kayıt olur, randevu alır, ödemesini bildirir.",
-    type: "website",
-  },
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  keywords: [
+    "pilates stüdyo programı",
+    "personal trainer uygulaması",
+    "danışan takip programı",
+    "seans takip",
+    "seans paketi takibi",
+    "pilates randevu sistemi",
+    "reformer pilates",
+    "grup dersi kontenjan",
+  ],
+  openGraph: { title: TITLE, description: DESCRIPTION, url: "/", type: "website", siteName: APP_NAME, locale: "tr_TR" },
 };
 
 const FEATURES = [
   {
-    title: "Tek dokunuşla yoklama, paket kendiliğinden düşer",
-    text: "Geldi, gelmedi, geç iptal. Kalan ders anında güncellenir; telafi hakkı varsa ders yanmaz.",
-    chips: ["Yoklama", "Telafi hakkı", "24 saat kuralı", "Paket bakiyesi"],
+    title: "Yoklama tek dokunuş, paket kendiliğinden düşer",
+    text: "Geldi, gelmedi, geç iptal… Kalan seans sayısı anında güncellenir. Telafi hakkı varsa ders yanmaz.",
+    chips: ["Yoklama", "Telafi hakkı", "24 saat kuralı", "Kalan seans"],
     Demo: AttendanceDemo,
   },
   {
-    title: "Instagram'a özel sayfan ve online kayıt",
-    text: "Paketlerin ve tanıtımın tek linkte. Bio'na koy; danışan paketi seçip formu doldursun, sen onayla.",
-    chips: ["Kişisel sayfa", "Kayıt formu", "Başvuru onayı", "KVKK rızası"],
+    title: "Instagram'a koyacağınız kendi sayfanız",
+    text: "Paketleriniz, fiyatlarınız ve tanıtımınız tek linkte. Bio'nuza ekleyin; danışan paketini seçip kayıt formunu doldursun, siz onaylayın.",
+    chips: ["Kişisel sayfa", "Online kayıt", "Başvuru onayı", "Açık rıza"],
     Demo: PublicPageDemo,
   },
   {
-    title: "Paketler, indirim, peşin ya da taksit",
-    text: "Özel, düet ya da grup paketleri. İndirimli fiyat, taksit planı ve dondurma hakkı paketin içinde.",
-    chips: ["Paketler", "İndirim", "Taksit", "Dondurma"],
+    title: "Seans paketleri: indirimli, peşin ya da taksitli",
+    text: "Özel, düet ve grup paketleri oluşturun. İndirimli fiyatı ve taksit seçeneğini siz belirleyin, danışan ödeme şeklini kendisi seçsin.",
+    chips: ["Seans paketi", "İndirim", "Peşin fiyat", "Taksit"],
     Demo: PricingDemo,
   },
   {
-    title: "Grup dersleri, dolu kontenjan derdi yok",
-    text: "Kapasiteyi belirle, sabit danışanlarına yerlerini ayır, kalan yerlere tek tek katılım al.",
-    chips: ["Kapasite", "Sabit yer", "Tek tek katılım"],
+    title: "Grup derslerinde kontenjan ve sabit yer",
+    text: "Kapasiteyi belirleyin, düzenli gelenlere sabit yer ayırın. Boş kalan yerlere danışanlar kendisi katılsın.",
+    chips: ["Kontenjan", "Sabit yer", "Derse katılım"],
     Demo: GroupDemo,
   },
   {
-    title: "Danışan kendi randevusunu alır",
-    text: "Çalışma saatlerini gir; danışan boş saatlerden seçer. Çakışma olmaz, iptal kuralın işler.",
-    chips: ["Online randevu", "Müsaitlik", "İptal kuralı"],
+    title: "Danışan randevusunu kendisi alır",
+    text: "Çalışma saatlerinizi girin; danışan boş saatlerden birini seçsin. Çakışma olmaz, iptal kuralınız geçerli olur.",
+    chips: ["Online randevu", "Çalışma saatleri", "İptal kuralı"],
     Demo: BookingDemo,
   },
   {
-    title: "Havale bildirimi, dekont ve WhatsApp hatırlatma",
-    text: "Danışan IBAN'ına öder, dekontunu yükler; sen onaylarsın. Paketi bitmek üzere olana hazır mesajla hatırlat.",
+    title: "Havale bildirimi, dekont ve WhatsApp hatırlatması",
+    text: "Danışan IBAN'ınıza ödeyip dekontunu yükler, siz onaylarsınız. Paketi bitmek üzere olanlara hazır mesajla hatırlatın.",
     chips: ["IBAN", "Dekont", "WhatsApp", "Hatırlatma"],
     Demo: PaymentDemo,
   },
 ];
 
 const STATS = [
-  { value: "₺0", label: "Beta boyunca ücretsiz" },
-  { value: "0 uygulama", label: "Danışanının indirmesi gereken" },
-  { value: "4 hafta", label: "İleriye otomatik planlanan grup dersleri" },
+  { value: "₺0", label: "Beta süresince ücret yok" },
+  { value: "0", label: "Danışanınızın indirmesi gereken uygulama" },
+  { value: "4 hafta", label: "Grup dersleri bu kadar ileriye kendiliğinden planlanır" },
 ];
 
 const STEPS = [
-  { title: "Paketlerini ve sayfanı hazırla", text: "Paketlerini, fiyatlarını, çalışma saatlerini ve kayıt formunu dakikalar içinde oluştur." },
-  { title: "Linkini Instagram'da paylaş", text: "Danışanın sayfandan paketini seçer, formu doldurur ve başvurur. Hesap açması gerekmez." },
-  { title: "Onayla ve takip et", text: "Başvuruyu onayla; dersler, yoklama, ödemeler ve hatırlatmalar tek ekranda." },
+  {
+    title: "Paketlerinizi ve sayfanızı hazırlayın",
+    text: "Seans paketlerinizi, fiyatlarınızı, çalışma saatlerinizi ve kayıt formunuzu birkaç dakikada oluşturun.",
+  },
+  {
+    title: "Linkinizi Instagram'da paylaşın",
+    text: "Danışan sayfanızdan paketini seçer, formu doldurur ve başvurur. Hesap açması gerekmez.",
+  },
+  { title: "Onaylayın, gerisini takip edin", text: "Başvuruyu onaylayın; seanslar, yoklama, ödemeler ve hatırlatmalar tek ekranda." },
 ];
 
 const REASONS = [
   {
-    title: "Türkiye'ye özel paket motoru",
-    text: "Telafi hakkı, 24 saat iptal kuralı, dondurma ve taksit. Buradaki stüdyoların gerçekten çalıştığı gibi.",
+    title: "Buradaki paket düzenine göre",
+    text: "Telafi hakkı, 24 saat iptal kuralı, taksit ve TL fiyatlar. Stüdyolarda iş nasıl yürüyorsa öyle.",
   },
   {
-    title: "Danışanın için uygulama yok",
-    text: "Her danışanın kişisel bir linki olur. Tarayıcıda açılır; şifre yok, indirme yok.",
+    title: "Danışanınız uygulama indirmez",
+    text: "Her danışanın kişisel bir linki olur. Tarayıcıda açılır; ne şifre ne indirme gerekir.",
   },
   {
-    title: "Paralar doğrudan senin IBAN'ına",
-    text: "Ödemeler bizim üzerimizden geçmez, komisyon yok. Danışan havale yapar, dekontu yükler, sen onaylarsın.",
+    title: "Paranız doğrudan IBAN'ınıza gelir",
+    text: "Ödemeler bizim üzerimizden geçmez, komisyon kesilmez. Danışan havale yapar, dekontu yükler, siz onaylarsınız.",
   },
   {
-    title: "Veriler KVKK'ya uygun",
-    text: "Sağlık bilgisi yalnızca danışanın açık rızasıyla alınır. Her eğitmen sadece kendi danışanlarını görür.",
+    title: "Danışan bilgileri özenle korunur",
+    text: "Sağlık bilgisi yalnızca danışanın açık rızasıyla alınır. Her eğitmen yalnızca kendi danışanlarını görür.",
   },
 ];
 
 const FAQ = [
   {
-    q: "Danışanlarım bir uygulama indirmek zorunda mı?",
-    a: "Hayır. Her danışanın kişisel bir linki olur; WhatsApp'tan ya da e-postayla gönderirsin, tarayıcıda açılır. Şifre ya da hesap gerekmez.",
+    q: "Danışanlarımın bir uygulama indirmesi gerekiyor mu?",
+    a: "Hayır. Her danışanın kişisel bir linki olur; bu linki WhatsApp'tan ya da e-postayla gönderirsiniz, tarayıcıda açılır. Şifre ya da hesap gerekmez.",
   },
   {
-    q: "Ödemeler uygulamanın üzerinden mi geçiyor?",
-    a: "Hayır. Danışan doğrudan senin IBAN'ına havale yapar ve dekontuyla bildirir; sen onaylarsın. Nakit ya da kartla aldığın ödemeleri de kendin girebilirsin.",
+    q: `Ödemeler ${APP_NAME} üzerinden mi geçiyor?`,
+    a: "Hayır. Danışan doğrudan sizin IBAN'ınıza havale yapar ve dekontuyla bildirir, siz onaylarsınız. Nakit ya da kartla aldığınız ödemeleri de kendiniz girebilirsiniz.",
+  },
+  {
+    q: "Yalnızca pilates eğitmenleri için mi?",
+    a: "Hayır. Reformer ve mat pilates eğitmenleri kadar personal trainer'lar ve grup dersi verenler için de uygun. Özel, düet ve grup seanslarını birlikte yönetebilirsiniz.",
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
-    a: "Sağlık bilgileri yalnızca danışan açık rıza verirse sorulur ve saklanır. Her eğitmen sadece kendi danışanlarını görebilir; bu kural veritabanı seviyesinde uygulanır.",
+    a: "Sağlık bilgileri yalnızca danışan açık rıza verirse istenir ve saklanır. Her eğitmen yalnızca kendi danışanlarını görebilir; bu kural doğrudan veritabanında uygulanır.",
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",
-    a: "Excel'den tek seferde aktarma yakında geliyor. O zamana kadar danışanlarını birkaç dokunuşla elle ekleyebilirsin.",
+    a: "Excel'den toplu aktarım yakında geliyor. O zamana kadar danışanlarınızı birkaç dokunuşla elle ekleyebilirsiniz.",
   },
   {
-    q: "Ücretli mi?",
-    a: "Beta döneminde eğitmenler için tamamen ücretsiz. Kredi kartı istemiyoruz.",
+    q: `${APP_NAME} ücretli mi?`,
+    a: "Beta süresince eğitmenler için tamamen ücretsiz. Kredi kartı bilgisi istemiyoruz.",
   },
 ];
 
-const HERO_CHECKS = ["Kredi kartı gerekmez", "Danışanın uygulama indirmez", "Türkçe ve TL"];
+const HERO_CHECKS = ["Kredi kartı gerekmez", "Danışanlarınız uygulama indirmez", "Türkçe arayüz, TL fiyatlar"];
 
 const NAV = [
   { href: "#ozellikler", label: "Özellikler" },
-  { href: "#nasil-calisir", label: "Nasıl çalışır" },
+  { href: "#nasil-calisir", label: "Nasıl çalışıyor" },
   { href: "#sss", label: "SSS" },
+];
+
+// Structured data: what the product is (no ratings or reviews: there are none yet) and the FAQ.
+const JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: APP_NAME,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, iOS, Android",
+    inLanguage: "tr-TR",
+    description: DESCRIPTION,
+    url: siteUrl(),
+    offers: { "@type": "Offer", price: "0", priceCurrency: "TRY", description: "Beta süresince ücretsiz" },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+  },
 ];
 
 // Rounded white card on the canvas; one radius for every card on the page.
@@ -158,7 +197,8 @@ function SectionHeading({
     <div className={cn("mx-auto max-w-4xl text-center", className)}>
       <p className="eyebrow mb-4">{eyebrow}</p>
       <h2 id={id} className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
-        <span className="text-foreground">{lead}</span> <span className="text-muted-foreground">{rest}</span>
+        <span className="text-foreground">{lead}</span>
+        {rest && <span className="text-muted-foreground"> {rest}</span>}
       </h2>
     </div>
   );
@@ -179,6 +219,11 @@ function Chips({ items }: { items: string[] }) {
 export default function Home() {
   return (
     <div className="min-h-dvh overflow-x-clip bg-canvas">
+      <script
+        type="application/ld+json"
+        // Escaping "<" keeps the JSON from closing the script tag.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }}
+      />
       <header className="sticky top-0 z-40 border-b border-border/70 bg-canvas/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
           <Logo />
@@ -194,7 +239,7 @@ export default function Home() {
               <Link href="/giris">Giriş yap</Link>
             </Button>
             <Button asChild>
-              <Link href="/giris">Ücretsiz başla</Link>
+              <Link href="/giris">Ücretsiz başlayın</Link>
             </Button>
           </div>
         </div>
@@ -206,28 +251,28 @@ export default function Home() {
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
             <p className="mb-7 inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pr-3.5 pl-2 text-xs font-medium shadow-card sm:text-sm">
               <span className="rounded-full bg-lime px-2 py-0.5 text-lime-foreground">Beta</span>
-              Eğitmenler için ücretsiz
+              Eğitmenlere ücretsiz
             </p>
             <h1
               id="hero-heading"
               className="text-[2.5rem] leading-[1.04] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.5rem]"
             >
-              <span className="block text-foreground">Derslerin, paketlerin, ödemelerin.</span>
-              <span className="block text-muted-foreground">Tek uygulamada, cebinde.</span>
+              <span className="block text-foreground">Defteri bırakın.</span>{" "}
+              <span className="block text-muted-foreground">Danışan ve seans takibini {APP_NAME} yapsın.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-              PT ve pilates eğitmenleri için ders defteri. Yoklamayı tek dokunuşla al, paketler kendiliğinden düşsün, kimin ne
-              ödeyeceği hep önünde olsun. Excel ve WhatsApp karmaşasına son.
+              Pilates ve personal trainer eğitmenleri için hazırlandı. Yoklamayı tek dokunuşla alın; kalan seanslar kendiliğinden
+              düşsün, kimin ne kadar ödeyeceği hep önünüzde olsun.
             </p>
             <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
               <Button asChild size="lg">
                 <Link href="/giris">
-                  Ücretsiz başla
+                  Ücretsiz başlayın
                   <ArrowRight />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="#nasil-calisir">Nasıl çalışır?</a>
+                <a href="#nasil-calisir">Nasıl çalışıyor?</a>
               </Button>
             </div>
             <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
@@ -278,8 +323,8 @@ export default function Home() {
           <SectionHeading
             id="features-heading"
             eyebrow="Özellikler"
-            lead="Stüdyonun tamamı tek ekranda."
-            rest="Excel'e, not defterine, ayrı sohbetlere gerek yok."
+            lead="İşinizin her adımı tek yerde."
+            rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
           />
           <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ title, text, chips, Demo }) => (
@@ -303,7 +348,7 @@ export default function Home() {
         <section aria-labelledby="stats-heading" className="px-4 pt-24 sm:px-6 sm:pt-32">
           <div className="mx-auto max-w-6xl rounded-[1.75rem] bg-[#1d1d1f] px-6 py-12 text-white sm:px-12 sm:py-16 dark:border dark:bg-card">
             <h2 id="stats-heading" className="max-w-xl text-2xl leading-tight font-semibold tracking-[-0.03em] sm:text-3xl">
-              Başlamak için ödeme yapman <span className="text-white/60">ya da bir şey kurman gerekmez.</span>
+              Başlamak için <span className="text-white/60">kart bilgisi ya da kurulum gerekmez.</span>
             </h2>
             <ul className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
               {STATS.map((s) => (
@@ -318,7 +363,7 @@ export default function Home() {
 
         {/* How it works */}
         <section id="nasil-calisir" aria-labelledby="how-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
-          <SectionHeading id="how-heading" eyebrow="Nasıl çalışır" lead="Üç adımda hazırsın." rest="Bu akşam kur, yarın kullan." />
+          <SectionHeading id="how-heading" eyebrow="Nasıl çalışıyor" lead="Üç adımda hazırsınız." rest="Akşam kurun, ertesi gün kullanın." />
           <ol className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-3">
             {STEPS.map((s, i) => (
               <li key={s.title} className={cn(card, "flex flex-col gap-3 p-7")}>
@@ -346,8 +391,8 @@ export default function Home() {
             <div className="lg:sticky lg:top-28 lg:self-start">
               <p className="eyebrow mb-4">Neden {APP_NAME}?</p>
               <h2 id="why-heading" className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
-                <span className="text-foreground">Türkiye&apos;deki eğitmenler için yapıldı.</span>{" "}
-                <span className="text-muted-foreground">Çeviri bir yazılım değil.</span>
+                <span className="text-foreground">Türkiye&apos;deki eğitmenlerin çalışma şekline göre tasarlandı.</span>{" "}
+                <span className="text-muted-foreground">Yabancı bir programın çevirisi değil.</span>
               </h2>
             </div>
             <ol className={cn(card, "divide-y px-6 sm:px-8")}>
@@ -368,7 +413,7 @@ export default function Home() {
 
         {/* FAQ */}
         <section id="sss" aria-labelledby="faq-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
-          <SectionHeading id="faq-heading" eyebrow="Sık sorulanlar" lead="Aklına takılanlar." rest="Kısa cevaplarıyla." />
+          <SectionHeading id="faq-heading" eyebrow="SSS" lead="Sık sorulan sorular" rest="" />
           <div className={cn(card, "mx-auto mt-12 max-w-3xl divide-y")}>
             {FAQ.map(({ q, a }) => (
               <details key={q} className="group px-5 sm:px-7 [&_summary::-webkit-details-marker]:hidden">
@@ -394,14 +439,14 @@ export default function Home() {
               <Activity className="size-6" strokeWidth={2.5} />
             </span>
             <h2 id="cta-heading" className="max-w-2xl text-[2rem] leading-[1.08] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-              Bu akşam Excel&apos;i kapat. Yarın dersini tek dokunuşla işle.
+              Defteri bu akşam kapatın. Yarınki seansı tek dokunuşla işleyin.
             </h2>
             <p className="mt-4 max-w-md text-base">Beta döneminde ücretsiz. Kurulum birkaç dakika sürer.</p>
             <Link
               href="/giris"
               className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-lime-foreground px-7 text-base font-medium text-lime transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-lime-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-lime"
             >
-              Ücretsiz başla
+              Ücretsiz başlayın
               <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
@@ -412,7 +457,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex flex-col gap-1">
             <Logo />
-            <p className="text-sm text-muted-foreground">PT ve pilates eğitmenleri için danışan, paket ve ödeme takibi.</p>
+            <p className="text-sm text-muted-foreground">Pilates ve PT eğitmenleri için danışan, seans ve ödeme takibi.</p>
           </div>
           <nav aria-label="Alt bilgi" className="flex flex-wrap gap-x-6 text-sm text-muted-foreground">
             {[

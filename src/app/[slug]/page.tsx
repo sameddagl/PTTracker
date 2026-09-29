@@ -9,20 +9,28 @@ import { WEEKDAY_LABELS, weekdayList } from "@/lib/dates";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
 import { discountPercent, monthlyAmount, paymentOptions } from "@/lib/pricing";
 import { getPublicPage, type PublicPage } from "@/lib/public-page";
+import { APP_NAME, siteUrl } from "@/lib/config";
 import { profileImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
+
+const DISCIPLINE_LABELS = { pilates: "Pilates", pt: "Personal Training", both: "Pilates ve Personal Training" } as const;
 
 export async function generateMetadata({ params }: PageProps<"/[slug]">): Promise<Metadata> {
   const page = await getPublicPage((await params).slug);
   if (!page) return {};
   const { trainer } = page;
-  const title = trainer.businessName || trainer.fullName;
+  const name = trainer.businessName || trainer.fullName;
+  // "Kadıköy, İstanbul" → "Kadıköy"; the title stays short enough not to be cut off.
+  const place = trainer.city?.split(",")[0].trim();
+  const title = `${name}${place ? ` · ${place}` : ""} ${DISCIPLINE_LABELS[trainer.discipline]} Dersleri`;
+  const description = (trainer.headline || trainer.bio || `${name} ders paketleri ve online kayıt.`).slice(0, 155);
   const image = profileImageUrl(trainer.coverPath ?? trainer.avatarPath);
   return {
     title: { absolute: title },
-    description: trainer.headline ?? `${title} ders paketleri`,
-    openGraph: { title, description: trainer.headline ?? undefined, images: image ? [image] : undefined, type: "profile" },
+    description,
+    alternates: { canonical: `/${trainer.slug}` },
+    openGraph: { title: name, description, url: `/${trainer.slug}`, images: image ? [image] : undefined, type: "profile", siteName: APP_NAME, locale: "tr_TR" },
   };
 }
 
@@ -45,6 +53,28 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
   return (
     <div className="min-h-dvh bg-canvas">
       <main className="mx-auto max-w-2xl px-4 pt-4 pb-12 sm:pt-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SportsActivityLocation",
+            name: displayName,
+            description: trainer.headline ?? trainer.bio ?? undefined,
+            url: `${siteUrl()}/${trainer.slug}`,
+            image: profileImageUrl(trainer.coverPath ?? trainer.avatarPath) ?? undefined,
+            address: trainer.city ? { "@type": "PostalAddress", addressLocality: trainer.city, addressCountry: "TR" } : undefined,
+            sameAs: trainer.instagram ? [`https://instagram.com/${trainer.instagram.replace(/^@/, "")}`] : undefined,
+            hasOfferCatalog: {
+              "@type": "OfferCatalog",
+              name: "Ders paketleri",
+              itemListElement: packages
+                .filter((p) => p.price)
+                .map((p) => ({ "@type": "Offer", name: p.name, price: Number(p.price).toFixed(2), priceCurrency: "TRY" })),
+            },
+          }).replace(/</g, "\\u003c"),
+        }}
+      />
         <header className="overflow-hidden surface">
           <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#1d1d1f] sm:aspect-[8/3]">
             {cover ? (
@@ -207,7 +237,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
             <span className="flex size-5 items-center justify-center rounded-md bg-lime text-lime-foreground" aria-hidden>
               <Activity className="size-3" />
             </span>
-            PTTracker ile oluşturuldu
+            {APP_NAME} ile oluşturuldu
           </Link>
         </footer>
       </main>

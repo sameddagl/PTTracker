@@ -25,6 +25,7 @@ export const getPublicPage = cache(async (slug: string) => {
       instagram: trainers.instagram,
       phone: trainers.phone,
       specialties: trainers.specialties,
+      discipline: trainers.discipline,
       avatarPath: trainers.avatarPath,
       coverPath: trainers.coverPath,
     })

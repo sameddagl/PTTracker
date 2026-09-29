@@ -1,6 +1,7 @@
-// Working name until the product is named.
-export const APP_NAME = "PTTracker";
-export const APP_DESCRIPTION = "Danışan, paket ve ödeme takibi — PT ve pilates eğitmenleri için.";
+export const APP_NAME = "Stüdyom";
+/** Domain spelled without Turkish letters; used in copy and mock URLs. The live origin comes from NEXT_PUBLIC_SITE_URL. */
+export const APP_DOMAIN = "studyom.app";
+export const APP_DESCRIPTION = "Pilates ve PT eğitmenleri için danışan, seans paketi, randevu ve ödeme takibi.";
 
 export const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
