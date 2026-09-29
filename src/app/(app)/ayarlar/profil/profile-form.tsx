@@ -59,7 +59,7 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
         </div>
       </Field>
 
-      <label className="flex items-start gap-3 rounded-xl border p-4">
+      <label className="flex items-start gap-3 surface p-4">
         <input
           type="checkbox"
           name="publicPageEnabled"
@@ -137,7 +137,7 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
         </Field>
       </div>
 
-      <fieldset className="flex flex-col gap-4 rounded-xl border p-4">
+      <fieldset className="flex flex-col gap-4 surface p-4">
         <legend className="px-1 text-sm font-medium">Ödeme bilgileri</legend>
         <p className="-mt-1 text-xs text-muted-foreground">
           Onayladığın danışanlar kendi sayfalarında bu hesabı ve açıklamaya yazacakları ödeme kodunu görür. Para doğrudan senin

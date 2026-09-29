@@ -219,7 +219,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
         </p>
       </div>
 
-      <fieldset className="flex flex-col gap-4 rounded-xl border p-4">
+      <fieldset className="flex flex-col gap-4 surface p-4">
         <legend className="px-1 text-sm font-medium">Ödeme (isteğe bağlı)</legend>
         <div className="grid grid-cols-2 gap-4">
           <Field id="paymentAmount" label="Alınan tutar (₺)" error={e.paymentAmount}>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Activity } from "lucide-react";
 import { redirect } from "next/navigation";
 import { BottomNav, SideNav } from "@/components/app-nav";
 import { withTrainer } from "@/db";
@@ -17,15 +18,20 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const badges = { "/danisanlar": pending, "/odemeler": payments };
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[220px_1fr]">
-      <aside className="hidden border-r bg-muted/30 p-4 md:flex md:flex-col md:gap-6">
-        <Link href="/bugun" className="px-3 text-xl font-semibold tracking-tight">
-          {APP_NAME}
-        </Link>
-        <SideNav badges={badges} />
+    <div className="min-h-dvh bg-canvas md:grid md:grid-cols-[256px_1fr]">
+      <aside className="hidden p-4 md:block">
+        <div className="sticky top-4 flex h-[calc(100dvh-2rem)] flex-col gap-8 surface p-4">
+          <Link href="/bugun" className="flex items-center gap-2 px-2 pt-1 text-xl font-semibold tracking-tight">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-lime text-lime-foreground" aria-hidden>
+              <Activity className="size-4" />
+            </span>
+            {APP_NAME}
+          </Link>
+          <SideNav badges={badges} />
+        </div>
       </aside>
       {/* Pages opt into a wider column by rendering an element with data-wide (the week calendar). */}
-      <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-28 md:px-8 md:pt-8 md:pb-12">
+      <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-32 md:px-8 md:pt-10 md:pb-12">
         {children}
       </main>
       <BottomNav badges={badges} />

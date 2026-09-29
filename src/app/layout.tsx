@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inconsolata, Poppins, Roboto } from "next/font/google";
+import { Inconsolata, Poppins } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
 import "./globals.css";
 
-// Clean design system fonts. latin-ext covers Turkish characters (ğ, ş, ı, İ).
-const roboto = Roboto({ variable: "--font-roboto", subsets: ["latin", "latin-ext"], weight: ["400", "500", "700"] });
-const poppins = Poppins({ variable: "--font-poppins", subsets: ["latin", "latin-ext"], weight: ["500", "600", "700"] });
+// Poppins for everything, Inconsolata for IBANs and codes. latin-ext covers Turkish (ğ, ş, ı, İ).
+const poppins = Poppins({ variable: "--font-poppins", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"] });
 const inconsolata = Inconsolata({ variable: "--font-inconsolata", subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
@@ -23,14 +22,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
+    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={`${roboto.variable} ${poppins.variable} ${inconsolata.variable} h-full antialiased`}>
+    <html lang="tr" className={`${poppins.variable} ${inconsolata.variable} h-full antialiased`}>
       <body className="min-h-full">
         {children}
         <Toaster position="top-center" richColors />

@@ -54,7 +54,7 @@ export function MemberList({
   return (
     <div className="flex flex-col gap-3">
       {members.length > 0 && (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden surface">
           {members.map((m) => (
             <li key={m.id} className="flex items-center gap-3 py-2 pr-2 pl-4">
               <div className="min-w-0 flex-1">
@@ -81,7 +81,7 @@ export function MemberList({
         (full ? (
           <p className="text-sm text-muted-foreground">Sabit yerler dolu. Kapasiteyi artırarak yer açabilirsin.</p>
         ) : (
-          <div className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-end">
+          <div className="flex flex-col gap-3 surface p-4 sm:flex-row sm:items-end">
             <label className="flex flex-1 flex-col gap-2 text-sm font-medium">
               Danışan
               <NativeSelect value={clientId} onChange={(e) => setClientId(e.target.value)}>

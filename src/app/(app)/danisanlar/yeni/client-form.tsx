@@ -50,7 +50,7 @@ export function ClientForm({ client, hasConsent = false }: { client?: ClientValu
         <Textarea id="notes" name="notes" rows={3} defaultValue={v.notes} />
       </Field>
 
-      <fieldset className="flex flex-col gap-3 rounded-xl border p-4">
+      <fieldset className="flex flex-col gap-3 surface p-4">
         <legend className="px-1 text-sm font-medium">Sağlık bilgisi (isteğe bağlı)</legend>
         <Textarea
           id="healthNotes"

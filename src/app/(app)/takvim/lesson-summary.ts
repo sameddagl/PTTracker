@@ -10,11 +10,20 @@ export function lessonTone(l: CalendarLesson): LessonTone {
   return "missed";
 }
 
+/** Filled blocks in the week grid. */
 export const TONE_CLASSES: Record<LessonTone, string> = {
-  planned: "border-primary/40 bg-primary/10 hover:bg-primary/15",
-  done: "border-success/40 bg-success/10 hover:bg-success/15",
-  missed: "border-warning/40 bg-warning/10 hover:bg-warning/15",
-  cancelled: "border-border bg-muted/40 text-muted-foreground line-through hover:bg-muted/60",
+  planned: "border-transparent bg-lime text-lime-foreground hover:bg-lime/85",
+  done: "border-success/30 bg-success/15 hover:bg-success/25",
+  missed: "border-warning/30 bg-warning/15 hover:bg-warning/25",
+  cancelled: "border-border bg-muted text-muted-foreground line-through hover:bg-secondary",
+};
+
+/** The coloured edge on agenda cards. */
+export const TONE_BARS: Record<LessonTone, string> = {
+  planned: "bg-foreground",
+  done: "bg-success",
+  missed: "bg-warning",
+  cancelled: "bg-border",
 };
 
 export const TONE_LABELS: Record<LessonTone, string> = {

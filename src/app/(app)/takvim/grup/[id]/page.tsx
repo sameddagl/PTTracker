@@ -45,13 +45,13 @@ export default async function GroupClassPage({ params }: PageProps<"/takvim/grup
       />
 
       <section aria-labelledby="upcoming-heading" className="mb-8">
-        <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+        <h2 id="upcoming-heading" className="mb-3 text-base font-semibold">
           Önümüzdeki dersler
         </h2>
         {g.upcoming.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">Planlı ders yok.</p>
+          <p className="rounded-2xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">Planlı ders yok.</p>
         ) : (
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y overflow-hidden surface">
             {g.upcoming.map((l) => {
               const full = l.capacity !== null && l.taken >= l.capacity;
               return (

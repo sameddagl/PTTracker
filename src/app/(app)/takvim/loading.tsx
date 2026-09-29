@@ -15,7 +15,7 @@ export default function Loading() {
           <Skeleton key={i} className="h-16 rounded-xl" />
         ))}
       </div>
-      <div data-wide className="hidden h-[32rem] overflow-hidden rounded-xl border md:grid md:grid-cols-[3rem_repeat(7,1fr)]">
+      <div data-wide className="hidden h-[32rem] overflow-hidden surface md:grid md:grid-cols-[3rem_repeat(7,1fr)]">
         <div className="border-r bg-muted/30" />
         {Array.from({ length: 7 }, (_, i) => (
           <div key={i} className="flex flex-col gap-3 border-r p-2 last:border-r-0">

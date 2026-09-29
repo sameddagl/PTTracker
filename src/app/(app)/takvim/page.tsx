@@ -19,7 +19,7 @@ import {
 } from "@/lib/dates";
 import { SESSION_TYPE_LABELS, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { TONE_CLASSES, TONE_LABELS, layoutDay, lessonTitle, lessonTone, minutesToTime, takenPlaces } from "./lesson-summary";
+import { TONE_BARS, TONE_CLASSES, TONE_LABELS, layoutDay, lessonTitle, lessonTone, minutesToTime, takenPlaces } from "./lesson-summary";
 
 export const metadata: Metadata = { title: "Takvim" };
 
@@ -101,8 +101,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
                   aria-current={d === selected ? "date" : undefined}
                   aria-label={`${dayLong(d)}, ${count} ders`}
                   className={cn(
-                    "flex flex-col items-center gap-1 rounded-lg py-2 text-xs transition-colors",
-                    d === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                    "flex flex-col items-center gap-1 rounded-2xl py-2 text-xs transition-colors",
+                    d === selected ? "bg-primary text-primary-foreground shadow-card" : "hover:bg-card",
                     d === today && d !== selected && "text-primary",
                   )}
                 >
@@ -111,7 +111,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
                   <span
                     className={cn(
                       "size-1.5 rounded-full",
-                      count === 0 ? "bg-transparent" : d === selected ? "bg-primary-foreground" : "bg-primary",
+                      count === 0 ? "bg-transparent" : d === selected ? "bg-lime" : "bg-foreground",
                     )}
                     aria-hidden
                   />
@@ -136,8 +136,12 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
   return (
     <Link
       href={`/ders/${l.lessonId}`}
-      className={cn("flex items-center gap-4 rounded-xl border px-4 py-3 transition-colors", TONE_CLASSES[tone])}
+      className={cn(
+        "relative flex items-center gap-4 overflow-hidden surface py-3.5 pr-4 pl-5 transition-colors hover:bg-muted/50",
+        tone === "cancelled" && "text-muted-foreground line-through",
+      )}
     >
+      <span aria-hidden className={cn("absolute inset-y-3 left-0 w-1 rounded-r-full", TONE_BARS[tone])} />
       <div className="w-12 shrink-0">
         <div className="font-semibold tabular-nums">{minutesToTime(l.startMinute)}</div>
         <div className="text-xs text-muted-foreground tabular-nums">{minutesToTime(l.startMinute + l.durationMinutes)}</div>
@@ -163,7 +167,7 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
 function DayAgenda({ lessons, addHref }: { lessons: CalendarLesson[]; addHref: string }) {
   if (lessons.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-8 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center">
         <p className="text-sm text-muted-foreground">Bu gün ders yok.</p>
         <Button asChild variant="outline" size="sm">
           <Link href={addHref}>
@@ -210,7 +214,7 @@ function WeekGrid({
   const nowMinute = Number(nowParts.hour) * 60 + Number(nowParts.minute);
 
   return (
-    <div data-wide className="hidden overflow-hidden rounded-xl border md:block">
+    <div data-wide className="hidden overflow-hidden surface md:block">
       <div className="grid grid-cols-[3rem_repeat(7,1fr)] border-b bg-muted/30">
         <div />
         {days.map((d, i) => (
@@ -254,7 +258,7 @@ function WeekGrid({
                   href={`/ders/${l.lessonId}`}
                   title={`${minutesToTime(l.startMinute)} ${lessonTitle(l)}`}
                   className={cn(
-                    "absolute overflow-hidden rounded-md border px-2 py-1 text-xs leading-tight transition-colors",
+                    "absolute overflow-hidden rounded-lg border px-2 py-1 text-xs leading-tight transition-colors",
                     TONE_CLASSES[tone],
                   )}
                   style={{

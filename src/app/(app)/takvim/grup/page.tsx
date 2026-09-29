@@ -41,7 +41,7 @@ export default async function GroupClassesPage() {
           Örneğin Salı ve Perşembe 18:00, 8 kişilik bir Grup Reformer dersi oluştur.
         </EmptyState>
       ) : (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden surface">
           {classes.map((c) => (
             <li key={c.id}>
               <Link href={`/takvim/grup/${c.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">

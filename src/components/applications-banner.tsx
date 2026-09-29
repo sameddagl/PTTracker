@@ -5,11 +5,11 @@ function Banner({ href, icon, text }: { href: string; icon: React.ReactNode; tex
   return (
     <Link
       href={href}
-      className="mb-3 flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 transition-colors last:mb-6 hover:bg-primary/15"
+      className="mb-3 flex items-center gap-3 rounded-2xl bg-lime px-4 py-3 text-lime-foreground transition-opacity last:mb-6 hover:opacity-90"
     >
-      <span className="text-primary [&_svg]:size-4">{icon}</span>
-      <span className="flex-1 text-sm font-medium">{text}</span>
-      <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+      <span className="flex size-8 items-center justify-center rounded-full bg-lime-foreground/10 [&_svg]:size-4">{icon}</span>
+      <span className="flex-1 text-sm font-semibold">{text}</span>
+      <ChevronRight className="size-4" aria-hidden />
     </Link>
   );
 }

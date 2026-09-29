@@ -113,7 +113,7 @@ export function LessonForm({
           ))}
           {visible.length === 0 && <li className="px-3 py-4 text-center text-sm text-muted-foreground">Sonuç yok</li>}
         </ul>
-        {e.clientIds && <p className="text-sm text-destructive">{e.clientIds}</p>}
+        {e.clientIds && <p className="text-sm text-destructive-strong">{e.clientIds}</p>}
       </fieldset>
 
       <div className="grid grid-cols-2 gap-4">
@@ -147,7 +147,7 @@ export function LessonForm({
         </Field>
       </div>
 
-      <fieldset className="flex flex-col gap-3 rounded-xl border p-4">
+      <fieldset className="flex flex-col gap-3 surface p-4">
         <label className="flex cursor-pointer items-center gap-3">
           <input
             type="checkbox"
@@ -180,7 +180,7 @@ export function LessonForm({
                 </label>
               ))}
             </div>
-            {e.weekdays && <p className="text-sm text-destructive">{e.weekdays}</p>}
+            {e.weekdays && <p className="text-sm text-destructive-strong">{e.weekdays}</p>}
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">Süre</span>
               <NativeSelect
@@ -236,14 +236,14 @@ export function LessonForm({
         </fieldset>
       )}
       {repeat && <input type="hidden" name="status" value="scheduled" />}
-      {e.status && <p className="text-sm text-destructive">{e.status}</p>}
+      {e.status && <p className="text-sm text-destructive-strong">{e.status}</p>}
 
       <Field id="note" label="Not" hint="isteğe bağlı">
         <Textarea id="note" name="note" rows={2} />
       </Field>
 
       {state.conflicts && state.conflicts.length > 0 && (
-        <div ref={conflictRef} tabIndex={-1} role="alert" className="flex flex-col gap-3 rounded-xl border border-warning/50 outline-none bg-warning/10 p-4">
+        <div ref={conflictRef} tabIndex={-1} role="alert" className="flex flex-col gap-3 surface border-warning/50 outline-none bg-warning/10 p-4">
           <p className="flex items-center gap-2 text-sm font-medium">
             <AlertTriangle className="size-4 text-warning" aria-hidden />
             Bu saatte başka dersin var

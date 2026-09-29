@@ -3,15 +3,14 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Design system: "Clean" (.claude/skills/design-system/SKILL.md).
- * Roboto for text, Poppins for headings, Inconsolata for codes and IBANs.
- * Type scale 12/14/16/20/24/32, 8pt spacing grid, 44px touch targets.
+ * Visual language (see CLAUDE.md "UI / design system"): calm light-grey
+ * canvas, white rounded surfaces with a hairline edge and a soft deep shadow,
+ * Poppins throughout with tight headings, pill buttons in ink, and a lime
+ * accent used sparingly for highlights (always with ink text on it).
  *
- * Colour tokens follow the skill's palette. Where a palette colour is too
- * light for text on white (WCAG AA 4.5:1), a "-strong" token from the same
- * family is used for text: primary #3B82F6 → #2563EB (5.2:1),
- * success #16A34A → #15803D (5.0:1), warning #D97706 → #B45309 (5.0:1),
- * danger #DC2626 → #B91C1C on tinted backgrounds (5.9:1).
+ * Contrast (WCAG AA): muted text #616166 is 6.2:1 on white and 5.7:1 on the
+ * canvas; form edges #8e8e93 are 3.3:1. Status colours keep a "-strong" text
+ * shade: success #15803D, warning #B45309, danger #B91C1C.
  */
 
 /* Follow the OS theme; no theme switcher yet. */
@@ -20,15 +19,21 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-roboto);
+  --font-sans: var(--font-poppins);
   --font-mono: var(--font-inconsolata);
   --font-heading: var(--font-poppins);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 18px 50px -28px rgb(0 0 0 / 0.18);
+  --shadow-float: 0 12px 40px -12px rgb(0 0 0 / 0.35);
 
   /* Type scale: text-xs 12, sm 14, base 16, xl 20, 2xl 24, 3xl 32. */
   --text-3xl: 2rem;
   --text-3xl--line-height: 1.2;
 
   --color-brand: var(--brand);
+  --color-lime: var(--lime);
+  --color-lime-foreground: var(--lime-foreground);
+  --color-canvas: var(--canvas);
   --color-success: var(--success);
   --color-success-strong: var(--success-strong);
   --color-warning: var(--warning);
@@ -74,27 +79,30 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
   /* Surfaces and text */
-  --background: #ffffff;
-  --foreground: #111827;
+  --canvas: #f5f5f7;
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #1d1d1f;
   --popover: #ffffff;
-  --popover-foreground: #111827;
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #111827;
-  --accent: #f3f4f6;
-  --accent-foreground: #111827;
+  --popover-foreground: #1d1d1f;
+  --muted: #f0f0f3;
+  --muted-foreground: #616166;
+  --secondary: #ececf0;
+  --secondary-foreground: #1d1d1f;
+  --accent: #f0f0f3;
+  --accent-foreground: #1d1d1f;
 
-  /* Brand */
-  --brand: #3b82f6;
-  --primary: #2563eb;
+  /* Brand: ink actions, lime highlights */
+  --brand: #1d1d1f;
+  --primary: #1d1d1f;
   --primary-foreground: #ffffff;
-  --ring: #3b82f6;
+  --lime: #c6f24e;
+  --lime-foreground: #1d1d1f;
+  --ring: #1d1d1f;
 
   /* Status */
   --success: #16a34a;
@@ -104,45 +112,48 @@
   --destructive: #dc2626;
   --destructive-strong: #b91c1c;
 
-  /* Lines: decorative dividers vs. form control edges (3:1 against white). */
-  --border: #e5e7eb;
-  --input: #848d9b;
+  /* Lines: hairlines between things vs. form control edges (3:1 on white). */
+  --border: #e6e6ea;
+  --input: #8e8e93;
 
-  --chart-1: #3b82f6;
-  --chart-2: #8b5cf6;
+  --chart-1: #1d1d1f;
+  --chart-2: #c6f24e;
   --chart-3: #16a34a;
   --chart-4: #d97706;
   --chart-5: #dc2626;
 
-  --sidebar: #f9fafb;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: #2563eb;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1d1d1f;
+  --sidebar-primary: #1d1d1f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eff6ff;
-  --sidebar-accent-foreground: #1d4ed8;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #3b82f6;
+  --sidebar-accent: #f0f0f3;
+  --sidebar-accent-foreground: #1d1d1f;
+  --sidebar-border: #e6e6ea;
+  --sidebar-ring: #1d1d1f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1120;
-    --foreground: #f9fafb;
-    --card: #111827;
-    --card-foreground: #f9fafb;
-    --popover: #111827;
-    --popover-foreground: #f9fafb;
-    --muted: #1f2937;
-    --muted-foreground: #9ca3af;
-    --secondary: #1f2937;
-    --secondary-foreground: #f9fafb;
-    --accent: #1f2937;
-    --accent-foreground: #f9fafb;
+    --canvas: #0a0a0b;
+    --background: #0a0a0b;
+    --foreground: #f5f5f7;
+    --card: #161618;
+    --card-foreground: #f5f5f7;
+    --popover: #1c1c1f;
+    --popover-foreground: #f5f5f7;
+    --muted: #222225;
+    --muted-foreground: #a1a1a6;
+    --secondary: #2a2a2e;
+    --secondary-foreground: #f5f5f7;
+    --accent: #222225;
+    --accent-foreground: #f5f5f7;
 
-    --brand: #60a5fa;
-    --primary: #60a5fa;
-    --primary-foreground: #0b1120;
-    --ring: #60a5fa;
+    --brand: #c6f24e;
+    --primary: #c6f24e;
+    --primary-foreground: #0a0a0b;
+    --lime: #c6f24e;
+    --lime-foreground: #0a0a0b;
+    --ring: #c6f24e;
 
     --success: #22c55e;
     --success-strong: #4ade80;
@@ -151,18 +162,33 @@
     --destructive: #f87171;
     --destructive-strong: #fca5a5;
 
-    --border: #1f2937;
-    --input: #6b7280;
+    --border: #2a2a2e;
+    --input: #6e6e73;
 
-    --sidebar: #0f172a;
-    --sidebar-foreground: #f9fafb;
-    --sidebar-primary: #60a5fa;
-    --sidebar-primary-foreground: #0b1120;
-    --sidebar-accent: #1e293b;
-    --sidebar-accent-foreground: #93c5fd;
-    --sidebar-border: #1f2937;
-    --sidebar-ring: #60a5fa;
+    --sidebar: #161618;
+    --sidebar-foreground: #f5f5f7;
+    --sidebar-primary: #c6f24e;
+    --sidebar-primary-foreground: #0a0a0b;
+    --sidebar-accent: #222225;
+    --sidebar-accent-foreground: #f5f5f7;
+    --sidebar-border: #2a2a2e;
+    --sidebar-ring: #c6f24e;
   }
+}
+
+/* A white rounded panel on the canvas: lists, grouped rows, settings blocks. */
+@utility surface {
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Small uppercase-free label above a heading, as in "Sizin için ne yapar?". */
+@utility eyebrow {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
 }
 
 @layer base {
@@ -179,6 +205,7 @@
   h2,
   h3 {
     font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 }
 

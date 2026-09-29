@@ -23,7 +23,7 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
       <div className="flex flex-col gap-2">
         <Label htmlFor="fullName">Adın soyadın</Label>
         <Input id="fullName" name="fullName" autoComplete="name" defaultValue={v.fullName} required autoFocus />
-        {e.fullName && <p className="text-sm text-destructive">{e.fullName}</p>}
+        {e.fullName && <p className="text-sm text-destructive-strong">{e.fullName}</p>}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -41,8 +41,8 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
             <label
               key={d.value}
               className={cn(
-                "flex cursor-pointer items-center justify-center rounded-lg border px-2 py-3 text-center text-sm font-medium transition-colors",
-                "has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                "flex min-h-12 cursor-pointer items-center justify-center rounded-xl border bg-card px-2 py-3 text-center text-sm font-medium transition-colors hover:bg-muted/60",
+                "has-[:checked]:border-transparent has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
               )}
             >
               <input
@@ -56,7 +56,7 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
             </label>
           ))}
         </div>
-        {e.discipline && <p className="text-sm text-destructive">{e.discipline}</p>}
+        {e.discipline && <p className="text-sm text-destructive-strong">{e.discipline}</p>}
       </fieldset>
 
       <Button type="submit" size="lg" loading={pending}>

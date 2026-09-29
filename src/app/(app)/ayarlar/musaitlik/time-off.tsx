@@ -23,7 +23,7 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
   return (
     <div className="flex flex-col gap-3">
       {items.length > 0 && (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden surface">
           {items.map((o) => (
             <li key={o.id} className="flex items-center gap-3 py-2 pr-2 pl-4 text-sm">
               <span className="flex-1">
@@ -44,7 +44,7 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
           ))}
         </ul>
       )}
-      <form ref={form} action={action} className="flex flex-col gap-3 rounded-xl border p-4" noValidate>
+      <form ref={form} action={action} className="flex flex-col gap-3 surface p-4" noValidate>
         <div className="grid grid-cols-2 gap-3">
           <Field id="startsOn" label="Başlangıç" error={e.startsOn}>
             <Input id="startsOn" name="startsOn" type="date" min={today} />

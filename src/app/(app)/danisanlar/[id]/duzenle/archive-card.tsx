@@ -15,7 +15,7 @@ export function ArchiveCard({ clientId, name, upcoming }: { clientId: string; na
   };
 
   return (
-    <section aria-labelledby="archive-heading" className="mt-12 flex flex-col gap-3 rounded-xl border p-4">
+    <section aria-labelledby="archive-heading" className="mt-12 flex flex-col gap-3 surface p-4">
       <h2 id="archive-heading" className="text-base font-semibold">
         Danışanı arşivle
       </h2>

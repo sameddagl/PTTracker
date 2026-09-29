@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import type { CalendarAttendee } from "@/db/lessons";
 import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/avatar";
 import { markAttendanceAction } from "@/app/(app)/bugun/actions";
 
 type Status = CalendarAttendee["status"];
@@ -13,7 +14,7 @@ const OPTIONS: { status: Status; label: string; active: string }[] = [
   { status: "attended", label: "Geldi", active: "border-success-strong bg-success-strong text-background" },
   { status: "no_show", label: "Gelmedi", active: "border-destructive bg-destructive text-background" },
   { status: "late_cancel", label: "Geç iptal", active: "border-warning-strong bg-warning-strong text-background" },
-  { status: "cancelled", label: "İptal", active: "border-foreground/40 bg-muted text-foreground" },
+  { status: "cancelled", label: "İptal", active: "border-foreground bg-foreground text-background" },
 ];
 
 export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
@@ -47,9 +48,10 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <Link href={`/danisanlar/${attendee.clientId}`} className="truncate font-medium hover:underline">
-          {attendee.name}
+      <div className="flex items-center justify-between gap-3">
+        <Link href={`/danisanlar/${attendee.clientId}`} className="flex min-w-0 items-center gap-2 font-medium hover:underline">
+          <Avatar name={attendee.name} size="sm" />
+          <span className="truncate">{attendee.name}</span>
         </Link>
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
           {remaining === null ? "Paketsiz" : `${remaining} ders kaldı`}
@@ -66,8 +68,8 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
               aria-pressed={active}
               disabled={pending}
               className={cn(
-                "h-11 rounded-lg border text-xs font-medium transition-colors disabled:opacity-70 sm:text-sm",
-                active ? o.active : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+                "h-11 rounded-full border text-xs font-medium transition-colors disabled:opacity-70 sm:text-sm",
+                active ? o.active : "border-transparent bg-muted text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
               {o.label}

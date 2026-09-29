@@ -122,7 +122,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
         <p className="text-sm text-muted-foreground">Telafi hakkı: geç iptal edildiğinde paketten düşmeyen ders sayısı.</p>
       </div>
 
-      <fieldset className="flex flex-col gap-4 rounded-xl border p-4">
+      <fieldset className="flex flex-col gap-4 surface p-4">
         <legend className="px-1 text-sm font-medium">Fiyat</legend>
         <div className="grid grid-cols-2 gap-4">
           <Field id="price" label="Peşin fiyat (₺)" error={e.price}>
@@ -191,7 +191,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
         )}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-4 rounded-xl border p-4">
+      <fieldset className="flex flex-col gap-4 surface p-4">
         <legend className="px-1 text-sm font-medium">Sayfanda nasıl görünsün</legend>
         <label className="flex min-h-11 items-center gap-3 text-sm">
           <input

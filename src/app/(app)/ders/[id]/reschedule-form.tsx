@@ -46,7 +46,7 @@ export function RescheduleForm({
   const durations = DURATIONS.includes(durationMinutes) ? DURATIONS : [...DURATIONS, durationMinutes].sort((a, b) => a - b);
 
   return (
-    <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 rounded-xl border p-4" noValidate>
+    <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 surface p-4" noValidate>
       <input type="hidden" name="lessonId" value={lessonId} />
       <FormError message={e.lessonId} />
       <div className="grid grid-cols-3 gap-3">

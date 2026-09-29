@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AtSign, Check, MapPin, MessageCircle, UsersRound } from "lucide-react";
+import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, MessageCircle, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/price-tag";
-import { weekdayList } from "@/lib/dates";
+import { WEEKDAY_LABELS, weekdayList } from "@/lib/dates";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
-import { monthlyAmount, paymentOptions } from "@/lib/pricing";
+import { discountPercent, monthlyAmount, paymentOptions } from "@/lib/pricing";
 import { getPublicPage, type PublicPage } from "@/lib/public-page";
 import { profileImageUrl } from "@/lib/storage";
+import { cn } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
 
 export async function generateMetadata({ params }: PageProps<"/[slug]">): Promise<Metadata> {
@@ -35,170 +36,243 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
   const cover = profileImageUrl(trainer.coverPath);
   const avatar = profileImageUrl(trainer.avatarPath);
   const wa = whatsappLink(trainer.phone, `Merhaba, ${displayName} sayfanızdan yazıyorum.`);
+  // The best discount on the page gets a ring, so the eye lands on a real deal (no invented "popular" label).
+  const best = packages.reduce<{ id: string; pct: number } | null>((acc, p) => {
+    const pct = discountPercent(p.compareAtPrice, p.price);
+    return pct !== null && (!acc || pct > acc.pct) ? { id: p.id, pct } : acc;
+  }, null);
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl pb-16">
-      <header>
-        <div className="relative aspect-[8/3] w-full overflow-hidden bg-gradient-to-br from-primary/40 via-primary/15 to-muted sm:rounded-b-2xl">
-          {cover && <Image src={cover} alt="" fill priority sizes="(max-width: 672px) 100vw, 672px" className="object-cover" />}
-        </div>
-        <div className="px-4">
-          <div className="-mt-12 flex items-end justify-between gap-3">
-            <div className="relative size-24 shrink-0 overflow-hidden rounded-full border-4 border-background bg-muted">
-              {avatar ? (
-                <Image src={avatar} alt={displayName} fill sizes="96px" className="object-cover" />
-              ) : (
-                <span className="flex size-full items-center justify-center text-2xl font-semibold text-muted-foreground">
-                  {displayName.charAt(0).toLocaleUpperCase("tr")}
-                </span>
-              )}
-            </div>
-            {wa && (
-              <Button asChild variant="outline" size="sm" className="mb-1">
-                <a href={wa} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle />
-                  Mesaj gönder
-                </a>
-              </Button>
+    <div className="min-h-dvh bg-canvas">
+      <main className="mx-auto max-w-2xl px-4 pt-4 pb-12 sm:pt-8">
+        <header className="overflow-hidden surface">
+          <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#1d1d1f] sm:aspect-[8/3]">
+            {cover ? (
+              <Image src={cover} alt="" fill priority sizes="(max-width: 672px) 100vw, 672px" className="object-cover" />
+            ) : (
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-[radial-gradient(120%_90%_at_85%_0%,rgb(198_242_78/0.55),transparent_55%),radial-gradient(90%_80%_at_0%_100%,rgb(255_255_255/0.08),transparent_60%)]"
+              />
             )}
           </div>
 
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">{displayName}</h1>
-          {trainer.businessName && trainer.fullName && (
-            <p className="text-sm text-muted-foreground">{trainer.fullName}</p>
-          )}
-          {trainer.headline && <p className="mt-2 text-pretty">{trainer.headline}</p>}
+          <div className="px-5 pb-6 sm:px-7">
+            <div className="-mt-12 flex items-end justify-between gap-3 sm:-mt-14">
+              <div className="relative size-24 shrink-0 overflow-hidden rounded-full bg-muted ring-4 ring-card sm:size-28">
+                {avatar ? (
+                  <Image src={avatar} alt={displayName} fill sizes="112px" className="object-cover" />
+                ) : (
+                  <span className="flex size-full items-center justify-center bg-lime text-3xl font-semibold text-lime-foreground">
+                    {displayName.charAt(0).toLocaleUpperCase("tr")}
+                  </span>
+                )}
+              </div>
+            </div>
 
-          {(trainer.city || trainer.instagram) && (
-            <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              {trainer.city && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="size-3.5" aria-hidden />
-                  {trainer.city}
-                </span>
+            <h1 className="mt-4 text-3xl font-semibold text-balance">{displayName}</h1>
+            {trainer.businessName && trainer.fullName && (
+              <p className="mt-1 text-sm font-medium text-muted-foreground">{trainer.fullName}</p>
+            )}
+            {trainer.headline && <p className="mt-3 text-base text-pretty">{trainer.headline}</p>}
+
+            {(trainer.city || trainer.instagram) && (
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                {trainer.city && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-4" aria-hidden />
+                    {trainer.city}
+                  </span>
+                )}
+                {trainer.instagram && (
+                  <a
+                    href={`https://instagram.com/${trainer.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-1.5 hover:text-foreground sm:min-h-0"
+                  >
+                    <AtSign className="size-4" aria-hidden />
+                    {trainer.instagram}
+                  </a>
+                )}
+              </div>
+            )}
+
+            {trainer.specialties.length > 0 && (
+              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Uzmanlık alanları">
+                {trainer.specialties.map((s) => (
+                  <li key={s} className="rounded-full border bg-muted/60 px-3 py-1.5 text-xs font-medium">
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {trainer.bio && <p className="mt-5 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">{trainer.bio}</p>}
+
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+              {packages.length > 0 && (
+                <Button asChild size="lg" className="sm:flex-1">
+                  <Link href={`/${slug}/kayit`}>
+                    Kayıt ol
+                    <ArrowRight />
+                  </Link>
+                </Button>
               )}
-              {trainer.instagram && (
-                <a
-                  href={`https://instagram.com/${trainer.instagram}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-foreground"
-                >
-                  <AtSign className="size-3.5" aria-hidden />
-                  {trainer.instagram}
-                </a>
+              {wa && (
+                <Button asChild size="lg" variant="outline" className="sm:flex-1">
+                  <a href={wa} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle />
+                    WhatsApp&apos;tan yaz
+                  </a>
+                </Button>
               )}
+            </div>
+          </div>
+        </header>
+
+        <section aria-labelledby="packages-heading" className="mt-10">
+          <div className="mb-4 px-1">
+            <p className="eyebrow">Ders paketleri</p>
+            <h2 id="packages-heading" className="text-2xl font-semibold">
+              Sana uygun paketi seç
+            </h2>
+          </div>
+          {packages.length === 0 ? (
+            <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-10 text-center text-sm text-muted-foreground">
+              Paketler yakında burada olacak.
             </p>
-          )}
-
-          {trainer.specialties.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-2" aria-label="Uzmanlık alanları">
-              {trainer.specialties.map((s) => (
-                <li key={s} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  {s}
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {packages.map((p) => (
+                <li key={p.id}>
+                  <PackageCard slug={slug} pkg={p} highlight={packages.length > 1 && best?.id === p.id} />
                 </li>
               ))}
             </ul>
           )}
-
-          {trainer.bio && <p className="mt-5 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">{trainer.bio}</p>}
-        </div>
-      </header>
-
-      <section aria-labelledby="packages-heading" className="mt-10 px-4">
-        <h2 id="packages-heading" className="mb-4 text-xl font-semibold">
-          Paketler
-        </h2>
-        {packages.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-            Paketler yakında burada olacak.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {packages.map((p) => (
-              <li key={p.id}>
-                <PackageCard slug={slug} pkg={p} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {groups.length > 0 && (
-        <section aria-labelledby="groups-heading" className="mt-10 px-4">
-          <h2 id="groups-heading" className="mb-4 text-xl font-semibold">
-            Grup ders programı
-          </h2>
-          <ul className="divide-y rounded-2xl border bg-card">
-            {groups.map((g) => (
-              <li key={g.id} className="flex items-center gap-4 px-5 py-4">
-                <UsersRound className="size-5 shrink-0 text-primary" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{g.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {weekdayList(g.weekdays)} · {g.startTime} · {g.durationMinutes} dk
-                  </p>
-                </div>
-                <span className="shrink-0 text-sm text-muted-foreground tabular-nums">{g.capacity} kişi</span>
-              </li>
-            ))}
-          </ul>
         </section>
-      )}
 
-      <footer className="mt-12 px-4 text-center text-xs text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">
-          PTTracker ile oluşturuldu
-        </Link>
-      </footer>
-    </main>
+        {groups.length > 0 && (
+          <section aria-labelledby="groups-heading" className="mt-10">
+            <div className="mb-4 px-1">
+              <p className="eyebrow">Her hafta</p>
+              <h2 id="groups-heading" className="text-2xl font-semibold">
+                Grup ders programı
+              </h2>
+            </div>
+            <ul className="divide-y overflow-hidden surface">
+              {groups.map((g) => (
+                <li key={g.id} className="flex items-center gap-4 px-4 py-4 sm:px-5">
+                  <div className="flex w-16 shrink-0 flex-col items-center rounded-xl bg-muted py-2">
+                    <span className="text-base font-semibold tabular-nums">{g.startTime.slice(0, 5)}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">{g.durationMinutes} dk</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{g.title}</p>
+                    <ul className="mt-1.5 flex flex-wrap gap-1" aria-label={`Günler: ${weekdayList(g.weekdays)}`}>
+                      {WEEKDAY_LABELS.map((label, i) => {
+                        const on = g.weekdays.includes(i + 1);
+                        return (
+                          <li
+                            key={label}
+                            aria-hidden
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              on ? "bg-lime text-lime-foreground" : "text-muted-foreground",
+                            )}
+                          >
+                            {label}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                  <span className="hidden shrink-0 items-center gap-1 text-sm text-muted-foreground tabular-nums sm:inline-flex">
+                    <UsersRound className="size-4" aria-hidden />
+                    {g.capacity} kişi
+                  </span>
+                  <span className="sr-only sm:hidden">{g.capacity} kişilik</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <footer className="mt-12 flex justify-center">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <span className="flex size-5 items-center justify-center rounded-md bg-lime text-lime-foreground" aria-hidden>
+              <Activity className="size-3" />
+            </span>
+            PTTracker ile oluşturuldu
+          </Link>
+        </footer>
+      </main>
+    </div>
   );
 }
 
-function PackageCard({ slug, pkg: p }: { slug: string; pkg: PublicPage["packages"][number] }) {
+function PackageCard({ slug, pkg: p, highlight }: { slug: string; pkg: PublicPage["packages"][number]; highlight: boolean }) {
   const plan = paymentOptions(p).find((o) => o.installments > 1);
   const perLesson = p.price && p.sessionCount > 1 ? Number(p.price) / p.sessionCount : null;
   return (
-    <article className="flex flex-col gap-4 rounded-2xl border bg-card p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="font-semibold">{p.name}</h3>
-          <p className="text-sm text-muted-foreground">
-            {SESSION_TYPE_LABELS[p.sessionType]} · {p.sessionCount} ders
-            {p.validityDays ? ` · ${p.validityDays} gün geçerli` : ""}
-          </p>
-        </div>
-        {(p.price || plan) && (
-          <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-            {p.price ? (
-              <>
-                <PriceTag price={p.price} compareAtPrice={p.compareAtPrice} size="lg" className="max-w-40" />
-                {perLesson && <p className="text-xs text-muted-foreground tabular-nums">peşin · ders başı {formatTRY(perLesson)}</p>}
-              </>
-            ) : (
-              plan && <p className="text-xl font-semibold tabular-nums">{formatTRY(plan.total)}</p>
-            )}
-            {plan && (
-              <p className="text-xs text-muted-foreground tabular-nums">
-                ya da {plan.installments} × {formatTRY(monthlyAmount(plan))} taksit
-              </p>
-            )}
-          </div>
-        )}
+    <article className={cn("flex flex-col gap-5 surface p-5 sm:p-6", highlight && "ring-2 ring-lime")}>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-xl font-semibold">{p.name}</h3>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span>{SESSION_TYPE_LABELS[p.sessionType]}</span>
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays className="size-3.5" aria-hidden />
+            {p.sessionCount} ders
+          </span>
+          {p.validityDays ? (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3.5" aria-hidden />
+              {p.validityDays} gün geçerli
+            </span>
+          ) : null}
+        </p>
       </div>
-      {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
+
+      {(p.price || plan) && (
+        <div className="flex flex-col gap-1 rounded-xl bg-muted/60 px-4 py-3">
+          {p.price ? (
+            <>
+              <PriceTag price={p.price} compareAtPrice={p.compareAtPrice} size="lg" align="start" className="[&>span:first-child]:text-2xl" />
+              {perLesson && <p className="text-xs text-muted-foreground tabular-nums">Peşin · ders başı {formatTRY(perLesson)}</p>}
+            </>
+          ) : (
+            plan && <p className="text-2xl font-semibold tabular-nums">{formatTRY(plan.total)}</p>
+          )}
+          {plan && (
+            <p className="text-xs text-muted-foreground tabular-nums">
+              ya da {plan.installments} × {formatTRY(monthlyAmount(plan))} taksit
+            </p>
+          )}
+        </div>
+      )}
+
+      {p.description && <p className="text-sm leading-relaxed text-muted-foreground">{p.description}</p>}
       {p.features.length > 0 && (
-        <ul className="flex flex-col gap-2 text-sm">
+        <ul className="flex flex-col gap-2.5 text-sm">
           {p.features.map((f) => (
-            <li key={f} className="flex gap-2">
-              <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+            <li key={f} className="flex gap-2.5">
+              <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                <Check className="size-3" strokeWidth={3} />
+              </span>
               {f}
             </li>
           ))}
         </ul>
       )}
-      <Button asChild size="lg">
-        <Link href={`/${slug}/kayit?paket=${p.id}`}>Bu paketi seç</Link>
+      <Button asChild size="lg" className="w-full">
+        <Link href={`/${slug}/kayit?paket=${p.id}`}>
+          Bu paketi seç
+          <ArrowRight />
+        </Link>
       </Button>
     </article>
   );

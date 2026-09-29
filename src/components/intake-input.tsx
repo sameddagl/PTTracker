@@ -16,7 +16,7 @@ export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: st
   const label = (
     <>
       {field.label}
-      {field.required ? <span className="text-destructive"> *</span> : <span className="font-normal text-muted-foreground"> · isteğe bağlı</span>}
+      {field.required ? <span className="text-destructive-strong"> *</span> : <span className="font-normal text-muted-foreground"> · isteğe bağlı</span>}
     </>
   );
 
@@ -90,7 +90,7 @@ export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: st
       )}
       {control}
       {error && (
-        <p id={`${id}-error`} className="text-sm text-destructive">
+        <p id={`${id}-error`} className="text-sm text-destructive-strong">
           {error}
         </p>
       )}

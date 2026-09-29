@@ -55,7 +55,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="rules" value={JSON.stringify(rules)} />
 
-      <label className="flex items-start gap-3 rounded-xl border p-4">
+      <label className="flex items-start gap-3 surface p-4">
         <input
           type="checkbox"
           name="bookingEnabled"
@@ -104,7 +104,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">Haftalık çalışma saatleri</legend>
         <FormError message={e.rules} />
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden surface">
           {FULL_DAY_NAMES.map((name, i) => {
             const day = i + 1;
             const ranges = week[day];

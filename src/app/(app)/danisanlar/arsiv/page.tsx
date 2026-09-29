@@ -28,7 +28,7 @@ export default async function ArchivedClientsPage() {
           Artık gelmeyen bir danışanı, düzenleme sayfasından arşivleyebilirsin.
         </EmptyState>
       ) : (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden surface">
           {archived.map((c) => (
             <li key={c.id}>
               <Link href={`/danisanlar/${c.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">

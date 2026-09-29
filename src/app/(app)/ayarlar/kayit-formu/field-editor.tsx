@@ -51,7 +51,7 @@ export function FieldEditor({ initial, onDone }: { initial: EditableField; onDon
   }, [state.savedAt, initial.id, onDone]);
 
   return (
-    <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 rounded-xl border bg-muted/30 p-4" noValidate>
+    <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 surface bg-muted/30 p-4" noValidate>
       {initial.id && <input type="hidden" name="id" value={initial.id} />}
 
       <Field id={`label-${initial.id ?? "new"}`} label="Soru" error={e.label}>

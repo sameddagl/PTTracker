@@ -38,7 +38,7 @@ export default async function ApplicationsPage() {
       <PageHeader title="Başvurular" description="Sayfandan paket seçip kayıt olanlar." />
 
       <section aria-labelledby="pending-heading" className="mb-8">
-        <h2 id="pending-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+        <h2 id="pending-heading" className="mb-3 text-base font-semibold">
           Onay bekleyenler
         </h2>
         {pending.length === 0 ? (
@@ -46,7 +46,7 @@ export default async function ApplicationsPage() {
             Sayfanın linkini Instagram bio&apos;na koyduğunda başvurular burada görünür.
           </EmptyState>
         ) : (
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y overflow-hidden surface">
             {pending.map((a) => (
               <li key={a.id}>
                 <Link href={`/danisanlar/basvurular/${a.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">
@@ -72,10 +72,10 @@ export default async function ApplicationsPage() {
 
       {decided.length > 0 && (
         <section aria-labelledby="decided-heading">
-          <h2 id="decided-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+          <h2 id="decided-heading" className="mb-3 text-base font-semibold">
             Son kararlar
           </h2>
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y overflow-hidden surface">
             {decided.map((a) => (
               <li key={a.id}>
                 <Link href={`/danisanlar/basvurular/${a.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">

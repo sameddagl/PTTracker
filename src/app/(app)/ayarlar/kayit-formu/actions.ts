@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
-import { createIntakeField, deleteIntakeField, moveIntakeField, updateIntakeField } from "@/db/intake";
+import { createIntakeField, deleteIntakeField, reorderIntakeFields, updateIntakeField } from "@/db/intake";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 import { INTAKE_TYPES } from "@/lib/intake";
 
@@ -77,9 +77,8 @@ export async function deleteIntakeFieldAction(id: string) {
   revalidatePath("/ayarlar/kayit-formu");
 }
 
-export async function moveIntakeFieldAction(id: string, direction: "up" | "down") {
-  const parsed = z.uuid().safeParse(id);
-  if (!parsed.success || (direction !== "up" && direction !== "down")) return;
-  await withTrainer((tx, trainerId) => moveIntakeField(tx, trainerId, parsed.data, direction));
+export async function reorderIntakeFieldsAction(ids: string[]) {
+  const parsed = z.array(z.uuid()).max(200).parse(ids);
+  await withTrainer((tx, trainerId) => reorderIntakeFields(tx, trainerId, parsed));
   revalidatePath("/ayarlar/kayit-formu");
 }

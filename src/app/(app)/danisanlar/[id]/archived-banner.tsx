@@ -18,7 +18,7 @@ export function ArchivedBanner({ clientId, name, archivedOn }: { clientId: strin
   };
 
   return (
-    <div role="status" className="mb-8 flex flex-col gap-3 rounded-xl border bg-muted/50 p-4">
+    <div role="status" className="mb-8 flex flex-col gap-3 surface bg-muted/50 p-4">
       <p className="text-sm">
         <span className="font-medium">Arşivde</span>
         <span className="text-muted-foreground"> · {archivedOn} tarihinde arşivlendi. Listelerde görünmez, portal linki kapalı.</span>

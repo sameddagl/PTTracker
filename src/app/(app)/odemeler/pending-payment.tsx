@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { Check, FileText, X } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { formatShortDate, formatTRY } from "@/lib/format";
 import { confirmPaymentAction, rejectPaymentAction } from "./actions";
@@ -27,9 +28,10 @@ export function PendingPaymentCard({
   const [confirming, startConfirm] = useTransition();
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl border p-4">
+    <li className="flex flex-col gap-3 surface p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <Avatar name={p.clientName} />
+        <div className="min-w-0 flex-1">
           <Link href={`/danisanlar/${p.clientId}`} className="block truncate font-medium hover:underline">
             {p.clientName}
           </Link>

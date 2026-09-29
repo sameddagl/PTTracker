@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Check, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { weekdayList } from "@/lib/dates";
 import { formatLongDate, formatTime } from "@/lib/format";
 import { joinGroupAction } from "./booking-actions";
@@ -38,56 +38,54 @@ export function GroupPanel({
 
   return (
     <section aria-labelledby="groups-heading" className="flex flex-col gap-3">
-      <h2 id="groups-heading" className="text-sm font-medium text-muted-foreground">
+      <h2 id="groups-heading" className="text-base font-semibold">
         Grup dersleri
       </h2>
-      <Card>
-        <CardContent className="flex flex-col gap-4">
-          {fixed.length > 0 && (
-            <ul className="flex flex-col gap-1 text-sm">
-              {fixed.map((f) => (
-                <li key={f.title} className="flex items-center gap-2">
-                  <UsersRound className="size-4 text-primary" aria-hidden />
-                  <span>
-                    Sabit yerin: <span className="font-medium">{f.title}</span> · {weekdayList(f.weekdays)} {f.startTime}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="text-sm text-muted-foreground">
-            {credits > 0 ? `Grup paketinde ${credits} ders için yer ayırabilirsin.` : "Grup paketin olduğunda boş derslere katılabilirsin."}
-          </p>
-          <ul className="flex flex-col gap-2">
-            {slots.slice(0, 10).map((s) => {
-              const left = Math.max(s.capacity - s.taken, 0);
-              return (
-                <li key={s.lessonId} className="flex items-center gap-3 rounded-lg border py-2 pr-2 pl-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{s.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="capitalize">{formatLongDate(s.startsAt, timezone)}</span> · {formatTime(s.startsAt, timezone)} ·{" "}
-                      {left > 0 ? `${left} yer kaldı` : "Dolu"}
-                    </p>
-                  </div>
-                  {s.joined ? (
-                    <span className="flex items-center gap-1 px-2 text-sm font-medium text-success-strong">
-                      <Check className="size-4" aria-hidden />
-                      Yerin var
-                    </span>
-                  ) : (
-                    s.canJoin && (
-                      <Button type="button" size="sm" disabled={pending} loading={pending && busy === s.lessonId} onClick={() => join(s)}>
-                        Katıl
-                      </Button>
-                    )
-                  )}
-                </li>
-              );
-            })}
+      <div className="flex flex-col gap-4 surface p-4 sm:p-5">
+        {fixed.length > 0 && (
+          <ul className="flex flex-col gap-2 text-sm">
+            {fixed.map((f) => (
+              <li key={f.title} className="flex items-center gap-3 rounded-xl bg-lime px-3 py-2.5 text-lime-foreground">
+                <UsersRound className="size-4 shrink-0" aria-hidden />
+                <span className="min-w-0">
+                  Sabit yerin: <span className="font-semibold">{f.title}</span> · {weekdayList(f.weekdays)} {f.startTime}
+                </span>
+              </li>
+            ))}
           </ul>
-        </CardContent>
-      </Card>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {credits > 0 ? `Grup paketinde ${credits} ders için yer ayırabilirsin.` : "Grup paketin olduğunda boş derslere katılabilirsin."}
+        </p>
+        <ul className="-mx-4 -mb-2 flex flex-col divide-y border-t sm:-mx-5 sm:-mb-3">
+          {slots.slice(0, 10).map((s) => {
+            const left = Math.max(s.capacity - s.taken, 0);
+            return (
+              <li key={s.lessonId} className="flex min-h-16 items-center gap-3 py-2.5 pr-3 pl-4 sm:pl-5">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{s.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="capitalize">{formatLongDate(s.startsAt, timezone)}</span> · {formatTime(s.startsAt, timezone)} ·{" "}
+                    <span className={left > 0 ? "" : "text-destructive-strong"}>{left > 0 ? `${left} yer kaldı` : "Dolu"}</span>
+                  </p>
+                </div>
+                {s.joined ? (
+                  <Badge variant="success" className="h-8 px-3">
+                    <Check aria-hidden />
+                    Yerin var
+                  </Badge>
+                ) : (
+                  s.canJoin && (
+                    <Button type="button" size="sm" disabled={pending} loading={pending && busy === s.lessonId} onClick={() => join(s)}>
+                      Katıl
+                    </Button>
+                  )
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </section>
   );
 }

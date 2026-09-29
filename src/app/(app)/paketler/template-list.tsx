@@ -101,7 +101,7 @@ function SortableRow({ template: t }: { template: TemplateRow }) {
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex items-center gap-2 rounded-xl border bg-card py-2 pr-2 pl-1",
+        "flex items-center gap-2 surface py-2 pr-2 pl-1",
         isDragging && "relative z-10 shadow-lg ring-2 ring-ring/40",
       )}
     >

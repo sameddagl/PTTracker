@@ -83,7 +83,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
         </Card>
       ) : (
         <section aria-labelledby="attendance-heading" className="mb-8">
-          <h2 id="attendance-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+          <h2 id="attendance-heading" className="mb-3 text-base font-semibold">
             Yoklama
             {lesson.capacity !== null && (
               <span className="tabular-nums">
@@ -113,7 +113,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
 
       {lesson.notes && (
         <section className="mb-8">
-          <h2 className="mb-2 text-sm font-medium text-muted-foreground">Not</h2>
+          <h2 className="mb-2 text-base font-semibold">Not</h2>
           <p className="text-sm whitespace-pre-wrap">{lesson.notes}</p>
         </section>
       )}

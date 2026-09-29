@@ -92,7 +92,7 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
           {MODES.map((m) => (
             <label
               key={m.value}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+              className="flex cursor-pointer items-start gap-3 surface px-4 py-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
             >
               <input
                 type="radio"

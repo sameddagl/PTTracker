@@ -39,7 +39,7 @@ function EmailStep({ state, pending }: { state: Extract<LoginState, { step: "ema
           aria-describedby={state.error ? "email-error" : undefined}
         />
         {state.error && (
-          <p id="email-error" className="text-sm text-destructive">
+          <p id="email-error" className="text-sm text-destructive-strong">
             {state.error}
           </p>
         )}
@@ -70,14 +70,14 @@ function CodeStep({ state, pending }: { state: Extract<LoginState, { step: "code
           pattern="[0-9]*"
           maxLength={10}
           placeholder="123456"
-          className="h-12 text-center text-xl tracking-[0.4em] tabular-nums"
+          className="h-14 text-center text-2xl font-semibold tracking-[0.4em] tabular-nums md:h-14 md:text-2xl"
           required
           autoFocus
           aria-invalid={!!state.error || undefined}
           aria-describedby={state.error ? "code-error" : undefined}
         />
         {state.error && (
-          <p id="code-error" className="text-sm text-destructive">
+          <p id="code-error" className="text-sm text-destructive-strong">
             {state.error}
           </p>
         )}
@@ -86,7 +86,7 @@ function CodeStep({ state, pending }: { state: Extract<LoginState, { step: "code
         {pending ? "Kontrol ediliyor…" : "Giriş yap"}
       </Button>
       <div className="flex items-center justify-between text-sm">
-        <Button type="submit" name="intent" value="change-email" variant="link" className="h-auto p-0" formNoValidate>
+        <Button type="submit" name="intent" value="change-email" variant="link" className="h-11 px-0 md:h-auto" formNoValidate>
           E-postayı değiştir
         </Button>
         <Button
@@ -94,7 +94,7 @@ function CodeStep({ state, pending }: { state: Extract<LoginState, { step: "code
           name="intent"
           value="resend"
           variant="link"
-          className="h-auto p-0"
+          className="h-11 px-0 md:h-auto"
           disabled={pending || secondsLeft > 0}
           formNoValidate
         >

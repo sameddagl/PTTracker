@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { CalendarCheck, CalendarClock, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { WEEKDAY_LABELS, dayLong, dayOfMonth, isoWeekday } from "@/lib/dates";
 import { formatLongDate, formatTime } from "@/lib/format";
 import type { DaySlots } from "@/lib/slots";
@@ -45,83 +45,90 @@ export function BookingPanel({
 
   return (
     <section aria-labelledby="booking-heading" className="flex flex-col gap-3">
-      <h2 id="booking-heading" className="text-sm font-medium text-muted-foreground">
-        Randevu al
-      </h2>
-      <Card>
-        <CardContent className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            {credits} ders için randevu alabilirsin · {lessonMinutes} dk
-          </p>
-          {days.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Önümüzdeki günlerde boş saat yok.</p>
-          ) : (
-            <>
-              <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" aria-label="Günler">
-                {days.map((d) => (
-                  <li key={d.date}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="booking-heading" className="text-base font-semibold">
+          Randevu al
+        </h2>
+        <span className="text-xs text-muted-foreground tabular-nums">{lessonMinutes} dk ders</span>
+      </div>
+      <div className="flex flex-col gap-5 surface p-4 sm:p-5">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge variant="lime" className="tabular-nums">
+            {credits} ders
+          </Badge>
+          için randevu alabilirsin
+        </p>
+        {days.length === 0 ? (
+          <p className="rounded-xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">Önümüzdeki günlerde boş saat yok.</p>
+        ) : (
+          <>
+            <ol className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5" aria-label="Günler">
+              {days.map((d) => {
+                const on = d.date === day;
+                return (
+                  <li key={d.date} className="snap-start">
                     <button
                       type="button"
                       onClick={() => {
                         setDay(d.date);
                         setPicked(null);
                       }}
-                      aria-pressed={d.date === day}
+                      aria-pressed={on}
                       aria-label={`${dayLong(d.date)}, ${d.minutes.length} boş saat`}
                       className={cn(
-                        "flex w-14 flex-col items-center rounded-xl border py-2 text-xs transition-colors",
-                        d.date === day ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted",
+                        "flex w-15 flex-col items-center gap-0.5 rounded-2xl border py-2.5 text-xs transition-colors",
+                        on ? "border-transparent bg-primary text-primary-foreground shadow-float" : "bg-card hover:bg-muted",
                       )}
                     >
-                      <span className={d.date === day ? "" : "text-muted-foreground"}>{WEEKDAY_LABELS[isoWeekday(d.date) - 1]}</span>
-                      <span className="text-xl font-semibold tabular-nums">{dayOfMonth(d.date)}</span>
-                      <span className={d.date === day ? "" : "text-muted-foreground"}>{monthShort(d.date)}</span>
+                      <span className={on ? "opacity-80" : "text-muted-foreground"}>{WEEKDAY_LABELS[isoWeekday(d.date) - 1]}</span>
+                      <span className="text-xl leading-tight font-semibold tabular-nums">{dayOfMonth(d.date)}</span>
+                      <span className={on ? "opacity-80" : "text-muted-foreground"}>{monthShort(d.date)}</span>
                     </button>
                   </li>
+                );
+              })}
+            </ol>
+
+            {current && (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label={`${dayLong(day)} boş saatler`}>
+                {current.minutes.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setPicked(m)}
+                    aria-pressed={picked === m}
+                    className={cn(
+                      "h-11 rounded-full border text-sm font-medium tabular-nums transition-colors",
+                      picked === m ? "border-transparent bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+                    )}
+                  >
+                    {toHHMM(m)}
+                  </button>
                 ))}
-              </ol>
+              </div>
+            )}
 
-              {current && (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label={`${dayLong(day)} boş saatler`}>
-                  {current.minutes.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setPicked(m)}
-                      aria-pressed={picked === m}
-                      className={cn(
-                        "h-11 rounded-lg border text-sm font-medium tabular-nums transition-colors",
-                        picked === m ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted",
-                      )}
-                    >
-                      {toHHMM(m)}
-                    </button>
-                  ))}
+            {picked !== null && (
+              <div className="flex flex-col gap-3 rounded-xl bg-muted/60 p-3">
+                <p className="flex items-center gap-2 text-sm">
+                  <CalendarCheck className="size-4 shrink-0" aria-hidden />
+                  <span>
+                    <span className="font-semibold">{dayLong(day)}</span> · {toHHMM(picked)}–{toHHMM(picked + lessonMinutes)}
+                  </span>
+                </p>
+                <div className="flex gap-2">
+                  <Button type="button" onClick={book} loading={pending} className="flex-1 sm:flex-none">
+                    {pending ? "Alınıyor…" : "Randevuyu onayla"}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setPicked(null)}>
+                    Vazgeç
+                  </Button>
                 </div>
-              )}
-
-              {picked !== null && (
-                <div className="flex flex-col gap-3 rounded-xl bg-muted/50 p-3">
-                  <p className="flex items-center gap-2 text-sm">
-                    <CalendarCheck className="size-4 text-primary" aria-hidden />
-                    <span>
-                      <span className="font-medium">{dayLong(day)}</span> · {toHHMM(picked)}–{toHHMM(picked + lessonMinutes)}
-                    </span>
-                  </p>
-                  <div className="flex gap-2">
-                    <Button type="button" onClick={book} loading={pending}>
-                      {pending ? "Alınıyor…" : "Randevuyu onayla"}
-                    </Button>
-                    <Button type="button" variant="ghost" onClick={() => setPicked(null)}>
-                      Vazgeç
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }
@@ -160,21 +167,33 @@ export function UpcomingLessons({
 
   return (
     <section aria-labelledby="upcoming-heading">
-      <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+      <h2 id="upcoming-heading" className="mb-3 text-base font-semibold">
         Sıradaki derslerin
       </h2>
       {lessons.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Planlanmış ders yok.</p>
+        <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
+          Planlanmış ders yok.
+        </p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {lessons.map((l) => (
-            <li key={l.attendeeId} className="flex items-center gap-3 rounded-lg border py-2 pr-2 pl-4">
-              <CalendarClock className="size-4 shrink-0 text-primary" aria-hidden />
-              <span className="min-w-0 flex-1 text-sm">
-                <span className="block capitalize">{formatLongDate(l.startsAt, timezone)}</span>
-                {l.title && <span className="block truncate text-xs text-muted-foreground">{l.title}</span>}
+        <ul className="divide-y overflow-hidden surface">
+          {lessons.map((l, i) => (
+            <li key={l.attendeeId} className="flex items-center gap-3 py-3 pr-2 pl-4">
+              <span
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-full",
+                  i === 0 ? "bg-lime text-lime-foreground" : "bg-muted text-muted-foreground",
+                )}
+                aria-hidden
+              >
+                <CalendarClock className="size-4" />
               </span>
-              <span className="text-sm tabular-nums">{formatTime(l.startsAt, timezone)}</span>
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="block truncate font-medium capitalize">{formatLongDate(l.startsAt, timezone)}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  <span className="tabular-nums">{formatTime(l.startsAt, timezone)}</span>
+                  {l.title && <> · {l.title}</>}
+                </span>
+              </span>
               <Button
                 type="button"
                 size="sm"
@@ -183,6 +202,7 @@ export function UpcomingLessons({
                 loading={pending && busy === l.attendeeId}
                 onClick={() => cancel(l)}
                 aria-label="Dersi iptal et"
+                className="text-muted-foreground"
               >
                 <X />
                 <span className="max-sm:sr-only">İptal</span>

@@ -67,18 +67,13 @@ export async function deleteIntakeField(tx: Tx, trainerId: string, id: string) {
   await tx.delete(intakeFields).where(and(eq(intakeFields.id, id), eq(intakeFields.trainerId, trainerId)));
 }
 
-/** Moves a field one step up or down by swapping sort orders with its neighbour. */
-export async function moveIntakeField(tx: Tx, trainerId: string, id: string, direction: "up" | "down") {
-  const fields = await listIntakeFields(tx, trainerId);
-  const i = fields.findIndex((f) => f.id === id);
-  const j = direction === "up" ? i - 1 : i + 1;
-  if (i === -1 || j < 0 || j >= fields.length) return;
-  // Renumber everything so equal sort orders can't get stuck.
-  const ordered = [...fields];
-  [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
-  for (const [k, f] of ordered.entries()) {
-    const sortOrder = (k + 1) * 10;
-    if (f.sortOrder !== sortOrder) await tx.update(intakeFields).set({ sortOrder }).where(eq(intakeFields.id, f.id));
+/** Saves a drag-and-drop order: `ids` top first. Ids of other trainers' fields are ignored. */
+export async function reorderIntakeFields(tx: Tx, trainerId: string, ids: string[]) {
+  for (const [k, id] of ids.entries()) {
+    await tx
+      .update(intakeFields)
+      .set({ sortOrder: (k + 1) * 10 })
+      .where(and(eq(intakeFields.id, id), eq(intakeFields.trainerId, trainerId)));
   }
 }
 

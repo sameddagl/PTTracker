@@ -13,10 +13,11 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
+import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState, PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listRecentPayments } from "@/db/payments";
 import { listIntakeAnswers } from "@/db/intake";
@@ -128,55 +129,46 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         <ChevronLeft className="size-4" aria-hidden />
         {client.archivedAt ? "Arşiv" : "Danışanlar"}
       </Link>
-      <PageHeader
-        title={client.fullName}
-        description={[formatPhone(client.phone), client.goals].filter(Boolean).join(" · ") || undefined}
-        action={
-          !client.archivedAt && (
-            <Button asChild variant="outline">
+      <section aria-label="Danışan" className="mb-8 surface p-5">
+        <div className="flex items-start gap-4">
+          <Avatar name={client.fullName} size="lg" />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl leading-tight font-semibold">{client.fullName}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {[formatPhone(client.phone), client.goals].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}
+            </p>
+          </div>
+          {!client.archivedAt && (
+            <Button asChild variant="outline" size="icon" aria-label="Düzenle">
               <Link href={`/danisanlar/${client.id}/duzenle`}>
                 <Pencil />
-                Düzenle
               </Link>
-            </Button>
-          )
-        }
-      />
-      {client.archivedAt ? (
-        <ArchivedBanner clientId={client.id} name={client.fullName} archivedOn={formatDayMonth(client.archivedAt, timezone)} />
-      ) : (
-        <div className="mb-8 flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href={`/danisanlar/${client.id}/paket-sat`}>
-              <PackagePlus />
-              Paket sat
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
-              <CalendarPlus />
-              Ders ekle
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
-              <Wallet />
-              Ödeme al{totalDue > 0 && ` · ${formatTRY(totalDue)}`}
-            </Link>
-          </Button>
-          {wa && (
-            <Button asChild variant="outline">
-              <a href={wa} target="_blank" rel="noopener noreferrer">
-                <MessageCircle />
-                WhatsApp
-              </a>
             </Button>
           )}
         </div>
+        {!client.archivedAt && (
+          <div className="mt-5 grid grid-cols-4 gap-2 border-t pt-4">
+            <QuickAction href={`/danisanlar/${client.id}/paket-sat`} icon={<PackagePlus />} label="Paket sat" primary />
+            <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" />
+            <QuickAction
+              href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}
+              icon={<Wallet />}
+              label={totalDue > 0 ? formatTRY(totalDue) : "Ödeme al"}
+            />
+            {wa ? (
+              <QuickAction href={wa} external icon={<MessageCircle />} label="WhatsApp" />
+            ) : (
+              <span aria-hidden />
+            )}
+          </div>
+        )}
+      </section>
+      {client.archivedAt && (
+        <ArchivedBanner clientId={client.id} name={client.fullName} archivedOn={formatDayMonth(client.archivedAt, timezone)} />
       )}
 
       <section aria-labelledby="packages-heading" className="mb-8">
-        <h2 id="packages-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+        <h2 id="packages-heading" className="mb-3 text-base font-semibold">
           Paketler
         </h2>
         {packages.length === 0 ? (
@@ -184,33 +176,38 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
             Ders sayısını takip etmek için bir paket sat.
           </EmptyState>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {packages.map((p) => (
-              <li key={p.id}>
-                <Card className="py-4">
-                  <CardContent className="flex items-center gap-4 px-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-semibold tabular-nums">{p.remaining}</div>
-                      <div className="text-xs text-muted-foreground">/ {p.total}</div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {SESSION_TYPE_LABELS[p.sessionType]} · {formatShortDate(p.startsOn)}
-                        {p.expiresOn && ` → ${formatShortDate(p.expiresOn)}`}
-                      </p>
-                      {p.installments > 1 && <InstallmentSummary pkg={p} today={today} />}
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant={p.state === "active" ? "default" : "secondary"}>{STATE_LABELS[p.state]}</Badge>
-                      {Number(p.overdue) > 0 ? (
-                        <span className="text-xs text-destructive">{formatTRY(p.overdue)} vadesi geldi</span>
-                      ) : (
-                        Number(p.due) > 0 && <span className="text-xs text-muted-foreground">{formatTRY(p.due)} kalan</span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+              <li key={p.id} className="surface p-4">
+                <div className="flex items-start gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {SESSION_TYPE_LABELS[p.sessionType]} · {formatShortDate(p.startsOn)}
+                      {p.expiresOn && ` → ${formatShortDate(p.expiresOn)}`}
+                    </p>
+                  </div>
+                  <Badge variant={p.state === "active" ? "lime" : "secondary"}>{STATE_LABELS[p.state]}</Badge>
+                </div>
+                <div className="mt-4 flex items-end justify-between gap-4">
+                  <p>
+                    <span className="text-3xl font-semibold tracking-tight tabular-nums">{p.remaining}</span>
+                    <span className="text-sm text-muted-foreground"> / {p.total} ders kaldı</span>
+                  </p>
+                  {Number(p.overdue) > 0 ? (
+                    <span className="text-sm font-medium text-destructive-strong">{formatTRY(p.overdue)} vadesi geldi</span>
+                  ) : (
+                    Number(p.due) > 0 && <span className="text-sm text-muted-foreground">{formatTRY(p.due)} kalan</span>
+                  )}
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  <div className="h-full rounded-full bg-lime" style={{ width: `${p.total > 0 ? (p.remaining / p.total) * 100 : 0}%` }} />
+                </div>
+                {p.installments > 1 && (
+                  <div className="mt-3">
+                    <InstallmentSummary pkg={p} today={today} />
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -235,10 +232,10 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
 
       {upcoming.length > 0 && (
         <section aria-labelledby="upcoming-heading" className="mb-8">
-          <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+          <h2 id="upcoming-heading" className="mb-3 text-base font-semibold">
             Sıradaki dersler
           </h2>
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y overflow-hidden surface">
             {upcoming.map((h) => (
               <li key={h.id}>
                 <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
@@ -253,13 +250,13 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
       )}
 
       <section aria-labelledby="history-heading" className="mb-8">
-        <h2 id="history-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+        <h2 id="history-heading" className="mb-3 text-base font-semibold">
           Son dersler
         </h2>
         {history.length === 0 ? (
           <EmptyState icon={<History />} title="Henüz ders yok" />
         ) : (
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y overflow-hidden surface">
             {history.map((h) => (
               <li key={h.id}>
                 <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
@@ -279,10 +276,10 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
 
       {paymentHistory.length > 0 && (
         <section aria-labelledby="payments-heading" className="mb-8">
-          <h2 id="payments-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+          <h2 id="payments-heading" className="mb-3 text-base font-semibold">
             Ödemeler
           </h2>
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y overflow-hidden surface">
             {paymentHistory.map((p) => (
               <li key={p.id} className="flex items-center gap-3 px-4 py-3 text-sm">
                 <span className="w-16 shrink-0 tabular-nums">{formatShortDate(p.paidOn)}</span>
@@ -352,11 +349,43 @@ function InstallmentSummary({
     <p className="text-xs text-muted-foreground">
       {paid}/{states.length} taksit ödendi
       {next && (
-        <span className={next.status === "overdue" ? "text-destructive" : undefined}>
+        <span className={next.status === "overdue" ? "text-destructive-strong" : undefined}>
           {" "}
           · sıradaki {formatTRY(next.remaining)} · {formatShortDate(next.dueOn)}
         </span>
       )}
     </p>
+  );
+}
+
+function QuickAction({
+  href,
+  icon,
+  label,
+  primary,
+  external,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  primary?: boolean;
+  external?: boolean;
+}) {
+  const circle = primary ? "bg-primary text-primary-foreground" : "bg-muted text-foreground";
+  const content = (
+    <>
+      <span className={`flex size-12 items-center justify-center rounded-full ${circle} [&_svg]:size-5`}>{icon}</span>
+      <span className="max-w-full truncate text-xs font-medium">{label}</span>
+    </>
+  );
+  const className = "flex min-w-0 flex-col items-center gap-2 rounded-2xl py-1 transition-opacity hover:opacity-80";
+  return external ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {content}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {content}
+    </Link>
   );
 }

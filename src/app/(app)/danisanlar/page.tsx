@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Archive, ChevronRight, UserPlus, Users } from "lucide-react";
+import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/page-header";
@@ -42,28 +43,39 @@ export default async function ClientsPage() {
           İlk danışanını ekle. Yakında Excel listeni de tek seferde içe aktarabileceksin.
         </EmptyState>
       ) : (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden surface">
           {clients.map((c) => {
             const pkg = c.packages[0];
             const due = c.packages.reduce((sum, p) => sum + Number(p.due), 0);
+            const low = pkg && pkg.remaining <= 2 && pkg.state !== "frozen";
             return (
               <li key={c.id}>
-                <Link
-                  href={`/danisanlar/${c.id}`}
-                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
-                >
+                <Link href={`/danisanlar/${c.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                  <Avatar name={c.fullName} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{c.fullName}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {pkg ? `${pkg.name} · ${pkg.remaining}/${pkg.total} ders kaldı` : "Aktif paket yok"}
-                    </p>
+                    {pkg ? (
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-muted" aria-hidden>
+                          <div
+                            className={low ? "h-full rounded-full bg-warning" : "h-full rounded-full bg-foreground"}
+                            style={{ width: `${pkg.total > 0 ? (pkg.remaining / pkg.total) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {pkg.remaining}/{pkg.total} · {pkg.name}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-muted-foreground">Aktif paket yok</p>
+                    )}
                   </div>
-                  {pkg?.state === "frozen" && <Badge variant="secondary">Donduruldu</Badge>}
-                  {pkg && pkg.remaining <= 2 && pkg.state !== "frozen" && (
-                    <Badge variant="outline">{pkg.remaining === 0 ? "Bitti" : "Azaldı"}</Badge>
-                  )}
-                  {due > 0 && <Badge variant="destructive">{formatTRY(due)}</Badge>}
-                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    {due > 0 && <Badge variant="destructive">{formatTRY(due)}</Badge>}
+                    {pkg?.state === "frozen" && <Badge variant="secondary">Donduruldu</Badge>}
+                    {low && <Badge variant="warning">{pkg.remaining === 0 ? "Bitti" : "Azaldı"}</Badge>}
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 </Link>
               </li>
             );

@@ -46,14 +46,14 @@ export function SideNav({ badges = {} }: { badges?: Badges }) {
           onClick={onTap(href)}
           aria-current={isActive(href) ? "page" : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-            isActive(href) && "bg-accent text-foreground",
+            "flex h-11 items-center gap-3 rounded-full px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            isActive(href) && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
           )}
         >
-          <Icon className="size-4" aria-hidden />
+          <Icon className="size-[18px]" aria-hidden />
           <span className="flex-1">{label}</span>
           {!!badges[href] && (
-            <span className="rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground tabular-nums">
+            <span className="min-w-6 rounded-full bg-lime px-2 text-center text-xs leading-6 font-semibold text-lime-foreground tabular-nums">
               {badges[href]}
             </span>
           )}
@@ -63,38 +63,47 @@ export function SideNav({ badges = {} }: { badges?: Badges }) {
   );
 }
 
+/** Phones: a floating dark pill; the current tab widens into a lime chip with its label. */
 export function BottomNav({ badges = {} }: { badges?: Badges }) {
   const { isActive, onTap } = useActiveTab();
   return (
     <nav
       aria-label="Ana menü"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
     >
-      <ul className="grid grid-cols-5">
-        {MOBILE_ITEMS.map(({ href, label, icon: Icon }) => (
-          <li key={href}>
-            <Link
-              href={href}
-              onClick={onTap(href)}
-              aria-current={isActive(href) ? "page" : undefined}
-              aria-label={badges[href] ? `${label}, ${badges[href]} bekleyen` : undefined}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2 text-xs font-medium text-muted-foreground",
-                isActive(href) && "text-primary",
-              )}
-            >
-              <span className="relative">
-                <Icon className="size-5" aria-hidden />
-                {!!badges[href] && (
-                  <span className="absolute -top-2 -right-3 min-w-5 rounded-full bg-primary px-1 text-center text-xs leading-5 font-semibold text-primary-foreground tabular-nums">
-                    {badges[href]}
-                  </span>
+      <ul className="mx-auto flex max-w-md gap-1 rounded-full bg-[#1d1d1f] p-1.5 shadow-float ring-1 ring-white/10 dark:bg-[#1c1c1f]">
+        {MOBILE_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = isActive(href);
+          return (
+            <li key={href} className={cn("transition-[flex-grow] duration-200", active ? "grow-[2.4]" : "grow")}>
+              <Link
+                href={href}
+                onClick={onTap(href)}
+                aria-current={active ? "page" : undefined}
+                aria-label={badges[href] ? `${label}, ${badges[href]} bekleyen` : label}
+                className={cn(
+                  "flex h-12 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium text-white/65 transition-colors",
+                  active ? "bg-lime text-lime-foreground" : "hover:text-white",
                 )}
-              </span>
-              {label}
-            </Link>
-          </li>
-        ))}
+              >
+                <span className="relative">
+                  <Icon className="size-5" aria-hidden />
+                  {!!badges[href] && (
+                    <span
+                      className={cn(
+                        "absolute -top-1.5 -right-2.5 min-w-5 rounded-full px-1 text-center text-xs leading-5 font-semibold tabular-nums",
+                        active ? "bg-[#1d1d1f] text-white" : "bg-lime text-lime-foreground",
+                      )}
+                    >
+                      {badges[href]}
+                    </span>
+                  )}
+                </span>
+                {active && <span className="truncate">{label}</span>}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
