@@ -5,6 +5,8 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.
 const nextConfig: NextConfig = {
   // The dev badge covers the mobile nav or header actions wherever it sits.
   devIndicators: false,
+  // Dev only: open the app from a phone on the same Wi-Fi (http://192.168.x.x:3000).
+  allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "*.local"],
   experimental: {
     // Clients attach transfer receipts (capped at 1.5 MB in the action).
     serverActions: { bodySizeLimit: "2mb" },
