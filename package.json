@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "db:check": "tsx scripts/check-remote-db.mts",
     "test:logic": "tsx --conditions=react-server scripts/test-logic.ts",
-    "test": "pnpm test:db && pnpm test:logic"
+    "test": "pnpm test:db && pnpm test:logic",
+    "mail:test": "tsx --conditions=react-server --env-file=.env.local scripts/send-test-mail.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
