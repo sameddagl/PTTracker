@@ -102,7 +102,7 @@ function CodeStep({ state, pending }: { state: Extract<LoginState, { step: "code
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Kod gelmediyse spam klasörüne bak. E-postadaki bağlantıya tıklayarak da girebilirsin.
+        Kod 1 saat geçerli. Gelmediyse spam klasörüne bak; bir dakika sonra yeni kod isteyebilirsin.
       </p>
     </>
   );
