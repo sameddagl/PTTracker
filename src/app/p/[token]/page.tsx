@@ -16,8 +16,9 @@ import { formatIban, paymentCode } from "@/lib/iban";
 import { installmentPlan, installmentStates } from "@/lib/installments";
 import { getPortalData, portalUrl } from "@/lib/portal";
 import { applicationOption, optionLabel } from "@/lib/pricing";
-import { BookingPanel, UpcomingLessons } from "./booking-panel";
-import { GroupPanel } from "./group-panel";
+import { UpcomingLessons } from "./booking-panel";
+import { LessonPicker } from "./lesson-picker";
+import { PackageShop } from "./package-shop";
 import { PaymentPanel } from "./payment-panel";
 import { cn } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -31,7 +32,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, reported, booking, bookable, groups } = data;
+  const { client, packages, upcoming, recent, application, pendingApplications, offers, reported, booking, bookable, groups } = data;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
   const url = portalUrl(token);
@@ -39,8 +40,32 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
     client.trainerPhone,
     `Merhaba, ${application?.packageName ?? "paket"} için başvurdum. Sayfam: ${url}`,
   );
-  const pending = application?.status === "pending";
-  const pendingOption = pending ? applicationOption(application) : null;
+  const turnedDown = application?.status === "rejected" && packages.length === 0 && pendingApplications.length === 0;
+  // Local date/time of each group class for the day strip.
+  const localDate = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+  const priv =
+    booking?.enabled && booking.packages.length > 0
+      ? { days: booking.days, lessonMinutes: booking.lessonMinutes, credits: booking.packages.reduce((sum, p) => sum + p.free, 0) }
+      : null;
+  // Only for clients group classes are for: a group package, a fixed place, or a booking already.
+  const group =
+    groups && groups.slots.length > 0 && (groups.credits > 0 || groups.fixed.length > 0 || groups.slots.some((sl) => sl.joined))
+      ? {
+          credits: groups.credits,
+          fixed: groups.fixed,
+          slots: groups.slots.map((sl) => ({
+            lessonId: sl.lessonId,
+            title: sl.title,
+            date: localDate(sl.startsAt),
+            start: formatTime(sl.startsAt, tz),
+            end: formatTime(sl.endsAt, tz),
+            capacity: sl.capacity,
+            taken: sl.taken,
+            joined: sl.joined,
+            canJoin: sl.canJoin,
+          })),
+        }
+      : null;
   const today = todayISO(tz);
   const plans = packages
     .map((p) => ({
@@ -93,31 +118,34 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           </div>
         )}
 
-        {pending && (
-          <div className="flex items-center gap-4 surface p-4">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning-strong">
-              <Hourglass className="size-5" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold">{application.packageName}</p>
-              <p className="text-sm text-muted-foreground">Eğitmenin onayı bekleniyor. Onaylanınca sana haber vereceğiz.</p>
-            </div>
-            {pendingOption && (
-              <span className="shrink-0 text-right">
-                <span className="block font-semibold tabular-nums">{formatTRY(pendingOption.total)}</span>
-                <span className="block text-xs text-muted-foreground">{optionLabel(pendingOption)}</span>
+        {pendingApplications.map((app) => {
+          const option = applicationOption(app);
+          return (
+            <div key={app.id} className="flex items-center gap-4 surface p-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning-strong">
+                <Hourglass className="size-5" aria-hidden />
               </span>
-            )}
-          </div>
-        )}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">{app.packageName}</p>
+                <p className="text-sm text-muted-foreground">Eğitmenin onayı bekleniyor. Onaylanınca sana haber vereceğiz.</p>
+              </div>
+              {option && (
+                <span className="shrink-0 text-right">
+                  <span className="block font-semibold tabular-nums">{formatTRY(option.total)}</span>
+                  <span className="block text-xs text-muted-foreground">{optionLabel(option)}</span>
+                </span>
+              )}
+            </div>
+          );
+        })}
 
-        {application?.status === "rejected" && packages.length === 0 && (
+        {turnedDown && (
           <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
             Başvurun şu an kabul edilemedi. Detaylar için {trainerName} ile iletişime geçebilirsin.
           </p>
         )}
 
-        {pending || (application?.status === "rejected" && packages.length === 0) ? null : packages.length === 0 ? (
+        {turnedDown || (pendingApplications.length > 0 && packages.length === 0) ? null : packages.length === 0 ? (
           <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
             Şu an aktif paketin yok.
           </p>
@@ -192,19 +220,14 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
             )
           ))}
 
-        {booking?.enabled && booking.packages.length > 0 && (
-          <BookingPanel
-            token={token}
-            days={booking.days}
-            lessonMinutes={booking.lessonMinutes}
-            credits={booking.packages.reduce((sum, p) => sum + p.free, 0)}
-          />
-        )}
+        {(priv || group) && <LessonPicker token={token} priv={priv} group={group} />}
 
-        {/* Only for clients group classes are for: a group package, a fixed place, or a booking already. */}
-        {groups && groups.slots.length > 0 && (groups.credits > 0 || groups.fixed.length > 0 || groups.slots.some((sl) => sl.joined)) && (
-          <GroupPanel token={token} timezone={tz} credits={groups.credits} fixed={groups.fixed} slots={groups.slots} />
-        )}
+        <PackageShop
+          token={token}
+          offers={offers}
+          pendingIds={pendingApplications.map((a) => a.templateId)}
+          hasPackage={packages.length > 0 || pendingApplications.length > 0}
+        />
 
         {(packages.length > 0 || upcoming.length > 0) && (
           <UpcomingLessons token={token} lessons={bookable} timezone={tz} lateCancelHours={booking?.lateCancelHours ?? 24} />

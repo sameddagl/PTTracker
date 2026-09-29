@@ -31,7 +31,7 @@ import {
   updateGroupClass,
 } from "../src/db/groups";
 import { archiveClient, countUpcomingLessons, deleteClient, listArchivedClients, restoreClient } from "../src/db/clients";
-import { approveApplication, countPendingApplications, rejectApplication } from "../src/db/applications";
+import { approveApplication, countPendingApplications, rejectApplication, requestPackage } from "../src/db/applications";
 import {
   createIntakeField,
   ensureDefaultIntakeFields,
@@ -625,6 +625,29 @@ async function main() {
   assert.deepEqual([strangers.length, strangers[0].id, strangers[0].archivedAt], [1, stranger.id, null], "same record, unarchived");
   assert.equal((await tryWith(moreTemplates[1].id)).limited, false, "3rd application in 24h still allowed");
   assert.equal((await tryWith(moreTemplates[2].id)).limited, true, "4th application from one phone in 24h is refused");
+
+  // An existing client asks for another package from the portal: same review, no form.
+  const [buyer] = await asTrainer((tx) => tx.insert(schema.clients).values({ trainerId: T, fullName: "İkinci Paket" }).returning({ id: schema.clients.id }));
+  const buyerWho = { trainerId: T, clientId: buyer.id };
+  const own2 = <R,>(fn: (tx: Tx) => Promise<R>) => db.transaction((tx) => fn(tx as unknown as Tx));
+  assert.deepEqual(await own2((tx) => requestPackage(tx, buyerWho, { templateId: tpl.id, installments: 3 })), { ok: false, reason: "option" });
+  assert.deepEqual(await own2((tx) => requestPackage(tx, buyerWho, { templateId: tpl.id, installments: 4 })), { ok: true, packageName: "8 Ders Özel" });
+  assert.deepEqual(await own2((tx) => requestPackage(tx, buyerWho, { templateId: tpl.id, installments: 1 })), { ok: false, reason: "already" });
+  assert.equal((await own2((tx) => requestPackage(tx, buyerWho, { templateId: moreTemplates[0].id, installments: 1 }))).ok, true, "unpriced package: no option needed");
+  assert.equal((await own2((tx) => requestPackage(tx, buyerWho, { templateId: moreTemplates[1].id, installments: 1 }))).ok, true);
+  assert.deepEqual(await own2((tx) => requestPackage(tx, buyerWho, { templateId: moreTemplates[2].id, installments: 1 })), { ok: false, reason: "limited" });
+  assert.deepEqual(
+    await own2((tx) => requestPackage(tx, { trainerId: "00000000-0000-0000-0000-0000000000b2", clientId: buyer.id }, { templateId: tpl.id, installments: 1 })),
+    { ok: false, reason: "not_found" },
+    "another trainer's package can't be requested",
+  );
+  const [buyerApp] = await db
+    .select()
+    .from(schema.applications)
+    .where(sql`${schema.applications.clientId} = ${buyer.id} and ${schema.applications.templateId} = ${tpl.id}`);
+  const buyerPkg = await asTrainer((tx) => approveApplication(tx, trainer, buyerApp.id, { startsOn: "2026-10-01" }));
+  const [bp] = await asTrainer((tx) => tx.select().from(schema.clientPackages).where(eq(schema.clientPackages.id, buyerPkg!.clientPackageId)));
+  assert.deepEqual([bp.price, bp.installments], ["4400.00", 4], "approved with the picked installment plan");
   console.log("approve/reject: package created from template, applicants archived on rejection, rate limit applies");
 
   // ---- Installment plans ----

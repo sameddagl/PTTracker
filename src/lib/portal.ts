@@ -105,9 +105,11 @@ export async function getPortalData(token: string) {
   const upcoming = await lessonRows("upcoming");
   const recent = await lessonRows("past");
 
-  // The latest sign-up from the public page, to show "waiting for approval".
-  const [application] = await adminDb
+  // Recent applications: the pending ones show as "waiting for approval", the latest decides the rejected message.
+  const appRows = await adminDb
     .select({
+      id: applications.id,
+      templateId: applications.templateId,
       status: applications.status,
       createdAt: applications.createdAt,
       packageName: packageTemplates.name,
@@ -121,7 +123,26 @@ export async function getPortalData(token: string) {
     .innerJoin(packageTemplates, eq(packageTemplates.id, applications.templateId))
     .where(eq(applications.clientId, link.clientId))
     .orderBy(desc(applications.createdAt))
-    .limit(1);
+    .limit(10);
+  const application = appRows[0];
+  const pendingApplications = appRows.filter((a) => a.status === "pending");
+
+  // What the client can buy next, in the trainer's own order.
+  const offers = await adminDb
+    .select({
+      id: packageTemplates.id,
+      name: packageTemplates.name,
+      sessionType: packageTemplates.sessionType,
+      sessionCount: packageTemplates.sessionCount,
+      validityDays: packageTemplates.validityDays,
+      price: packageTemplates.price,
+      compareAtPrice: packageTemplates.compareAtPrice,
+      installmentPrice: packageTemplates.installmentPrice,
+      installments: packageTemplates.installments,
+    })
+    .from(packageTemplates)
+    .where(and(eq(packageTemplates.trainerId, link.trainerId), eq(packageTemplates.isActive, true), eq(packageTemplates.isPublic, true)))
+    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.createdAt));
 
   // Transfers this client reported that are waiting, or were turned down recently.
   const reported = await adminDb
@@ -153,5 +174,17 @@ export async function getPortalData(token: string) {
 
   await adminDb.update(portalTokens).set({ lastUsedAt: now }).where(eq(portalTokens.id, link.id));
 
-  return { client, packages, upcoming, recent, application: application ?? null, reported, booking, bookable, groups };
+  return {
+    client,
+    packages,
+    upcoming,
+    recent,
+    application: application ?? null,
+    pendingApplications,
+    offers,
+    reported,
+    booking,
+    bookable,
+    groups,
+  };
 }

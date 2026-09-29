@@ -1,6 +1,6 @@
 import "server-only";
 import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
-import { pickOption } from "@/lib/pricing";
+import { paymentOptions, pickOption } from "@/lib/pricing";
 import type { Tx } from "./index";
 import { expiryFor, sellPackage } from "./packages";
 import { applications, clients, packageTemplates } from "./schema";
@@ -131,4 +131,50 @@ export async function rejectApplication(tx: Tx, trainerId: string, id: string) {
       .where(and(eq(clients.id, app.clientId), eq(clients.status, "applicant")));
   }
   return { clientId: app.clientId };
+}
+
+export type RequestResult =
+  | { ok: true; packageName: string }
+  | { ok: false; reason: "not_found" | "already" | "limited" | "option" };
+
+/**
+ * An existing client asks for another package from their portal. Same review
+ * as a sign-up (the trainer approves), without the form: answers and consents
+ * are already on file.
+ */
+export async function requestPackage(
+  tx: Tx,
+  who: { trainerId: string; clientId: string },
+  { templateId, installments }: { templateId: string; installments: number },
+): Promise<RequestResult> {
+  const [t] = await tx
+    .select()
+    .from(packageTemplates)
+    .where(
+      and(
+        eq(packageTemplates.id, templateId),
+        eq(packageTemplates.trainerId, who.trainerId),
+        eq(packageTemplates.isActive, true),
+        eq(packageTemplates.isPublic, true),
+      ),
+    );
+  if (!t) return { ok: false, reason: "not_found" };
+  const options = paymentOptions(t);
+  if (options.length > 0 && !options.some((o) => o.installments === installments)) return { ok: false, reason: "option" };
+
+  const mine = await tx
+    .select({ templateId: applications.templateId, status: applications.status, createdAt: applications.createdAt })
+    .from(applications)
+    .where(and(eq(applications.clientId, who.clientId), eq(applications.trainerId, who.trainerId)));
+  if (mine.some((a) => a.status === "pending" && a.templateId === templateId)) return { ok: false, reason: "already" };
+  // Same cap as sign-ups: three requests a day per person.
+  if (mine.filter((a) => a.createdAt.getTime() > Date.now() - 86_400_000).length >= 3) return { ok: false, reason: "limited" };
+
+  await tx.insert(applications).values({
+    trainerId: who.trainerId,
+    clientId: who.clientId,
+    templateId,
+    installments: options.length > 0 ? installments : 1,
+  });
+  return { ok: true, packageName: t.name };
 }

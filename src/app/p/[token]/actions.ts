@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { authUsers } from "drizzle-orm/supabase";
 import { z } from "zod";
-import { adminDb } from "@/db";
+import { adminDb, type Tx } from "@/db";
+import { requestPackage } from "@/db/applications";
 import { MAX_RECEIPT_BYTES, RECEIPT_TYPES, recordClientPayment } from "@/db/payments";
 import { clients } from "@/db/schema";
 import { siteUrl } from "@/lib/config";
@@ -79,4 +80,43 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
 
   revalidatePath(`/p/${token}`);
   return { savedAt: Date.now() };
+}
+
+/** "Bu paketi istiyorum": an existing client asks for another package; the trainer approves it like a sign-up. */
+export async function requestPackageAction(
+  token: string,
+  templateId: string,
+  installments: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const link = await resolvePortalToken(token);
+  if (!link || !z.uuid().safeParse(templateId).success || !Number.isInteger(installments)) return { ok: false, error: "Geçersiz istek." };
+
+  const result = await adminDb.transaction((tx) => requestPackage(tx as unknown as Tx, link, { templateId, installments }));
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: {
+        not_found: "Bu paket artık satışta değil.",
+        already: "Bu paket için başvurun zaten onay bekliyor.",
+        limited: "Bugün yeterince başvuru yaptın. Yarın tekrar deneyebilirsin.",
+        option: "Ödeme şeklini seç.",
+      }[result.reason],
+    };
+  }
+
+  const [who] = await adminDb
+    .select({ name: clients.fullName, trainerEmail: authUsers.email })
+    .from(clients)
+    .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
+    .where(eq(clients.id, link.clientId));
+  if (who?.trainerEmail) {
+    const { html, text } = layout({
+      heading: "Yeni paket talebi",
+      lines: [`${who.name}, ${result.packageName} paketini almak istiyor.`, "Başvurular ekranından onaylayabilirsin."],
+      cta: { label: "Başvuruyu gör", url: `${siteUrl()}/danisanlar/basvurular` },
+    });
+    await sendMail({ to: who.trainerEmail, subject: `Paket talebi: ${who.name}`, html, text });
+  }
+  revalidatePath(`/p/${token}`);
+  return { ok: true };
 }
