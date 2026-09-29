@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
+import { Field } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createClientAction, type ClientFormState } from "../actions";
 
@@ -69,30 +69,5 @@ export function ClientForm() {
         {pending ? "Kaydediliyor…" : "Danışanı kaydet"}
       </Button>
     </form>
-  );
-}
-
-function Field({
-  id,
-  label,
-  hint,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  hint?: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>
-        {label}
-        {hint && <span className="font-normal text-muted-foreground">· {hint}</span>}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
   );
 }

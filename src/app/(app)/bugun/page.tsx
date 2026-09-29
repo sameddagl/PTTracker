@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, CalendarPlus, MessageCircle, Sunrise } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { getPackageAlerts, getTodayLessons, getTrainer, type PackageAlert } from "@/db/queries";
 import {
-  ATTENDANCE_LABELS,
   SESSION_TYPE_LABELS,
   formatLongDate,
   formatShortDate,
@@ -17,6 +15,7 @@ import {
   greeting,
 } from "@/lib/format";
 import { messages, whatsappLink } from "@/lib/whatsapp";
+import { AttendanceRow } from "./attendance-row";
 
 export const metadata: Metadata = { title: "Bugün" };
 
@@ -37,6 +36,14 @@ export default async function TodayPage() {
       <PageHeader
         title={firstName ? `${greeting(now, trainer.timezone)}, ${firstName}` : greeting(now, trainer.timezone)}
         description={formatLongDate(now, trainer.timezone)}
+        action={
+          <Button asChild>
+            <Link href="/ders/yeni?next=/bugun">
+              <CalendarPlus />
+              <span className="max-sm:sr-only">Ders ekle</span>
+            </Link>
+          </Button>
+        }
       />
 
       <section aria-labelledby="lessons-heading" className="mb-8">
@@ -46,37 +53,29 @@ export default async function TodayPage() {
         {lessons.length === 0 ? (
           <EmptyState icon={<Sunrise />} title="Bugün planlı ders yok">
             <Button asChild variant="outline" size="sm" className="mt-2">
-              <Link href="/takvim">
+              <Link href="/ders/yeni?next=/bugun">
                 <CalendarPlus />
-                Ders planla
+                Ders ekle
               </Link>
             </Button>
           </EmptyState>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {lessons.map((l) => (
               <li key={l.lessonId}>
-                <Card className="py-3">
-                  <CardContent className="flex items-center gap-4 px-4">
-                    <div className="w-12 shrink-0 text-center">
-                      <div className="text-base font-semibold tabular-nums">{formatTime(l.startsAt, trainer.timezone)}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">
-                        {formatTime(l.endsAt, trainer.timezone)}
-                      </div>
+                <Card className="gap-3 py-4">
+                  <CardContent className="flex flex-col gap-4 px-4">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-base font-semibold tabular-nums">
+                        {formatTime(l.startsAt, trainer.timezone)}–{formatTime(l.endsAt, trainer.timezone)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{SESSION_TYPE_LABELS[l.sessionType]}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">
-                        {l.attendees.map((a) => a.name).join(", ") || l.title || "Ders"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{SESSION_TYPE_LABELS[l.sessionType]}</p>
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-1">
-                      {l.attendees.map((a) => (
-                        <Badge key={a.id} variant={a.status === "scheduled" ? "outline" : "secondary"}>
-                          {ATTENDANCE_LABELS[a.status]}
-                        </Badge>
-                      ))}
-                    </div>
+                    {l.attendees.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{l.title || "Danışan eklenmemiş"}</p>
+                    ) : (
+                      l.attendees.map((a) => <AttendanceRow key={a.id} attendee={a} />)
+                    )}
                   </CardContent>
                 </Card>
               </li>

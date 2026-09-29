@@ -11,7 +11,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "typecheck": "tsc --noEmit",
-    "db:check": "tsx scripts/check-remote-db.mts"
+    "db:check": "tsx scripts/check-remote-db.mts",
+    "test:logic": "tsx --conditions=react-server scripts/test-logic.ts",
+    "test": "pnpm test:db && pnpm test:logic"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

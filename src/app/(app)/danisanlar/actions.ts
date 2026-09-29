@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import { clients, consents } from "@/db/schema";
+import { fieldErrors, readForm, type FormState } from "@/lib/forms";
 import { normalizePhone } from "@/lib/whatsapp";
 
 // Bump when the consent text shown in the form changes.
@@ -29,28 +30,15 @@ const clientSchema = z
     message: "Sağlık bilgisi kaydetmek için danışanın açık rızası gerekli.",
   });
 
-export type ClientFormState = {
-  errors?: Partial<Record<keyof z.input<typeof clientSchema>, string>>;
-  values?: Record<string, string>;
-};
+const FIELDS = ["fullName", "phone", "email", "goals", "notes", "healthNotes", "healthConsent"] as const;
+
+export type ClientFormState = FormState<(typeof FIELDS)[number]>;
 
 export async function createClientAction(_prev: ClientFormState, formData: FormData): Promise<ClientFormState> {
-  const raw = Object.fromEntries(
-    ["fullName", "phone", "email", "goals", "notes", "healthNotes", "healthConsent"].map((k) => [
-      k,
-      formData.get(k)?.toString() ?? "",
-    ]),
-  );
+  const raw = readForm(formData, FIELDS);
   const parsed = clientSchema.safeParse({ ...raw, healthConsent: raw.healthConsent || undefined });
 
-  if (!parsed.success) {
-    const errors: ClientFormState["errors"] = {};
-    for (const issue of parsed.error.issues) {
-      const key = issue.path[0] as keyof NonNullable<ClientFormState["errors"]>;
-      errors[key] ??= issue.message;
-    }
-    return { errors, values: raw };
-  }
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
 
   const { healthConsent, phone, ...data } = parsed.data;
   const id = await withTrainer(async (tx, trainerId) => {

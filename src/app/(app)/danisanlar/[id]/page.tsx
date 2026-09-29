@@ -2,14 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
-import { ChevronLeft, MessageCircle, Package } from "lucide-react";
+import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { clientPackageBalances, clientPackages, clients } from "@/db/schema";
-import { SESSION_TYPE_LABELS, formatShortDate, formatTRY } from "@/lib/format";
+import { getTrainer } from "@/db/queries";
+import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessons } from "@/db/schema";
+import {
+  ATTENDANCE_LABELS,
+  SESSION_TYPE_LABELS,
+  formatDayMonth,
+  formatShortDate,
+  formatTRY,
+  formatTime,
+} from "@/lib/format";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Danışan" };
@@ -49,11 +57,25 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
       .innerJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, clientPackages.id))
       .where(eq(clientPackages.clientId, id))
       .orderBy(desc(clientPackages.startsOn));
-    return { client, packages };
+    const history = await tx
+      .select({
+        id: lessonAttendees.id,
+        startsAt: lessons.startsAt,
+        sessionType: lessons.sessionType,
+        status: lessonAttendees.status,
+        makeupUsed: lessonAttendees.makeupUsed,
+      })
+      .from(lessonAttendees)
+      .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+      .where(eq(lessonAttendees.clientId, id))
+      .orderBy(desc(lessons.startsAt))
+      .limit(10);
+    const { timezone } = await getTrainer(tx, trainerId);
+    return { client, packages, history, timezone };
   });
   if (!data) notFound();
 
-  const { client, packages } = data;
+  const { client, packages, history, timezone } = data;
   const wa = whatsappLink(client.phone, `Merhaba ${client.fullName.split(" ")[0]},`);
 
   return (
@@ -68,17 +90,29 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
       <PageHeader
         title={client.fullName}
         description={[formatPhone(client.phone), client.goals].filter(Boolean).join(" · ") || undefined}
-        action={
-          wa && (
-            <Button asChild variant="outline">
-              <a href={wa} target="_blank" rel="noopener noreferrer">
-                <MessageCircle />
-                <span className="max-sm:sr-only">WhatsApp</span>
-              </a>
-            </Button>
-          )
-        }
       />
+      <div className="mb-8 flex flex-wrap gap-2">
+        <Button asChild>
+          <Link href={`/danisanlar/${client.id}/paket-sat`}>
+            <PackagePlus />
+            Paket sat
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
+            <CalendarPlus />
+            Ders ekle
+          </Link>
+        </Button>
+        {wa && (
+          <Button asChild variant="outline">
+            <a href={wa} target="_blank" rel="noopener noreferrer">
+              <MessageCircle />
+              WhatsApp
+            </a>
+          </Button>
+        )}
+      </div>
 
       <section aria-labelledby="packages-heading" className="mb-8">
         <h2 id="packages-heading" className="mb-3 text-sm font-medium text-muted-foreground">
@@ -86,7 +120,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         </h2>
         {packages.length === 0 ? (
           <EmptyState icon={<Package />} title="Paket yok">
-            Paket satışı bir sonraki adımda eklenecek.
+            Ders sayısını takip etmek için bir paket sat.
           </EmptyState>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -113,6 +147,29 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
                     </div>
                   </CardContent>
                 </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="history-heading" className="mb-8">
+        <h2 id="history-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+          Son dersler
+        </h2>
+        {history.length === 0 ? (
+          <EmptyState icon={<History />} title="Henüz ders yok" />
+        ) : (
+          <ul className="divide-y rounded-xl border">
+            {history.map((h) => (
+              <li key={h.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
+                <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
+                <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
+                <Badge variant={h.status === "attended" ? "default" : h.status === "scheduled" ? "outline" : "secondary"}>
+                  {ATTENDANCE_LABELS[h.status]}
+                  {h.makeupUsed && " · telafi"}
+                </Badge>
               </li>
             ))}
           </ul>

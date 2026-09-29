@@ -15,6 +15,9 @@ export async function getTrainer(tx: Tx, trainerId: string) {
   return row;
 }
 
+export type TodayLesson = Awaited<ReturnType<typeof getTodayLessons>>[number];
+export type TodayAttendee = TodayLesson["attendees"][number];
+
 export async function getTodayLessons(tx: Tx, trainer: TrainerRef) {
   const trainerId = trainer.id;
   // Midnight-to-midnight in the trainer's timezone.
@@ -30,11 +33,17 @@ export async function getTodayLessons(tx: Tx, trainer: TrainerRef) {
       attendeeId: lessonAttendees.id,
       clientId: clients.id,
       clientName: clients.fullName,
+      clientPhone: clients.phone,
       attendance: lessonAttendees.status,
+      makeupUsed: lessonAttendees.makeupUsed,
+      packageName: clientPackages.name,
+      remaining: clientPackageBalances.remainingSessions,
     })
     .from(lessons)
     .leftJoin(lessonAttendees, eq(lessonAttendees.lessonId, lessons.id))
     .leftJoin(clients, eq(clients.id, lessonAttendees.clientId))
+    .leftJoin(clientPackages, eq(clientPackages.id, lessonAttendees.clientPackageId))
+    .leftJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, lessonAttendees.clientPackageId))
     .where(
       and(
         eq(lessons.trainerId, trainerId),
@@ -45,12 +54,18 @@ export async function getTodayLessons(tx: Tx, trainer: TrainerRef) {
     )
     .orderBy(asc(lessons.startsAt), asc(clients.fullName));
 
-  const byLesson = new Map<
-    string,
-    Pick<(typeof rows)[number], "lessonId" | "title" | "sessionType" | "startsAt" | "endsAt"> & {
-      attendees: { id: string; clientId: string; name: string; status: NonNullable<(typeof rows)[number]["attendance"]> }[];
-    }
-  >();
+  type Row = (typeof rows)[number];
+  type Attendee = {
+    id: string;
+    clientId: string;
+    name: string;
+    phone: string | null;
+    status: NonNullable<Row["attendance"]>;
+    makeupUsed: boolean;
+    packageName: string | null;
+    remaining: number | null;
+  };
+  const byLesson = new Map<string, Pick<Row, "lessonId" | "title" | "sessionType" | "startsAt" | "endsAt"> & { attendees: Attendee[] }>();
   for (const r of rows) {
     const lesson = byLesson.get(r.lessonId) ?? {
       lessonId: r.lessonId,
@@ -61,7 +76,16 @@ export async function getTodayLessons(tx: Tx, trainer: TrainerRef) {
       attendees: [],
     };
     if (r.attendeeId && r.clientId && r.attendance) {
-      lesson.attendees.push({ id: r.attendeeId, clientId: r.clientId, name: r.clientName ?? "", status: r.attendance });
+      lesson.attendees.push({
+        id: r.attendeeId,
+        clientId: r.clientId,
+        name: r.clientName ?? "",
+        phone: r.clientPhone,
+        status: r.attendance,
+        makeupUsed: r.makeupUsed ?? false,
+        packageName: r.packageName,
+        remaining: r.remaining,
+      });
     }
     byLesson.set(r.lessonId, lesson);
   }

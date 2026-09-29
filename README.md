@@ -55,6 +55,8 @@ pnpm dev
 | `pnpm dev` | Geliştirme sunucusu |
 | `pnpm build` | Production build |
 | `pnpm typecheck` / `pnpm lint` | Tip kontrolü / lint |
+| `pnpm test` | Tüm testler (`test:db` + `test:logic`) |
+| `pnpm test:logic` | Paket seçimi, telafi hakkı, yoklama ve saat dilimi mantığını gerçek fonksiyonlarla test eder |
 | `pnpm test:db` | Migration'ları bellek içi Postgres'e (PGlite) uygular. RLS izolasyonunu ve paket bakiyesi hesabını test eder. Supabase gerektirmez |
 | `pnpm db:generate` | `src/db/schema.ts` değişikliğinden yeni migration üretir |
 | `pnpm db:migrate` | Migration'ları Supabase'e uygular |
