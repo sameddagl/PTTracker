@@ -4,7 +4,7 @@ import type { Tx } from "./index";
 import { clientPackageBalances, clientPackages, packageTemplates, payments } from "./schema";
 
 export type SessionType = (typeof packageTemplates.$inferSelect)["sessionType"];
-export type PaymentMethod = (typeof payments.$inferInsert)["method"];
+export type PaymentMethod = (typeof payments.$inferSelect)["method"];
 
 export async function listTemplates(tx: Tx, trainerId: string, { activeOnly = false } = {}) {
   const rows = await tx

@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import type { Tx } from "../src/db";
 import { createLesson, setAttendance } from "../src/db/lessons";
 import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
+import { deletePayment, listDebtors, listRecentPayments, recordPayment } from "../src/db/payments";
 import * as schema from "../src/db/schema";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -187,6 +188,75 @@ async function main() {
   assert.equal(b.state, "finished");
   console.log("undo and finish: balances follow attendance");
 
+  // Payments. "older" (2000, 500 paid) is finished but still owes 1500.
+  let pay = await asTrainer((tx) =>
+    recordPayment(tx, T, {
+      clientId: zeynep.id,
+      clientPackageId: older,
+      amount: 1600,
+      method: "cash",
+      paidOn: "2026-10-01",
+      note: null,
+    }),
+  );
+  assert.deepEqual(pay, { ok: false, reason: "overpay", due: 1500 });
+  // Paying into another client's package is refused, not a crash.
+  pay = await asTrainer((tx) =>
+    recordPayment(tx, T, { clientId: ali.id, clientPackageId: older, amount: 10, method: "cash", paidOn: "2026-10-01", note: null }),
+  );
+  assert.deepEqual(pay, { ok: false, reason: "package_not_found" });
+
+  let debtors = await asTrainer((tx) => listDebtors(tx, T));
+  assert.equal(debtors.length, 1);
+  assert.equal(debtors[0].total, 5500, "finished package's debt (1500) + unpaid newer package (4000)");
+  assert.equal(debtors[0].packages.length, 2);
+
+  pay = await asTrainer((tx) =>
+    recordPayment(tx, T, { clientId: zeynep.id, clientPackageId: older, amount: 1500, method: "card", paidOn: "2026-10-01", note: null }),
+  );
+  assert.deepEqual(pay, { ok: true });
+  debtors = await asTrainer((tx) => listDebtors(tx, T));
+  assert.equal(debtors[0].total, 4000);
+  assert.deepEqual(
+    debtors[0].packages.map((p) => p.id),
+    [newer],
+    "fully paid package drops off",
+  );
+
+  // A package sold without a price accepts any amount; so does a payment with no package.
+  const free = await asTrainer((tx) =>
+    sellPackage(tx, T, {
+      clientId: ali.id,
+      templateId: null,
+      name: "Deneme",
+      sessionType: "private",
+      totalSessions: 1,
+      startsOn: "2026-10-01",
+      expiresOn: null,
+      price: 0,
+      makeupAllowance: 0,
+      payment: null,
+    }),
+  );
+  assert.deepEqual(
+    await asTrainer((tx) =>
+      recordPayment(tx, T, { clientId: ali.id, clientPackageId: free, amount: 300, method: "cash", paidOn: "2026-10-02", note: null }),
+    ),
+    { ok: true },
+  );
+  assert.deepEqual(
+    await asTrainer((tx) =>
+      recordPayment(tx, T, { clientId: ali.id, clientPackageId: null, amount: 750, method: "bank_transfer", paidOn: "2026-10-02", note: "tek ders" }),
+    ),
+    { ok: true },
+  );
+  const recent = await asTrainer((tx) => listRecentPayments(tx, T, { clientId: ali.id }));
+  assert.deepEqual(
+    recent.map((p) => String(p.amount)).sort(),
+    ["300.00", "750.00"],
+  );
+  console.log("payments: overpay blocked, debts follow payments, unpriced and package-less payments allowed");
+
   // Another trainer's attendee id is invisible (RLS) → null, nothing changed.
   await addUsers(pg, [{ id: "00000000-0000-0000-0000-0000000000b2" }]);
   const other = await db.transaction(async (tx) => {
@@ -195,7 +265,15 @@ async function main() {
     return setAttendance(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", aAtt.id, "attended");
   });
   assert.equal(other, null);
-  console.log("cross-tenant attendance blocked\n\nall logic checks passed");
+  const [someone] = await asTrainer((tx) => listRecentPayments(tx, T, { limit: 1 }));
+  const deletedByOther = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b2', true)`);
+    await tx.execute(sql`set local role authenticated`);
+    return deletePayment(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", someone.id);
+  });
+  assert.equal(deletedByOther, null);
+  assert.ok(await asTrainer((tx) => deletePayment(tx, T, someone.id)), "owner can delete");
+  console.log("cross-tenant attendance and payment delete blocked\n\nall logic checks passed");
 }
 
 main().catch((e) => {

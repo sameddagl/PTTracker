@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PAYMENT_METHOD_LABELS, SESSION_TYPE_LABELS, formatShortDate, formatTRY } from "@/lib/format";
 import { parseTRY, type FormState } from "@/lib/forms";
+import { submitWithoutReset } from "@/lib/use-form-submit";
 import { cn } from "@/lib/utils";
 import { sellPackageAction, type SellField } from "./actions";
 
@@ -64,7 +65,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
   const price = parseTRY(values.price);
 
   return (
-    <form action={action} className="flex flex-col gap-6" noValidate>
+    <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="clientId" value={clientId} />
       <input type="hidden" name="templateId" value={values.templateId} />
       <FormError message={e.clientId ?? e.templateId} />

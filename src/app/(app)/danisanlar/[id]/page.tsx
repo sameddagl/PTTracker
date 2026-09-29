@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
-import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus } from "lucide-react";
+import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { listRecentPayments } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
 import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessons } from "@/db/schema";
 import {
   ATTENDANCE_LABELS,
+  PAYMENT_METHOD_LABELS,
   SESSION_TYPE_LABELS,
   formatDayMonth,
   formatShortDate,
@@ -70,12 +72,14 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
       .where(eq(lessonAttendees.clientId, id))
       .orderBy(desc(lessons.startsAt))
       .limit(10);
+    const paymentHistory = await listRecentPayments(tx, trainerId, { clientId: id, limit: 10 });
     const { timezone } = await getTrainer(tx, trainerId);
-    return { client, packages, history, timezone };
+    return { client, packages, history, paymentHistory, timezone };
   });
   if (!data) notFound();
 
-  const { client, packages, history, timezone } = data;
+  const { client, packages, history, paymentHistory, timezone } = data;
+  const totalDue = packages.filter((p) => p.state !== "cancelled").reduce((sum, p) => sum + Number(p.due), 0);
   const wa = whatsappLink(client.phone, `Merhaba ${client.fullName.split(" ")[0]},`);
 
   return (
@@ -102,6 +106,12 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           <Link href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
             <CalendarPlus />
             Ders ekle
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}>
+            <Wallet />
+            Ödeme al{totalDue > 0 && ` · ${formatTRY(totalDue)}`}
           </Link>
         </Button>
         {wa && (
@@ -175,6 +185,26 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           </ul>
         )}
       </section>
+
+      {paymentHistory.length > 0 && (
+        <section aria-labelledby="payments-heading" className="mb-8">
+          <h2 id="payments-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+            Ödemeler
+          </h2>
+          <ul className="divide-y rounded-xl border">
+            {paymentHistory.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                <span className="w-16 shrink-0 tabular-nums">{formatShortDate(p.paidOn)}</span>
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                  {PAYMENT_METHOD_LABELS[p.method]}
+                  {p.packageName && ` · ${p.packageName}`}
+                </span>
+                <span className="font-medium tabular-nums">{formatTRY(p.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {(client.notes || client.healthNotes) && (
         <Card>
