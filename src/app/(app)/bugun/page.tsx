@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { getPackageAlerts, getTodayLessons, getTrainer, type PackageAlert } from "@/db/queries";
+import { getLessons } from "@/db/lessons";
+import { getPackageAlerts, getTrainer, type PackageAlert } from "@/db/queries";
 import {
   SESSION_TYPE_LABELS,
   formatLongDate,
@@ -13,9 +14,10 @@ import {
   formatTRY,
   formatTime,
   greeting,
+  todayISO,
 } from "@/lib/format";
 import { messages, whatsappLink } from "@/lib/whatsapp";
-import { AttendanceRow } from "./attendance-row";
+import { AttendanceRow } from "@/components/attendance-row";
 
 export const metadata: Metadata = { title: "Bugün" };
 
@@ -23,7 +25,8 @@ export default async function TodayPage() {
   const { trainer, lessons, alerts } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
-    const lessons = await getTodayLessons(tx, trainer);
+    const today = todayISO(trainer.timezone);
+    const lessons = await getLessons(tx, trainer, { from: today, to: today });
     const alerts = await getPackageAlerts(tx, trainer);
     return { trainer, lessons, alerts };
   });
@@ -65,12 +68,12 @@ export default async function TodayPage() {
               <li key={l.lessonId}>
                 <Card className="gap-3 py-4">
                   <CardContent className="flex flex-col gap-4 px-4">
-                    <div className="flex items-baseline gap-2">
+                    <Link href={`/ders/${l.lessonId}`} className="flex items-baseline gap-2 hover:underline">
                       <span className="text-base font-semibold tabular-nums">
                         {formatTime(l.startsAt, trainer.timezone)}–{formatTime(l.endsAt, trainer.timezone)}
                       </span>
                       <span className="text-xs text-muted-foreground">{SESSION_TYPE_LABELS[l.sessionType]}</span>
-                    </div>
+                    </Link>
                     {l.attendees.length === 0 ? (
                       <p className="text-sm text-muted-foreground">{l.title || "Danışan eklenmemiş"}</p>
                     ) : (

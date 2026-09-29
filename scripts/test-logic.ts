@@ -4,7 +4,19 @@ import assert from "node:assert/strict";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import type { Tx } from "../src/db";
-import { createLesson, setAttendance } from "../src/db/lessons";
+import {
+  cancelLessons,
+  createLessons,
+  findConflicts,
+  getLesson,
+  getLessons,
+  lessonDates,
+  rescheduleLesson,
+  restoreLesson,
+  setAttendance,
+} from "../src/db/lessons";
+import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
+import { recurringDates, startOfWeek } from "../src/lib/dates";
 import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
 import { deletePayment, listDebtors, listRecentPayments, recordPayment } from "../src/db/payments";
 import * as schema from "../src/db/schema";
@@ -88,7 +100,8 @@ async function main() {
 
   // Lesson in the trainer's timezone: 10:00 Istanbul = 07:00 UTC.
   const lessonId = await asTrainer((tx) =>
-    createLesson(tx, trainer, {
+    createLessons(tx, trainer, {
+      repeat: null,
       date: "2026-10-05",
       time: "10:00",
       durationMinutes: 50,
@@ -115,7 +128,8 @@ async function main() {
   // A booked lesson reserves a credit: with 2 total and 1 booked, the next
   // booking still fits the older package, the third moves to the newer one.
   const second = await asTrainer((tx) =>
-    createLesson(tx, trainer, {
+    createLessons(tx, trainer, {
+      repeat: null,
       date: "2026-10-06",
       time: "10:00",
       durationMinutes: 50,
@@ -126,7 +140,8 @@ async function main() {
     }),
   );
   const third = await asTrainer((tx) =>
-    createLesson(tx, trainer, {
+    createLessons(tx, trainer, {
+      repeat: null,
       date: "2026-10-07",
       time: "10:00",
       durationMinutes: 50,
@@ -156,7 +171,8 @@ async function main() {
   assert.equal(r?.makeupUsed, true);
 
   const fourth = await asTrainer((tx) =>
-    createLesson(tx, trainer, {
+    createLessons(tx, trainer, {
+      repeat: null,
       date: "2026-10-08",
       time: "10:00",
       durationMinutes: 50,
@@ -256,6 +272,107 @@ async function main() {
     ["300.00", "750.00"],
   );
   console.log("payments: overpay blocked, debts follow payments, unpriced and package-less payments allowed");
+
+  // ---- Calendar: series, conflicts, cancel/restore, reschedule ----
+  assert.deepEqual(recurringDates("2026-10-05", "2026-10-18", [2, 4]), ["2026-10-06", "2026-10-08", "2026-10-13", "2026-10-15"]);
+  assert.equal(startOfWeek("2026-10-04"), "2026-09-28", "Sunday belongs to the week starting Monday");
+  assert.deepEqual(
+    lessonDates({ date: "2026-10-06", repeat: { weekdays: [2, 4], weeks: 2 } }),
+    ["2026-10-06", "2026-10-08", "2026-10-13", "2026-10-15"],
+  );
+
+  const [mert] = await asTrainer((tx) =>
+    tx.insert(schema.clients).values({ trainerId: T, fullName: "Mert" }).returning({ id: schema.clients.id }),
+  );
+  const mertPkg = await asTrainer((tx) =>
+    sellPackage(tx, T, {
+      clientId: mert.id,
+      templateId: null,
+      name: "3 Ders",
+      sessionType: "private",
+      totalSessions: 3,
+      startsOn: "2026-11-01",
+      expiresOn: null,
+      price: 0,
+      makeupAllowance: 0,
+      payment: null,
+    }),
+  );
+  const series = {
+    date: "2026-11-03", // Tuesday
+    time: "18:00",
+    durationMinutes: 60,
+    sessionType: "private" as const,
+    clientIds: [mert.id],
+    status: "scheduled" as const,
+    note: null,
+    repeat: { weekdays: [2, 4], weeks: 2 },
+  };
+  const firstOfSeries = await asTrainer((tx) => createLessons(tx, trainer, series));
+  const mertLessons = await asTrainer((tx) => getLessons(tx, trainer, { from: "2026-11-01", to: "2026-11-30" }));
+  const mine = mertLessons.filter((l) => l.attendees.some((a) => a.clientId === mert.id));
+  assert.deepEqual(
+    mine.map((l) => `${l.localDate} ${l.startMinute}`),
+    ["2026-11-03 1080", "2026-11-05 1080", "2026-11-10 1080", "2026-11-12 1080"],
+    "4 occurrences at 18:00 local",
+  );
+  assert.ok(mine.every((l) => l.seriesId && l.seriesId === mine[0].seriesId), "all share one series");
+  // 3-lesson package: the first three occurrences draw from it, the fourth has no package.
+  assert.deepEqual(
+    mine.map((l) => (l.attendees[0].remaining === null ? "none" : "pkg")),
+    ["pkg", "pkg", "pkg", "none"],
+  );
+  console.log("series: weekly occurrences created, package credits reserved in order");
+
+  // Conflicts: 18:30 on the 5th overlaps; 19:00 (back-to-back) does not.
+  let conflicts = await asTrainer((tx) =>
+    findConflicts(tx, trainer, { dates: ["2026-11-05", "2026-11-06"], time: "18:30", durationMinutes: 60 }),
+  );
+  assert.deepEqual(conflicts.map((c) => c.date), ["2026-11-05"]);
+  assert.equal(conflicts[0].names, "Mert");
+  conflicts = await asTrainer((tx) => findConflicts(tx, trainer, { dates: ["2026-11-05"], time: "19:00", durationMinutes: 60 }));
+  assert.equal(conflicts.length, 0, "back-to-back is fine");
+  conflicts = await asTrainer((tx) =>
+    findConflicts(tx, trainer, { dates: ["2026-11-03"], time: "18:15", durationMinutes: 30, excludeLessonId: firstOfSeries }),
+  );
+  assert.equal(conflicts.length, 0, "a lesson doesn't conflict with itself when moved");
+  console.log("conflicts: overlap detected in trainer timezone, edges and self excluded");
+
+  // Cancel the second occurrence and everything after: reserved credits are released.
+  const second2 = mine[1].lessonId;
+  assert.equal(await asTrainer((tx) => cancelLessons(tx, T, second2, { following: true })), 3);
+  let bal = await balance(mertPkg);
+  assert.equal(bal.scheduledSessions, 1, "only the first occurrence still holds a credit");
+  assert.equal(bal.remainingSessions, 3, "trainer-side cancel burns nothing");
+  const cancelledNow = await asTrainer((tx) => getLessons(tx, trainer, { from: "2026-11-01", to: "2026-11-30" }));
+  assert.equal(cancelledNow.filter((l) => l.attendees.some((a) => a.clientId === mert.id)).length, 1, "hidden unless includeCancelled");
+
+  assert.equal(await asTrainer((tx) => restoreLesson(tx, T, second2)), true);
+  bal = await balance(mertPkg);
+  assert.equal(bal.scheduledSessions, 2);
+  console.log("cancel following + restore: credits released and re-reserved");
+
+  // Reschedule the first occurrence to 09:30 local next day.
+  assert.equal(
+    await asTrainer((tx) => rescheduleLesson(tx, trainer, firstOfSeries, { date: "2026-11-04", time: "09:30", durationMinutes: 45 })),
+    true,
+  );
+  const moved = await asTrainer((tx) => getLesson(tx, trainer, firstOfSeries));
+  assert.deepEqual([moved?.localDate, moved?.startMinute, moved?.durationMinutes], ["2026-11-04", 570, 45]);
+  console.log("reschedule: moved in local time");
+
+  // Overlapping lessons get side-by-side lanes.
+  const fake = (id: string, start: number, dur: number) =>
+    ({ lessonId: id, startMinute: start, durationMinutes: dur }) as Parameters<typeof layoutDay>[0][number];
+  const lanes = layoutDay([fake("a", 600, 60), fake("b", 630, 60), fake("c", 720, 30)]);
+  assert.deepEqual(
+    lanes.map((p) => [p.lesson.lessonId, p.lane, p.lanes]),
+    [
+      ["a", 0, 2],
+      ["b", 1, 2],
+      ["c", 0, 1],
+    ],
+  );
 
   // Another trainer's attendee id is invisible (RLS) → null, nothing changed.
   await addUsers(pg, [{ id: "00000000-0000-0000-0000-0000000000b2" }]);

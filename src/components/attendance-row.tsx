@@ -3,11 +3,11 @@
 import { useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import type { TodayAttendee } from "@/db/queries";
+import type { CalendarAttendee } from "@/db/lessons";
 import { cn } from "@/lib/utils";
-import { markAttendanceAction } from "./actions";
+import { markAttendanceAction } from "@/app/(app)/bugun/actions";
 
-type Status = TodayAttendee["status"];
+type Status = CalendarAttendee["status"];
 
 const OPTIONS: { status: Status; label: string; active: string }[] = [
   { status: "attended", label: "Geldi", active: "border-emerald-600 bg-emerald-600 text-white" },
@@ -16,7 +16,7 @@ const OPTIONS: { status: Status; label: string; active: string }[] = [
   { status: "cancelled", label: "İptal", active: "border-foreground/40 bg-muted text-foreground" },
 ];
 
-export function AttendanceRow({ attendee }: { attendee: TodayAttendee }) {
+export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
   const [optimistic, setOptimistic] = useOptimistic(attendee.status);
   const [pending, startTransition] = useTransition();
   // Updated from the action result, so the count changes without waiting for the page refresh.

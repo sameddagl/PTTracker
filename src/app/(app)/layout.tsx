@@ -17,7 +17,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </Link>
         <SideNav />
       </aside>
-      <main className="mx-auto w-full max-w-3xl px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-28 md:px-8 md:pt-8 md:pb-12">
+      {/* Pages opt into a wider column by rendering an element with data-wide (the week calendar). */}
+      <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-28 md:px-8 md:pt-8 md:pb-12">
         {children}
       </main>
       <BottomNav />

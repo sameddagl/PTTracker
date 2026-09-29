@@ -7,13 +7,14 @@ import { withTrainer } from "@/db";
 import { listClientOptions } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { safeNext } from "@/lib/config";
+import { isISODate } from "@/lib/dates";
 import { nextHourISO, todayISO } from "@/lib/format";
 import { LessonForm } from "./lesson-form";
 
 export const metadata: Metadata = { title: "Ders ekle" };
 
 export default async function NewLessonPage({ searchParams }: PageProps<"/ders/yeni">) {
-  const { danisan, next } = await searchParams;
+  const { danisan, next, tarih, saat } = await searchParams;
   const { clients, trainer } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     const clients = await listClientOptions(tx, trainerId);
@@ -41,7 +42,8 @@ export default async function NewLessonPage({ searchParams }: PageProps<"/ders/y
           clients={clients}
           preselected={preselected}
           today={todayISO(trainer.timezone)}
-          defaultTime={nextHourISO(trainer.timezone)}
+          defaultDate={isISODate(tarih) ? tarih : todayISO(trainer.timezone)}
+          defaultTime={typeof saat === "string" && /^\d{2}:\d{2}$/.test(saat) ? saat : nextHourISO(trainer.timezone)}
           next={back}
         />
       )}

@@ -20,6 +20,8 @@ export async function markAttendanceAction(attendeeId: string, status: string): 
   if (!result) return { error: "Kayıt bulunamadı." };
 
   revalidatePath("/bugun");
+  revalidatePath("/takvim");
+  revalidatePath("/ders", "layout");
   revalidatePath("/danisanlar", "layout");
   return result;
 }
