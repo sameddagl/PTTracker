@@ -8,6 +8,7 @@ import { approveApplication, getApplication, rejectApplication } from "@/db/appl
 import { createPortalLink, getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
 import { layout, sendMail } from "@/lib/mail";
+import { notifyClient } from "@/lib/notify";
 import { portalUrl } from "@/lib/portal";
 
 export type DecisionState = { error?: string };
@@ -29,11 +30,13 @@ export async function approveApplicationAction(_prev: DecisionState, formData: F
     if (!approved) return null;
     const app = await getApplication(tx, trainerId, id.data);
     const link = (await getActivePortalLink(tx, approved.clientId)) ?? (await createPortalLink(tx, trainerId, approved.clientId));
-    return { app: app!, trainerName: trainer.businessName || trainer.fullName, token: link.token };
+    return { app: app!, trainerId, trainerName: trainer.businessName || trainer.fullName, token: link.token };
   });
   if (!result) return { error: "Başvuru bulunamadı ya da zaten karara bağlanmış." };
 
-  const { app, trainerName, token } = result;
+  const { app, trainerId, trainerName, token } = result;
+  // Push only reaches a client who turned notifications on earlier (e.g. a renewal request).
+  await notifyClient({ trainerId, clientId: app.clientId }, { title: "Başvurun onaylandı 🎉", body: `${trainerName}, ${app.packageName} başvurunu onayladı.`, hash: "#paketler" });
   let emailed = false;
   if (app.clientEmail) {
     const { html, text } = layout({

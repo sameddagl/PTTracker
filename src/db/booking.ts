@@ -251,6 +251,7 @@ export async function upcomingForClient(tx: Tx, who: Who) {
       sessionType: lessons.sessionType,
       title: lessons.title,
       lateCancelHours: trainers.lateCancelHours,
+      confirmedAt: lessonAttendees.confirmedAt,
     })
     .from(lessonAttendees)
     .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
@@ -266,5 +267,9 @@ export async function upcomingForClient(tx: Tx, who: Who) {
     )
     .orderBy(asc(lessons.startsAt))
     .limit(10);
-  return rows.map((r) => ({ ...r, lateIfCancelledNow: r.startsAt.getTime() - Date.now() < r.lateCancelHours * 3_600_000 }));
+  return rows.map(({ confirmedAt, ...r }) => ({
+    ...r,
+    confirmed: confirmedAt !== null,
+    lateIfCancelledNow: r.startsAt.getTime() - Date.now() < r.lateCancelHours * 3_600_000,
+  }));
 }

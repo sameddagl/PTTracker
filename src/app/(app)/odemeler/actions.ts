@@ -10,6 +10,7 @@ import { getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
 import { clients } from "@/db/schema";
 import { layout, sendMail } from "@/lib/mail";
+import { notifyClient as pushClient } from "@/lib/notify";
 import { portalUrl } from "@/lib/portal";
 import { safeNext } from "@/lib/config";
 import { formatTRY } from "@/lib/format";
@@ -79,8 +80,9 @@ async function notifyClient(clientId: string, heading: string, lines: string[]) 
     const [c] = await tx.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
     const trainer = await getTrainer(tx, trainerId);
     const link = await getActivePortalLink(tx, clientId);
-    return { email: c?.email ?? null, trainerName: trainer.businessName || trainer.fullName, token: link?.token ?? null };
+    return { trainerId, email: c?.email ?? null, trainerName: trainer.businessName || trainer.fullName, token: link?.token ?? null };
   });
+  await pushClient({ trainerId: info.trainerId, clientId }, { title: heading, body: lines[0], hash: "#paketler", tag: `payment-${clientId}` });
   if (!info.email) return;
   const { html, text } = layout({
     heading,

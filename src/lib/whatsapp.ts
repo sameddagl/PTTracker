@@ -43,4 +43,8 @@ export const messages = {
   portalInvite: (name: string, url: string) =>
     `Merhaba ${firstName(name)}, kalan derslerini, randevularını ve ödeme durumunu buradan görebilirsin: ${url}`,
   reminder: (name: string, when: string) => `Merhaba ${firstName(name)}, ${when} dersimizi hatırlatırım. Görüşmek üzere!`,
+  confirmAsk: (name: string, when: string) =>
+    `Merhaba ${firstName(name)}, ${when} dersin var. Gelebilecek misin? Sayfandan tek dokunuşla onaylayabilirsin.`,
+  missYou: (name: string) =>
+    `Merhaba ${firstName(name)}, bir süredir görüşemedik. Bu hafta bir ders planlayalım mı? 🙂`,
 };

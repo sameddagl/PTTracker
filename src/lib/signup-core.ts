@@ -3,7 +3,7 @@ import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import type { Tx } from "@/db";
 import { saveIntakeAnswers, toDef, type IntakeField } from "@/db/intake";
 import { createPortalLink, getActivePortalLink } from "@/db/portal";
-import { applications, clients, consents } from "@/db/schema";
+import { applications, clients, consents, packageTemplates } from "@/db/schema";
 import { LEGAL } from "./legal";
 import { answerName, parseAnswer, type IntakeValue } from "./intake";
 import { paymentOptions, type PricedTemplate } from "./pricing";
@@ -86,7 +86,11 @@ export function validateSignup(form: SignupForm, formData: FormData): { data: Si
  * an application, saves answers and consents, and returns their portal link.
  * Rate-limited per phone and per trainer.
  */
-export async function recordSignup(tx: Tx, trainerId: string, d: SignupData): Promise<{ limited: true } | { limited: false; token: string }> {
+export async function recordSignup(
+  tx: Tx,
+  trainerId: string,
+  d: SignupData,
+): Promise<{ limited: true; trialUsed?: boolean } | { limited: false; token: string }> {
   const [{ recentFromPhone, recentTotal }] = await tx
     .select({
       recentFromPhone: sql<number>`count(*) filter (where ${clients.phone} = ${d.phone})::int`,
@@ -111,6 +115,20 @@ export async function recordSignup(tx: Tx, trainerId: string, d: SignupData): Pr
     )
     .orderBy(sql`${clients.archivedAt} is not null`, desc(clients.createdAt))
     .limit(1);
+
+  // A trial lesson is once per person (same phone): not for anyone who already has a package or applied before.
+  const [tpl] = await tx.select({ isTrial: packageTemplates.isTrial }).from(packageTemplates).where(eq(packageTemplates.id, d.templateId));
+  if (tpl?.isTrial && existing) {
+    const [history] = await tx
+      .select({ n: sql<number>`(
+        (select count(*) from client_packages cp where cp.client_id = ${existing.id})
+        + (select count(*) from applications a where a.client_id = ${existing.id}
+             and (a.status = 'approved' or (a.status = 'pending' and a.template_id <> ${d.templateId})))
+      )::int` })
+      .from(clients)
+      .where(eq(clients.id, existing.id));
+    if ((history?.n ?? 0) > 0) return { limited: true, trialUsed: true };
+  }
 
   let clientId: string;
   if (existing) {

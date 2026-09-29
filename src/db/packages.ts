@@ -37,6 +37,8 @@ export type TemplateInput = {
   installments: number;
   makeupAllowance: number;
   isPublic: boolean;
+  /** A one-off trial lesson: shown first on the public page, once per person. */
+  isTrial: boolean;
   description: string | null;
   features: string[];
 };

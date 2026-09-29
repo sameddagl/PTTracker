@@ -18,6 +18,7 @@ const FIELDS = [
   "installments",
   "makeupAllowance",
   "isPublic",
+  "isTrial",
   "description",
   "features",
 ] as const;
@@ -48,6 +49,7 @@ const templateSchema = z
     installments: intIn(1, 12, "Taksit sayısı 1–12 olmalı."),
     makeupAllowance: intIn(0, 50, "Telafi hakkı 0 ile 50 arasında olmalı."),
     isPublic: z.string().transform((v) => v === "on"),
+    isTrial: z.string().transform((v) => v === "on"),
     description: z
       .string()
       .trim()

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, CalendarPlus, MessageCircle, Sunrise, Users, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, CalendarPlus, MessageCircle, Sunrise, Users, Wallet } from "lucide-react";
 import { StatTile } from "@/components/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { ApplicationsBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
+import { LOST_AFTER_DAYS, lostClients, tomorrowAttendees } from "@/db/engagement";
 import { ensureGroupOccurrences } from "@/db/groups";
 import { getLessons } from "@/db/lessons";
 import { countPendingPayments, getPaymentSummary } from "@/db/payments";
@@ -27,6 +28,7 @@ import { siteUrl } from "@/lib/config";
 import { buildGuide, guideMode } from "@/lib/guide";
 import { portalUrl } from "@/lib/portal";
 import { cn } from "@/lib/utils";
+import { whenPhrase } from "@/lib/when";
 import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
 import { AttendanceRow } from "@/components/attendance-row";
 import { Avatar } from "@/components/avatar";
@@ -36,20 +38,24 @@ import { GettingStarted, GuideComplete } from "./getting-started";
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
     await ensureGroupOccurrences(tx, trainer);
     const lessons = await getLessons(tx, trainer, { from: today, to: today });
     const alerts = await getPackageAlerts(tx, trainer);
-    const portals = await getActivePortalTokens(tx, [...new Set(alerts.map((a) => a.clientId))]);
+    const tomorrow = await tomorrowAttendees(tx, trainer);
+    const lost = await lostClients(tx, trainer, 5);
+    const portals = await getActivePortalTokens(tx, [
+      ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId)]),
+    ]);
     const pending = await countPendingApplications(tx, trainerId);
     const pendingPayments = await countPendingPayments(tx, trainerId);
     const money = await getPaymentSummary(tx, trainer);
     // Skip the checklist counts once the trainer has hidden it.
     const guideFacts = trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
-    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts };
+    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost };
   });
 
   const now = new Date();
@@ -169,6 +175,58 @@ export default async function TodayPage() {
         )}
       </section>
 
+      {tomorrow.length > 0 && (
+        <section aria-labelledby="tomorrow-heading" className="mb-8">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h2 id="tomorrow-heading" className="text-base font-semibold">
+              Yarın gelecekler
+            </h2>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {tomorrow.filter((t) => t.confirmed).length}/{tomorrow.length} onayladı
+            </span>
+          </div>
+          <ul className="divide-y overflow-hidden surface">
+            {tomorrow.map((t) => {
+              const token = portals.get(t.clientId);
+              const ask = t.confirmed
+                ? null
+                : whatsappLink(t.phone, withPortal(messages.confirmAsk(t.name, whenPhrase(t.startsAt, trainer.timezone)), token && portalUrl(token)));
+              return (
+                <li key={t.attendeeId} className="flex items-center gap-3 px-4 py-3">
+                  <Avatar name={t.name} />
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/danisanlar/${t.clientId}`} className="block truncate font-medium hover:underline">
+                      {t.name}
+                    </Link>
+                    <p className="truncate text-xs text-muted-foreground tabular-nums">
+                      {formatTime(t.startsAt, trainer.timezone)}
+                      {t.title && <> · {t.title}</>}
+                    </p>
+                  </div>
+                  {t.confirmed ? (
+                    <Badge variant="success">
+                      <Check aria-hidden />
+                      Onayladı
+                    </Badge>
+                  ) : (
+                    <>
+                      <span className="text-xs text-muted-foreground max-sm:sr-only">Yanıt bekleniyor</span>
+                      {ask && (
+                        <Button asChild size="icon" variant="outline" aria-label={`${t.name} için WhatsApp'tan onay iste`}>
+                          <a href={ask} target="_blank" rel="noopener noreferrer">
+                            <MessageCircle />
+                          </a>
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="alerts-heading">
         <h2 id="alerts-heading" className="mb-3 text-base font-semibold">
           Dikkat edilecekler
@@ -185,6 +243,38 @@ export default async function TodayPage() {
           </ul>
         )}
       </section>
+
+      {lost.length > 0 && (
+        <section aria-labelledby="lost-heading" className="mt-8">
+          <h2 id="lost-heading" className="mb-1 text-base font-semibold">
+            Bir süredir gelmeyenler
+          </h2>
+          <p className="mb-3 text-sm text-muted-foreground">{LOST_AFTER_DAYS} günden uzun süredir dersi olmayan ve randevusu bulunmayan danışanlar.</p>
+          <ul className="divide-y overflow-hidden surface">
+            {lost.map((c) => {
+              const href = whatsappLink(c.phone, messages.missYou(c.name));
+              return (
+                <li key={c.clientId} className="flex items-center gap-3 px-4 py-3">
+                  <Avatar name={c.name} />
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/danisanlar/${c.clientId}`} className="block truncate font-medium hover:underline">
+                      {c.name}
+                    </Link>
+                    <p className="truncate text-xs text-muted-foreground">Son ders {formatShortDate(c.lastLessonOn)}</p>
+                  </div>
+                  {href && (
+                    <Button asChild size="icon" variant="outline" aria-label={`${c.name} ile WhatsApp'ta yazış`}>
+                      <a href={href} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle />
+                      </a>
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

@@ -11,6 +11,7 @@ import { clients } from "@/db/schema";
 import { siteUrl } from "@/lib/config";
 import { formatTRY, todayISO } from "@/lib/format";
 import { layout, sendMail } from "@/lib/mail";
+import { pushTrainer } from "@/lib/notify";
 import { resolvePortalToken } from "@/lib/portal";
 
 export type ReportState = { errors?: Record<string, string>; savedAt?: number };
@@ -66,6 +67,7 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
     .from(clients)
     .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
     .where(eq(clients.id, link.clientId));
+  if (who) await pushTrainer(link.trainerId, `Ödeme bildirimi: ${who.name}`, `${label} için havale yaptığını bildirdi.`, "/odemeler");
   if (who?.trainerEmail) {
     const { html, text } = layout({
       heading: "Ödeme bildirimi",
@@ -99,6 +101,7 @@ export async function requestPackageAction(
         not_found: "Bu paket artık satışta değil.",
         already: "Bu paket için başvurun zaten onay bekliyor.",
         limited: "Bugün yeterince başvuru yaptın. Yarın tekrar deneyebilirsin.",
+        trial: "Deneme dersi yalnızca ilk kez gelenler için.",
         option: "Ödeme şeklini seç.",
       }[result.reason],
     };
@@ -109,6 +112,7 @@ export async function requestPackageAction(
     .from(clients)
     .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
     .where(eq(clients.id, link.clientId));
+  if (who) await pushTrainer(link.trainerId, `Paket talebi: ${who.name}`, `${result.packageName} paketini almak istiyor.`, "/danisanlar/basvurular");
   if (who?.trainerEmail) {
     const { html, text } = layout({
       heading: "Yeni paket talebi",

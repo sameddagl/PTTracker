@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, gte, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { cache } from "react";
 import { adminDb } from "@/db";
 import { groupClasses, packageTemplates, trainers } from "@/db/schema";
@@ -46,6 +46,7 @@ export const getPublicPage = cache(async (slug: string) => {
       description: packageTemplates.description,
       features: packageTemplates.features,
       installments: packageTemplates.installments,
+      isTrial: packageTemplates.isTrial,
     })
     .from(packageTemplates)
     .where(
@@ -55,7 +56,8 @@ export const getPublicPage = cache(async (slug: string) => {
         eq(packageTemplates.isPublic, true),
       ),
     )
-    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.createdAt));
+    // Trial lessons first: they are the easiest yes for a newcomer.
+    .orderBy(desc(packageTemplates.isTrial), asc(packageTemplates.sortOrder), asc(packageTemplates.createdAt));
 
   // Weekly group schedule (live classes), a draw for people who see the page on Instagram.
   const groups = await adminDb

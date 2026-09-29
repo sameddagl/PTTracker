@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, MessagesSquare, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { PushToggle } from "@/components/push-toggle";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
 import { siteUrl } from "@/lib/config";
 import { signOut } from "../../giris/actions";
 import { DeleteAccount } from "./delete-account";
+import { subscribeTrainerAction, unsubscribeTrainerAction } from "./push-actions";
 
 export const metadata: Metadata = { title: "Ayarlar" };
 
@@ -28,6 +30,7 @@ export default async function SettingsPage() {
       title: "Profil ve sayfam",
       hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
     },
+    { href: "/mesajlar", icon: MessagesSquare, title: "Mesajlar", hint: "Danışanlarınla uygulama içinden yazış" },
     { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
     { href: "/takvim/grup", icon: UsersRound, title: "Grup dersleri", hint: "Kapasite ve sabit yerler" },
     {
@@ -74,6 +77,12 @@ export default async function SettingsPage() {
           </section>
         )}
 
+        <PushToggle
+          subscribe={subscribeTrainerAction}
+          unsubscribe={unsubscribeTrainerAction}
+          description="Yeni başvuru, randevu, iptal, ödeme bildirimi, mesaj ve pazartesi haftalık özetin bu cihaza gelsin."
+        />
+
         <ul className="divide-y overflow-hidden surface">
           {rows.map(({ href, icon: Icon, title, hint }) => (
             <li key={href}>
@@ -89,6 +98,18 @@ export default async function SettingsPage() {
               </Link>
             </li>
           ))}
+          <li>
+            {/* A plain link, so the browser downloads the file instead of routing to it. */}
+            <a href="/ayarlar/disa-aktar" download className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted [&_svg]:size-[18px]">
+                <Download aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">Verilerini dışa aktar</span>
+                <span className="block truncate text-xs text-muted-foreground">Excel dosyası: danışanlar, paketler, dersler, ödemeler</span>
+              </span>
+            </a>
+          </li>
         </ul>
 
         <form action={signOut}>

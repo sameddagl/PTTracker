@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { paymentOptions, pickOption } from "@/lib/pricing";
 import type { Tx } from "./index";
 import { expiryFor, sellPackage } from "./packages";
-import { applications, clients, packageTemplates } from "./schema";
+import { applications, clientPackages, clients, packageTemplates } from "./schema";
 
 type TrainerRef = { id: string; timezone: string };
 
@@ -135,7 +135,7 @@ export async function rejectApplication(tx: Tx, trainerId: string, id: string) {
 
 export type RequestResult =
   | { ok: true; packageName: string }
-  | { ok: false; reason: "not_found" | "already" | "limited" | "option" };
+  | { ok: false; reason: "not_found" | "already" | "limited" | "option" | "trial" };
 
 /**
  * An existing client asks for another package from their portal. Same review
@@ -155,10 +155,15 @@ export async function requestPackage(
         eq(packageTemplates.id, templateId),
         eq(packageTemplates.trainerId, who.trainerId),
         eq(packageTemplates.isActive, true),
-        eq(packageTemplates.isPublic, true),
       ),
     );
   if (!t) return { ok: false, reason: "not_found" };
+  const owned = await tx
+    .select({ templateId: clientPackages.templateId })
+    .from(clientPackages)
+    .where(and(eq(clientPackages.clientId, who.clientId), eq(clientPackages.trainerId, who.trainerId)));
+  // A hidden package can still be renewed by someone who already has it.
+  if (!t.isPublic && !owned.some((p) => p.templateId === templateId)) return { ok: false, reason: "not_found" };
   const options = paymentOptions(t);
   if (options.length > 0 && !options.some((o) => o.installments === installments)) return { ok: false, reason: "option" };
 
@@ -167,6 +172,9 @@ export async function requestPackage(
     .from(applications)
     .where(and(eq(applications.clientId, who.clientId), eq(applications.trainerId, who.trainerId)));
   if (mine.some((a) => a.status === "pending" && a.templateId === templateId)) return { ok: false, reason: "already" };
+  // A trial lesson is for newcomers only.
+  if (t.isTrial && (owned.length > 0 || mine.some((a) => a.status !== "rejected" || a.templateId === templateId)))
+    return { ok: false, reason: "trial" };
   // Same cap as sign-ups: three requests a day per person.
   if (mine.filter((a) => a.createdAt.getTime() > Date.now() - 86_400_000).length >= 3) return { ok: false, reason: "limited" };
 

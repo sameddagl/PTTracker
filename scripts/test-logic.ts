@@ -986,6 +986,7 @@ async function main() {
     installments: 1,
     makeupAllowance: 0,
     isPublic: true,
+    isTrial: false,
     description: null,
     features: [],
   };

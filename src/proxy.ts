@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // The trainer app. Everything else is public: landing, login, legal pages,
 // client portals (/p/…) and trainers' public pages (/<slug>).
-const PROTECTED_PREFIXES = ["/bugun", "/danisanlar", "/takvim", "/odemeler", "/ayarlar", "/paketler", "/ders", "/baslangic", "/yardim"];
+const PROTECTED_PREFIXES = ["/bugun", "/danisanlar", "/takvim", "/odemeler", "/ayarlar", "/paketler", "/ders", "/baslangic", "/yardim", "/mesajlar"];
 
 const isProtected = (path: string) => PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 

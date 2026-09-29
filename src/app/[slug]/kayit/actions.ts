@@ -8,6 +8,7 @@ import { siteUrl } from "@/lib/config";
 import { formatTRY } from "@/lib/format";
 import { pickOption } from "@/lib/pricing";
 import { layout, sendMail } from "@/lib/mail";
+import { pushTrainer } from "@/lib/notify";
 import { portalUrl } from "@/lib/portal";
 import { getPublicPage } from "@/lib/public-page";
 import { submitSignup, type SignupErrors } from "@/lib/signup";
@@ -41,6 +42,7 @@ export async function signupAction(slug: string, _prev: SignupState, formData: F
   }
 
   if (page) {
+    await pushTrainer(page.trainer.id, `Yeni başvuru: ${clientName}`, `${pkg?.name ?? "Bir paket"}${priceNote} için başvurdu.`, "/danisanlar/basvurular");
     const [trainerUser] = await adminDb.select({ email: authUsers.email }).from(authUsers).where(eq(authUsers.id, page.trainer.id));
     if (trainerUser?.email) {
       const { html, text } = layout({

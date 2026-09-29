@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Check, CheckCircle2, Hourglass, Lock, MessageCircle, Minus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { PushToggle } from "@/components/push-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,12 +20,25 @@ import { applicationOption, optionLabel } from "@/lib/pricing";
 import { UpcomingLessons } from "./booking-panel";
 import { LessonPicker } from "./lesson-picker";
 import { PackageShop } from "./package-shop";
+import { MessageThread } from "./message-thread";
 import { PaymentPanel } from "./payment-panel";
+import { subscribeClientAction, unsubscribeClientAction } from "./push-actions";
+import { RenewalOffer } from "./renewal-offer";
 import { cn } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
 
 // Personal links must never be indexed or leak through referrers.
-export const metadata: Metadata = { title: "Derslerim", robots: { index: false, follow: false }, referrer: "no-referrer" };
+export async function generateMetadata({ params }: PageProps<"/p/[token]">): Promise<Metadata> {
+  const { token } = await params;
+  return {
+    title: "Derslerim",
+    robots: { index: false, follow: false },
+    referrer: "no-referrer",
+    // "Ana ekrana ekle" opens this page, not the trainer app.
+    manifest: `/p/${token}/manifest.webmanifest`,
+    appleWebApp: { capable: true, title: "Derslerim", statusBarStyle: "default" },
+  };
+}
 
 export default async function PortalPage({ params, searchParams }: PageProps<"/p/[token]">) {
   const { token } = await params;
@@ -32,7 +46,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, pendingApplications, offers, reported, booking, bookable, groups } = data;
+  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups } = data;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
   const url = portalUrl(token);
@@ -150,8 +164,11 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
             Şu an aktif paketin yok.
           </p>
         ) : (
-          <section aria-label="Paketlerin" className="flex flex-col gap-3">
-            {packages.map((p) => (
+          <section id="paketler" aria-label="Paketlerin" className="flex scroll-mt-6 flex-col gap-3">
+            {packages.map((p) => {
+              const renew = renewable.find((r) => r.clientPackageId === p.id);
+              const renewPending = renew && pendingApplications.some((a) => a.templateId === renew.templateId);
+              return (
               <article key={p.id} className="flex flex-col gap-5 surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -197,8 +214,23 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
                     )}
                   </dl>
                 )}
+                {renew &&
+                  (renewPending ? (
+                    <p className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">
+                      <Hourglass className="size-4 shrink-0" aria-hidden />
+                      Yenileme isteğin eğitmeninin onayını bekliyor.
+                    </p>
+                  ) : (
+                    <RenewalOffer
+                      token={token}
+                      templateId={renew.templateId}
+                      installments={renew.installments}
+                      reason={renew.remaining <= 0 ? "Paketindeki dersler bitti." : renew.remaining <= 2 ? `${renew.remaining} dersin kaldı.` : "Paketinin süresi bitiyor."}
+                    />
+                  ))}
               </article>
-            ))}
+              );
+            })}
           </section>
         )}
 
@@ -265,6 +297,14 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
             </ul>
           </section>
         )}
+
+        <MessageThread token={token} initial={messages} trainerName={trainerName} timeZone={tz} />
+
+        <PushToggle
+          subscribe={subscribeClientAction.bind(null, token)}
+          unsubscribe={unsubscribeClientAction.bind(null, token)}
+          description="Ders hatırlatması, onaylar ve eğitmeninin mesajları telefonuna gelsin."
+        />
 
         <footer className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-center text-xs text-muted-foreground">
           <Lock className="size-3.5 shrink-0" aria-hidden />

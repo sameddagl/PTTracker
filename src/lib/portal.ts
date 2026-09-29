@@ -2,6 +2,8 @@ import "server-only";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { adminDb, type Tx } from "@/db";
 import { getBookingView, upcomingForClient } from "@/db/booking";
+import { renewablePackages } from "@/db/engagement";
+import { getClientThread } from "@/db/messages";
 import { getGroupView } from "@/db/groups";
 import { PORTAL_TOKEN_PATTERN, hashToken } from "@/db/portal";
 import {
@@ -139,6 +141,7 @@ export async function getPortalData(token: string) {
       compareAtPrice: packageTemplates.compareAtPrice,
       installmentPrice: packageTemplates.installmentPrice,
       installments: packageTemplates.installments,
+      isTrial: packageTemplates.isTrial,
     })
     .from(packageTemplates)
     .where(and(eq(packageTemplates.trainerId, link.trainerId), eq(packageTemplates.isActive, true), eq(packageTemplates.isPublic, true)))
@@ -165,12 +168,21 @@ export async function getPortalData(token: string) {
     .orderBy(desc(payments.createdAt));
 
   const who = { trainerId: link.trainerId, clientId: link.clientId };
-  const { groups, booking, bookable } = await adminDb.transaction(async (tx) => ({
+  const { groups, booking, bookable, messages } = await adminDb.transaction(async (tx) => ({
     // First: it creates this week's group lessons and places fixed members, which the list below shows.
     groups: await getGroupView(tx as unknown as Tx, who),
     booking: await getBookingView(tx as unknown as Tx, who),
     bookable: await upcomingForClient(tx as unknown as Tx, who),
+    messages: await getClientThread(tx as unknown as Tx, who),
   }));
+  const renewable = await renewablePackages(adminDb as unknown as Tx, who, client.timezone);
+  // Trials are for newcomers: hide them once the client has a package or has applied.
+  const [anyPackage] = await adminDb
+    .select({ id: clientPackages.id })
+    .from(clientPackages)
+    .where(eq(clientPackages.clientId, link.clientId))
+    .limit(1);
+  const newcomer = !anyPackage && appRows.every((a) => a.status === "rejected");
 
   await adminDb.update(portalTokens).set({ lastUsedAt: now }).where(eq(portalTokens.id, link.id));
 
@@ -181,7 +193,9 @@ export async function getPortalData(token: string) {
     recent,
     application: application ?? null,
     pendingApplications,
-    offers,
+    offers: offers.filter((o) => newcomer || !o.isTrial),
+    renewable,
+    messages,
     reported,
     booking,
     bookable,

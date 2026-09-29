@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
   formatDetection: { telephone: false },
   icons: { apple: "/pwa-icon/180" },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {

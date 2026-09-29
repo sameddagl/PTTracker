@@ -6,22 +6,26 @@ import { authUsers } from "drizzle-orm/supabase";
 import { z } from "zod";
 import { adminDb, type Tx } from "@/db";
 import { bookSlot, cancelBooking } from "@/db/booking";
+import { confirmAttendance } from "@/db/engagement";
 import { joinGroupLesson } from "@/db/groups";
 import { clients, trainers } from "@/db/schema";
 import { siteUrl } from "@/lib/config";
 import { dayLong } from "@/lib/dates";
 import { formatLongDate, formatTime } from "@/lib/format";
 import { layout, sendMail } from "@/lib/mail";
+import { pushTrainer } from "@/lib/notify";
 import { resolvePortalToken } from "@/lib/portal";
 import { toHHMM } from "@/lib/slots";
 
 async function notifyTrainer(clientId: string, heading: string, line: string) {
   const [who] = await adminDb
-    .select({ name: clients.fullName, email: authUsers.email })
+    .select({ name: clients.fullName, email: authUsers.email, trainerId: clients.trainerId })
     .from(clients)
     .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
     .where(eq(clients.id, clientId));
-  if (!who?.email) return;
+  if (!who) return;
+  await pushTrainer(who.trainerId, `${heading}: ${who.name}`, `${who.name} ${line}`, "/takvim");
+  if (!who.email) return;
   const { html, text } = layout({ heading, lines: [`${who.name} ${line}`], cta: { label: "Takvimi aç", url: `${siteUrl()}/takvim` } });
   await sendMail({ to: who.email, subject: `${heading}: ${who.name}`, html, text });
 }
@@ -97,6 +101,16 @@ export async function joinGroupAction(token: string, lessonId: string): Promise<
   const [trainer] = await adminDb.select({ tz: trainers.timezone }).from(trainers).where(eq(trainers.id, link.trainerId));
   const tz = trainer?.tz ?? "Europe/Istanbul";
   await notifyTrainer(link.clientId, "Grup dersine katılım", `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} ${result.title} dersine katıldı.`);
+  revalidatePath(`/p/${token}`);
+  return { ok: true };
+}
+
+/** "Geliyorum" on an upcoming lesson. */
+export async function confirmAttendanceAction(token: string, attendeeId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const link = await resolvePortalToken(token);
+  if (!link || !z.uuid().safeParse(attendeeId).success) return { ok: false, error: "Geçersiz istek." };
+  const done = await adminDb.transaction((tx) => confirmAttendance(tx as unknown as Tx, link, attendeeId));
+  if (!done) return { ok: false, error: "Bu ders artık onaylanamıyor." };
   revalidatePath(`/p/${token}`);
   return { ok: true };
 }

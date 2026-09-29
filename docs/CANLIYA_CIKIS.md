@@ -62,6 +62,18 @@
 | `NEXT_PUBLIC_SITE_URL` | `https://studyom.app` | canonical, OG ve danışan linkleri bununla oluşur |
 | `PORTAL_SECRET` | **yeni, rastgele, uzun** bir değer | Geliştirmedekiyle aynı olmasın. Sonradan değiştirilirse danışanlara gönderilmiş bütün linkler bozulur |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | Gmail (şimdilik) | `MAIL_FROM="Stüdyom <adres@gmail.com>"` |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | **canlı için yeni** anahtar çifti | Bildirimler için. `npx web-push generate-vapid-keys` ile üretilir; `VAPID_SUBJECT=mailto:destek@alanadi`. Sonradan değişirse herkesin bildirim aboneliği düşer, yeniden açmaları gerekir |
+| `CRON_SECRET` | uzun, rastgele bir değer | Zamanlanmış görevleri (aşağıda) korur |
+
+### Zamanlanmış görev (cron)
+
+Ders hatırlatması ("Geliyor musun?"), paket yenileme teklifi, pazartesi haftalık özeti ve grup derslerinin önceden oluşturulması `/api/cron` adresinden çalışır. hPanel → **Gelişmiş → Cron Jobs** bölümünde **15 dakikada bir** şu komut eklenir:
+
+```
+curl -fsS -H "Authorization: Bearer CRON_SECRET_DEĞERİ" https://studyom.app/api/cron
+```
+
+Her görev bir kez işaretlendiği için kaçan ya da iki kez çalışan tetikleme sorun yaratmaz. Hostinger cron'u yoksa ücretsiz cron-job.org aynı işi görür.
 
 ## 5. Supabase Auth ayarları (canlı projede)
 
@@ -98,7 +110,10 @@
 
 - [ ] Canlı adreste: kayıt ol → giriş kodu gelir → başlangıç → paket oluştur → danışan ekle → ders → yoklama → ödeme
 - [ ] Trainer sayfası `/<slug>` → kayıt formu → başvuru e-postası → onay → danışan portalı
-- [ ] Portal: randevu al, grup dersine katıl, havale bildir, dekont yükle, yeni paket iste
+- [ ] Portal: randevu al, grup dersine katıl, havale bildir, dekont yükle, yeni paket iste, "Geliyorum" onayı, mesaj yaz
+- [ ] Bildirimler: Android Chrome'da ve iPhone'da (ana ekrana ekledikten sonra) eğitmen ve danışan tarafında bildirimi aç, bir mesajla dene
+- [ ] Cron: `/api/cron` yanıtı `{"ok":true,...}`; ertesi güne ders koyup hatırlatmanın geldiğini gör
+- [ ] Excel'den danışan aktar (örnek dosyayla) ve verileri dışa aktar
 - [ ] Hesap silme (test hesabıyla)
 - [ ] Telefon (iOS Safari + Android Chrome), açık ve koyu tema
 - [ ] Google Search Console'a site ve `sitemap.xml` ekle

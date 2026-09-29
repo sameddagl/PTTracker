@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, CalendarDays, Package, Settings, Users, Wallet } from "lucide-react";
+import { CalendarCheck, CalendarDays, MessagesSquare, Package, Settings, Users, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -11,11 +11,14 @@ const ITEMS = [
   { href: "/danisanlar", label: "Danışanlar", icon: Users },
   { href: "/takvim", label: "Takvim", icon: CalendarDays },
   { href: "/odemeler", label: "Ödemeler", icon: Wallet },
+  { href: "/mesajlar", label: "Mesajlar", icon: MessagesSquare, desktopOnly: true },
   { href: "/paketler", label: "Paketler", icon: Package, desktopOnly: true },
   { href: "/ayarlar", label: "Ayarlar", icon: Settings },
 ] as const;
 
-// Five tabs fit a phone's bottom bar; packages live under Ayarlar there.
+// Five tabs fit a phone's bottom bar (at 375px a sixth leaves the current tab's
+// label no room); packages live under Ayarlar there and messages get the
+// floating MessagesPill below.
 const MOBILE_ITEMS = ITEMS.filter((i) => !("desktopOnly" in i));
 
 type Badges = Partial<Record<(typeof ITEMS)[number]["href"], number>>;
@@ -106,5 +109,24 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
         })}
       </ul>
     </nav>
+  );
+}
+
+/**
+ * Phones only: messages have no tab in the bottom bar, so unread ones show as a
+ * small pill just above it (hidden on the messages screens themselves).
+ */
+export function MessagesPill({ unread }: { unread: number }) {
+  const pathname = usePathname();
+  if (unread === 0 || pathname === "/mesajlar" || pathname.startsWith("/mesajlar/")) return null;
+  return (
+    <Link
+      href="/mesajlar"
+      className="fixed right-4 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.25rem)] z-40 flex h-11 items-center gap-2 rounded-full bg-[#1d1d1f] py-1 pr-1.5 pl-4 text-sm font-medium text-white shadow-float ring-1 ring-white/10 md:hidden dark:bg-[#1c1c1f]"
+    >
+      <MessagesSquare className="size-[18px]" aria-hidden />
+      {unread === 1 ? "Yeni mesaj" : "Yeni mesajlar"}
+      <span className="min-w-8 rounded-full bg-lime px-2 text-center leading-8 font-semibold text-lime-foreground tabular-nums">{unread}</span>
+    </Link>
   );
 }

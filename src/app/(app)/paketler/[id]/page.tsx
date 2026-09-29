@@ -34,6 +34,7 @@ export default async function EditTemplatePage({ params }: PageProps<"/paketler/
           installmentPrice: t.installmentPrice ? String(Number(t.installmentPrice)) : "",
           makeupAllowance: String(t.makeupAllowance),
           isPublic: t.isPublic,
+          isTrial: t.isTrial,
           description: t.description ?? "",
           features: t.features.join("\n"),
           installments: String(t.installments),

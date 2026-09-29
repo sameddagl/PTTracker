@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Archive, ChevronRight, UserPlus, Users } from "lucide-react";
+import { Archive, ChevronRight, FileSpreadsheet, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,12 +27,20 @@ export default async function ClientsPage() {
         title="Danışanlar"
         description={clients.length > 0 ? `${clients.length} aktif danışan` : undefined}
         action={
-          <Button asChild>
-            <Link href="/danisanlar/yeni">
-              <UserPlus />
-              <span className="max-sm:sr-only">Yeni danışan</span>
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href="/danisanlar/ice-aktar">
+                <FileSpreadsheet />
+                <span className="max-sm:sr-only">Excel&apos;den aktar</span>
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/danisanlar/yeni">
+                <UserPlus />
+                <span className="max-sm:sr-only">Yeni danışan</span>
+              </Link>
+            </Button>
+          </>
         }
       />
 
@@ -43,15 +51,23 @@ export default async function ClientsPage() {
           icon={<Users />}
           title="Henüz danışan yok"
           action={
-            <Button asChild size="sm">
-              <Link href="/danisanlar/yeni">
-                <UserPlus />
-                İlk danışanını ekle
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild size="sm">
+                <Link href="/danisanlar/yeni">
+                  <UserPlus />
+                  İlk danışanını ekle
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/danisanlar/ice-aktar">
+                  <FileSpreadsheet />
+                  Excel&apos;den aktar
+                </Link>
+              </Button>
+            </div>
           }
         >
-          Danışanlarının paketlerini, derslerini ve ödemelerini buradan takip edersin. Sayfandan kayıt olanlar da onaylayınca buraya gelir.
+          Danışanlarının paketlerini, derslerini ve ödemelerini buradan takip edersin. Sayfandan kayıt olanlar da onaylayınca buraya gelir. Listen Excel&apos;deyse tek seferde aktarabilirsin.
         </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden surface">

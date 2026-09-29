@@ -23,7 +23,8 @@ const PRESETS = [
 
 const PLAN_COUNTS = INSTALLMENT_OPTIONS.filter((n) => n > 1);
 
-export type TemplateValues = Record<Exclude<TemplateField, "isPublic">, string> & { isPublic: boolean };
+type Flag = "isPublic" | "isTrial";
+export type TemplateValues = Record<Exclude<TemplateField, Flag>, string> & Record<Flag, boolean>;
 
 export const EMPTY_TEMPLATE: TemplateValues = {
   name: "",
@@ -36,6 +37,7 @@ export const EMPTY_TEMPLATE: TemplateValues = {
   installments: "1",
   makeupAllowance: "1",
   isPublic: true,
+  isTrial: false,
   description: "",
   features: "",
 };
@@ -50,7 +52,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
   const formRef = useRef<HTMLFormElement>(null);
   const v = state.values ?? {};
   const e = state.errors ?? {};
-  const val = (k: Exclude<TemplateField, "isPublic">) => v[k] ?? initial[k];
+  const val = (k: Exclude<TemplateField, Flag>) => v[k] ?? initial[k];
 
   const [price, setPrice] = useState(initial.price);
   const [compareAt, setCompareAt] = useState(initial.compareAtPrice);
@@ -201,6 +203,20 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
             className="size-4 accent-[var(--primary)]"
           />
           Herkese açık sayfamda göster
+        </label>
+        <label className="flex min-h-11 items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            name="isTrial"
+            defaultChecked={v.isTrial !== undefined ? v.isTrial === "on" : initial.isTrial}
+            className="mt-0.5 size-4 accent-[var(--primary)]"
+          />
+          <span>
+            Deneme dersi
+            <span className="block text-xs text-muted-foreground">
+              Sayfanda en üstte öne çıkar. Her kişi yalnızca bir kez alabilir; mevcut danışanlara gösterilmez.
+            </span>
+          </span>
         </label>
         <Field id="description" label="Açıklama" hint="isteğe bağlı" error={e.description}>
           <Textarea

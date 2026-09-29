@@ -35,6 +35,7 @@ export type TemplateRow = {
   installments: number;
   isActive: boolean;
   isPublic: boolean;
+  isTrial: boolean;
 };
 
 export function TemplateList({ templates }: { templates: TemplateRow[] }) {
@@ -128,6 +129,7 @@ function SortableRow({ template: t }: { template: TemplateRow }) {
               {t.installments} taksit {formatTRY(t.installmentPrice)}
             </span>
           )}
+          {t.isTrial && <Badge variant="lime">Deneme</Badge>}
           {!active ? <Badge variant="secondary">Pasif</Badge> : !t.isPublic && <Badge variant="outline">Gizli</Badge>}
         </span>
       </Link>

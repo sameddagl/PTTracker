@@ -167,6 +167,7 @@ export async function getLessons(
       clientPhone: clients.phone,
       attendance: lessonAttendees.status,
       makeupUsed: lessonAttendees.makeupUsed,
+      confirmedAt: lessonAttendees.confirmedAt,
       packageName: clientPackages.name,
       remaining: clientPackageBalances.remainingSessions,
     })
@@ -193,16 +194,21 @@ export async function getLessons(
     phone: string | null;
     status: NonNullable<Row["attendance"]>;
     makeupUsed: boolean;
+    /** The client tapped "Geliyorum" on their page. */
+    confirmed: boolean;
     packageName: string | null;
     remaining: number | null;
   };
-  type Lesson = Omit<Row, "attendeeId" | "clientId" | "clientName" | "clientPhone" | "attendance" | "makeupUsed" | "packageName" | "remaining"> & {
+  type Lesson = Omit<
+    Row,
+    "attendeeId" | "clientId" | "clientName" | "clientPhone" | "attendance" | "makeupUsed" | "confirmedAt" | "packageName" | "remaining"
+  > & {
     attendees: Attendee[];
   };
 
   const byLesson = new Map<string, Lesson>();
   for (const r of rows) {
-    const { attendeeId, clientId, clientName, clientPhone, attendance, makeupUsed, packageName, remaining, ...lesson } = r;
+    const { attendeeId, clientId, clientName, clientPhone, attendance, makeupUsed, confirmedAt, packageName, remaining, ...lesson } = r;
     const entry = byLesson.get(r.lessonId) ?? { ...lesson, attendees: [] };
     if (attendeeId && clientId && attendance) {
       entry.attendees.push({
@@ -212,6 +218,7 @@ export async function getLessons(
         phone: clientPhone,
         status: attendance,
         makeupUsed: makeupUsed ?? false,
+        confirmed: confirmedAt !== null,
         packageName,
         remaining,
       });

@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   History,
   MessageCircle,
+  MessagesSquare,
   Package,
   PackagePlus,
   Pencil,
@@ -147,19 +148,19 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
           )}
         </div>
         {!client.archivedAt && (
-          <div className="mt-5 grid grid-cols-4 gap-2 border-t pt-4">
-            <QuickAction href={`/danisanlar/${client.id}/paket-sat`} icon={<PackagePlus />} label="Paket sat" primary />
-            <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" />
-            <QuickAction
-              href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}
-              icon={<Wallet />}
-              label={totalDue > 0 ? formatTRY(totalDue) : "Ödeme al"}
-            />
-            {wa ? (
-              <QuickAction href={wa} external icon={<MessageCircle />} label="WhatsApp" />
-            ) : (
-              <span aria-hidden />
-            )}
+          <div className="mt-5 border-t pt-4">
+            {/* Five actions on a 375px phone: borrow a little of the card's padding so "WhatsApp" fits. */}
+            <div className={`grid ${wa ? "-mx-2 grid-cols-5 gap-1 sm:mx-0 sm:gap-2" : "grid-cols-4 gap-2"}`}>
+              <QuickAction href={`/danisanlar/${client.id}/paket-sat`} icon={<PackagePlus />} label="Paket sat" primary />
+              <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" />
+              <QuickAction
+                href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}
+                icon={<Wallet />}
+                label={totalDue > 0 ? formatTRY(totalDue) : "Ödeme al"}
+              />
+              <QuickAction href={`/mesajlar/${client.id}`} icon={<MessagesSquare />} label="Mesaj" />
+              {wa && <QuickAction href={wa} external icon={<MessageCircle />} label="WhatsApp" />}
+            </div>
           </div>
         )}
       </section>

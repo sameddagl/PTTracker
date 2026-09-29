@@ -2,10 +2,12 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import type { CalendarAttendee } from "@/db/lessons";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/avatar";
+import { Badge } from "@/components/ui/badge";
 import { markAttendanceAction } from "@/app/(app)/bugun/actions";
 
 type Status = CalendarAttendee["status"];
@@ -52,6 +54,12 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
         <Link href={`/danisanlar/${attendee.clientId}`} className="flex min-w-0 items-center gap-2 font-medium hover:underline">
           <Avatar name={attendee.name} size="sm" />
           <span className="truncate">{attendee.name}</span>
+          {attendee.confirmed && optimistic === "scheduled" && (
+            <Badge variant="success" className="shrink-0">
+              <Check aria-hidden />
+              Onayladı
+            </Badge>
+          )}
         </Link>
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
           {remaining === null ? "Paketsiz" : `${remaining} ders kaldı`}

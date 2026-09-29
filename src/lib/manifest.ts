@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
 
-export default function manifest(): MetadataRoute.Manifest {
+// Served by route handlers, not the manifest.ts file convention: file-based
+// metadata would override the per-client manifest on portal pages.
+
+export function webManifest(over: Partial<MetadataRoute.Manifest> = {}): MetadataRoute.Manifest {
   return {
     name: APP_NAME,
     short_name: APP_NAME,
@@ -17,5 +20,9 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    ...over,
   };
 }
+
+export const manifestResponse = (m: MetadataRoute.Manifest, cache = "public, max-age=86400") =>
+  Response.json(m, { headers: { "Content-Type": "application/manifest+json", "Cache-Control": cache } });

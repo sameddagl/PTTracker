@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, MessageCircle, UsersRound } from "lucide-react";
+import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, MessageCircle, Sparkles, UsersRound } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/price-tag";
 import { WEEKDAY_LABELS, weekdayList } from "@/lib/dates";
@@ -249,8 +250,14 @@ function PackageCard({ slug, pkg: p, highlight }: { slug: string; pkg: PublicPag
   const plan = paymentOptions(p).find((o) => o.installments > 1);
   const perLesson = p.price && p.sessionCount > 1 ? Number(p.price) / p.sessionCount : null;
   return (
-    <article className={cn("flex flex-col gap-5 surface p-5 sm:p-6", highlight && "ring-2 ring-lime")}>
+    <article className={cn("flex flex-col gap-5 surface p-5 sm:p-6", (highlight || p.isTrial) && "ring-2 ring-lime")}>
       <div className="flex flex-col gap-1">
+        {p.isTrial && (
+          <Badge variant="lime" className="mb-1 self-start">
+            <Sparkles aria-hidden />
+            İlk kez gelenlere
+          </Badge>
+        )}
         <h3 className="text-xl font-semibold">{p.name}</h3>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           <span>{SESSION_TYPE_LABELS[p.sessionType]}</span>
@@ -300,7 +307,7 @@ function PackageCard({ slug, pkg: p, highlight }: { slug: string; pkg: PublicPag
       )}
       <Button asChild size="lg" className="w-full">
         <Link href={`/${slug}/kayit?paket=${p.id}`}>
-          Bu paketi seç
+          {p.isTrial ? "Deneme dersi al" : "Bu paketi seç"}
           <ArrowRight />
         </Link>
       </Button>

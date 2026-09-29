@@ -1,21 +1,23 @@
 import Link from "next/link";
 import { Activity } from "lucide-react";
 import { redirect } from "next/navigation";
-import { BottomNav, SideNav } from "@/components/app-nav";
+import { BottomNav, MessagesPill, SideNav } from "@/components/app-nav";
 import { withTrainer } from "@/db";
 import { countPendingApplications } from "@/db/applications";
+import { countUnread } from "@/db/messages";
 import { countPendingPayments } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
 import { APP_NAME } from "@/lib/config";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
-  const { trainer, pending, payments } = await withTrainer(async (tx, id) => ({
+  const { trainer, pending, payments, unread } = await withTrainer(async (tx, id) => ({
     trainer: await getTrainer(tx, id),
     pending: await countPendingApplications(tx, id),
     payments: await countPendingPayments(tx, id),
+    unread: await countUnread(tx, id),
   }));
   if (!trainer.onboardedAt) redirect("/baslangic");
-  const badges = { "/danisanlar": pending, "/odemeler": payments };
+  const badges = { "/danisanlar": pending, "/odemeler": payments, "/mesajlar": unread };
 
   return (
     <div className="min-h-dvh bg-canvas md:grid md:grid-cols-[256px_1fr]">
@@ -34,6 +36,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-32 md:px-8 md:pt-10 md:pb-12">
         {children}
       </main>
+      <MessagesPill unread={unread} />
       <BottomNav badges={badges} />
     </div>
   );

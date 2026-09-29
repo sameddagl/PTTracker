@@ -119,6 +119,8 @@ export const trainers = pgTable(
     // step the app can't see for itself (link added to the Instagram bio).
     guideDismissedAt: timestamp("guide_dismissed_at", { withTimezone: true }),
     bioLinkAddedAt: timestamp("bio_link_added_at", { withTimezone: true }),
+    // Monday of the last week a weekly summary was sent for (the cron job is idempotent per week).
+    weeklySummaryWeek: date("weekly_summary_week"),
     ...timestamps,
   },
   (t) => [
@@ -190,6 +192,8 @@ export const packageTemplates = pgTable(
     // Bullet points on the public package card, e.g. "Haftada 2 ders".
     features: text("features").array().notNull().default(sql`'{}'::text[]`),
     sortOrder: smallint("sort_order").notNull().default(0),
+    // A trial ("deneme dersi"): shown first on the public page, one per person.
+    isTrial: boolean("is_trial").notNull().default(false),
     // Monthly installments of the installment option (1 = cash only).
     installments: smallint("installments").notNull().default(1),
     ...timestamps,
@@ -224,6 +228,8 @@ export const clientPackages = pgTable(
     installments: smallint("installments").notNull().default(1),
     status: packageStatusEnum("status").notNull().default("active"),
     notes: text("notes"),
+    // When the client was told this package is running out (renewal offer sent once).
+    renewalOfferedAt: timestamp("renewal_offered_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
@@ -408,6 +414,9 @@ export const lessonAttendees = pgTable(
     makeupUsed: boolean("makeup_used").notNull().default(false),
     note: text("note"),
     markedAt: timestamp("marked_at", { withTimezone: true }),
+    // "Geliyor musun?": the client confirmed from their page; the reminder is sent once.
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
@@ -654,6 +663,55 @@ export const intakeAnswers = pgTable(
 );
 
 // KVKK consent log: which text version the client agreed to, and when.
+export const messageSenderEnum = pgEnum("message_sender", ["trainer", "client"]);
+
+// Trainer ↔ client chat, one thread per client.
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    sender: messageSenderEnum("sender").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Set when the other side has seen it.
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    check("messages_body_length", sql`char_length(${t.body}) between 1 and 2000`),
+    foreignKey({ name: "messages_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    index("messages_thread_idx").on(t.clientId, t.createdAt),
+    index("messages_trainer_unread_idx").on(t.trainerId, t.sender, t.readAt),
+    ownRows("messages_own", t.trainerId),
+  ],
+);
+
+// Web Push subscriptions: the trainer's devices (client_id null) and clients' devices (from their portal).
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id"),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({ name: "push_subscriptions_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    index("push_subscriptions_owner_idx").on(t.trainerId, t.clientId),
+    ownRows("push_subscriptions_own", t.trainerId),
+  ],
+);
+
 export const consents = pgTable(
   "consents",
   {

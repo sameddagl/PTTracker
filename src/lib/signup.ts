@@ -27,6 +27,14 @@ export async function submitSignup(slug: string, formData: FormData): Promise<Si
   if ("errors" in v) return { ok: false, errors: v.errors };
 
   const result = await adminDb.transaction((tx) => recordSignup(tx, form.trainer.id, v.data));
-  if (result.limited) return { ok: false, errors: { form: "Çok fazla başvuru yapıldı. Lütfen daha sonra tekrar dene." } };
+  if (result.limited)
+    return {
+      ok: false,
+      errors: {
+        form: result.trialUsed
+          ? "Deneme dersi yalnızca ilk kez gelenler için. Dilersen başka bir paket seçebilirsin."
+          : "Çok fazla başvuru yapıldı. Lütfen daha sonra tekrar dene.",
+      },
+    };
   return { ok: true, token: result.token, email: v.data.email };
 }
