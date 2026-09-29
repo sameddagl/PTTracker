@@ -4,8 +4,8 @@ export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 
 // Top-level paths the app uses (or may use); a trainer can't claim them.
 const RESERVED = new Set([
-  "admin", "api", "app", "auth", "ayarlar", "baslangic", "bugun", "danisan", "danisanlar", "ders", "destek",
-  "fiyatlar", "giris", "gizlilik", "hakkimizda", "help", "icon", "kayit", "kvkk", "login", "manifest", "odemeler",
+  "acik-riza", "admin", "api", "app", "auth", "ayarlar", "baslangic", "bugun", "danisan", "danisanlar", "ders", "destek",
+  "fiyatlar", "giris", "gizlilik", "hakkimizda", "help", "icon", "kayit", "kosullar", "kvkk", "login", "manifest", "odemeler",
   "p", "paketler", "pwa-icon", "sozlesme", "takvim", "www",
 ]);
 

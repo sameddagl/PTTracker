@@ -37,10 +37,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
         </div>
         <p className="px-4 text-center text-xs leading-relaxed text-muted-foreground">
           Devam ederek{" "}
-          <Link href="/kvkk" className="font-medium text-foreground underline underline-offset-2">
-            KVKK aydınlatma metnini
-          </Link>{" "}
-          okuduğunu kabul edersin.
+          <Link href="/kosullar" className="font-medium text-foreground underline underline-offset-2">
+            Kullanım Koşulları
+          </Link>
+          &apos;nı kabul etmiş olursun. Kişisel verilerin{" "}
+          <Link href="/kvkk#egitmenler" className="font-medium text-foreground underline underline-offset-2">
+            Aydınlatma Metni
+          </Link>
+          &apos;ne göre işlenir.
         </p>
       </div>
     </main>

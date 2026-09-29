@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .where(and(eq(trainers.publicPageEnabled, true), isNotNull(trainers.slug)));
   return [
     { url: base, changeFrequency: "weekly", priority: 1 },
-    { url: `${base}/kvkk`, changeFrequency: "yearly", priority: 0.2 },
+    ...["/kvkk", "/acik-riza", "/kosullar"].map((path) => ({ url: `${base}${path}`, changeFrequency: "yearly" as const, priority: 0.2 })),
     ...pages.map((p) => ({ url: `${base}/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "weekly" as const, priority: 0.6 })),
   ];
 }

@@ -213,8 +213,11 @@ export function SignupForm({
               />
               <span className="text-muted-foreground">
                 Sağlık ve vücut ölçüsü bilgilerimin, derslerimin güvenli ve bana uygun planlanması amacıyla {trainerName}{" "}
-                tarafından işlenmesine <strong className="font-medium text-foreground">açık rıza</strong> veriyorum. Vermek
-                zorunda değilim; istediğim zaman geri alabilirim.
+                tarafından işlenmesine{" "}
+                <Link href="/acik-riza" target="_blank" className="font-medium text-foreground underline underline-offset-2">
+                  Açık Rıza Metni
+                </Link>{" "}
+                kapsamında açık rıza veriyorum. Vermek zorunda değilim; istediğim zaman geri alabilirim.
               </span>
             </label>
             {healthConsent ? (
@@ -244,10 +247,12 @@ export function SignupForm({
                 aria-invalid={!!e.kvkk || undefined}
               />
               <span className="text-muted-foreground">
-                <Link href="/kvkk" target="_blank" className="font-medium text-foreground underline underline-offset-2">
-                  KVKK aydınlatma metnini
-                </Link>{" "}
-                okudum; bilgilerimin başvurumun değerlendirilmesi ve derslerimin yürütülmesi için işlenmesini anladım.
+                Bilgilerimin başvurumun değerlendirilmesi ve derslerimin yürütülmesi için veri sorumlusu {trainerName} tarafından
+                işleneceğini açıklayan{" "}
+                <Link href="/kvkk#danisanlar" target="_blank" className="font-medium text-foreground underline underline-offset-2">
+                  Aydınlatma Metni
+                </Link>
+                &apos;ni okudum.
               </span>
             </label>
             {e.kvkk && <p className="text-sm text-destructive-strong">{e.kvkk}</p>}

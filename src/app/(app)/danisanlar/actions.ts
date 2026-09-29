@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
+import { LEGAL } from "@/lib/legal";
 import { withTrainer, type Tx } from "@/db";
 import { archiveClient, deleteClient, restoreClient } from "@/db/clients";
 import { clients, consents } from "@/db/schema";
 import { fieldErrors, readForm, type FormState } from "@/lib/forms";
 import { normalizePhone } from "@/lib/whatsapp";
 
-// Bump when the consent text shown in the form changes.
-const HEALTH_CONSENT_VERSION = "saglik-2026-09";
+const HEALTH_CONSENT_VERSION = LEGAL.healthConsentVersion;
 
 const optionalText = z
   .string()

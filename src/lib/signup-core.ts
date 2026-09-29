@@ -4,6 +4,7 @@ import type { Tx } from "@/db";
 import { saveIntakeAnswers, toDef, type IntakeField } from "@/db/intake";
 import { createPortalLink, getActivePortalLink } from "@/db/portal";
 import { applications, clients, consents } from "@/db/schema";
+import { LEGAL } from "./legal";
 import { answerName, parseAnswer, type IntakeValue } from "./intake";
 import { paymentOptions, type PricedTemplate } from "./pricing";
 import { normalizePhone } from "./whatsapp";
@@ -12,8 +13,8 @@ import { normalizePhone } from "./whatsapp";
 // it runs under the test harness too. Entry point: ./signup.ts.
 
 // Bump when the texts shown next to the consent checkboxes change.
-export const KVKK_NOTICE_VERSION = "kvkk-aydinlatma-2026-09";
-export const HEALTH_CONSENT_VERSION = "saglik-rizasi-2026-09";
+export const KVKK_NOTICE_VERSION = LEGAL.noticeVersion;
+export const HEALTH_CONSENT_VERSION = LEGAL.healthConsentVersion;
 
 export type SignupErrors = Record<string, string>;
 export type SignupResult = { ok: true; token: string; email: string | null } | { ok: false; errors: SignupErrors };

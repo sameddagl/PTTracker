@@ -461,7 +461,8 @@ export default function Home() {
           </div>
           <nav aria-label="Alt bilgi" className="flex flex-wrap gap-x-6 text-sm text-muted-foreground">
             {[
-              { href: "/kvkk", label: "KVKK aydınlatma metni" },
+              { href: "/kvkk", label: "KVKK Aydınlatma Metni" },
+              { href: "/kosullar", label: "Kullanım Koşulları" },
               { href: "/giris", label: "Giriş yap" },
               { href: "#sss", label: "SSS" },
             ].map((l) => (

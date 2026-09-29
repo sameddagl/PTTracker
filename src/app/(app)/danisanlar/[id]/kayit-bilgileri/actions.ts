@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
+import { LEGAL } from "@/lib/legal";
 import { withTrainer } from "@/db";
 import { listIntakeFields, replaceClientAnswers, toDef } from "@/db/intake";
 import { clients, consents } from "@/db/schema";
 import { answerName, parseAnswer, type IntakeValue } from "@/lib/intake";
 
-// Same text as the consent checkbox on the client form.
-const HEALTH_CONSENT_VERSION = "saglik-2026-09";
+const HEALTH_CONSENT_VERSION = LEGAL.healthConsentVersion;
 
 export type AnswersState = { errors?: Record<string, string> };
 
