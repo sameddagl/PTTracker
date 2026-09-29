@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Globe, LogOut, Package, UsersRound } from "lucide-react";
+import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
@@ -36,6 +36,12 @@ export default async function SettingsPage() {
       title: "Müsaitlik ve randevu",
       hint: trainer.bookingEnabled ? "Danışanlar randevu alabiliyor" : "Randevu kapalı",
     },
+    {
+      href: "/ayarlar/iptal-kurali",
+      icon: TimerOff,
+      title: "Geç iptal kuralı",
+      hint: trainer.lateCancelHours === 0 ? "Kural yok, iptal her zaman ücretsiz" : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz`,
+    },
     { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Danışandan istenen bilgiler" },
     { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Paket, yoklama, ödeme ve diğer akışlar adım adım" },
   ];
@@ -49,7 +55,6 @@ export default async function SettingsPage() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold">{trainer.fullName || "—"}</p>
             <p className="truncate text-sm text-muted-foreground">{claims?.email ?? "—"}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Geç iptal: dersten {trainer.lateCancelHours} saat öncesine kadar ücretsiz</p>
           </div>
         </section>
 

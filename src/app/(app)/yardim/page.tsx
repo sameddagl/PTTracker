@@ -53,16 +53,22 @@ function guides(lateCancelHours: number): HelpGuide[] {
     {
       id: "yoklama",
       icon: <ClipboardCheck />,
-      title: `Yoklama, telafi hakkı ve ${lateCancelHours} saat kuralı`,
+      title: lateCancelHours > 0 ? `Yoklama, telafi hakkı ve ${lateCancelHours} saat kuralı` : "Yoklama ve telafi hakkı",
       summary: "Hangi durumda ders paketten düşer, hangisinde düşmez.",
       steps: [
         "Bugün'de her dersin altında danışan başına Geldi, Gelmedi, Geç iptal ve İptal düğmeleri var. Yanlış dokunduysan aynı düğmeye tekrar dokun, geri alınır.",
         "Geldi ve Gelmedi paketten bir ders düşer. Zamanında yapılan İptal ders düşürmez.",
-        `Dersten ${lateCancelHours} saatten az önce yapılan iptal Geç iptal sayılır ve ders yanar.`,
+        lateCancelHours > 0
+          ? `Dersten ${lateCancelHours} saatten az önce yapılan iptal Geç iptal sayılır ve ders yanar.`
+          : "Şu an geç iptal kuralın yok: danışan ne zaman iptal ederse etsin ders yanmaz. Yine de yoklamada Geç iptal'i elle işaretleyebilirsin.",
         "Paketin telafi hakkı varsa geç iptalde önce bu hak kullanılır ve ders paketten düşmez. Hak bitince geç iptaller paketten düşer.",
         "Danışan kendi sayfasından iptal ederse aynı kural otomatik uygulanır; geç iptalse ona önceden söylenir.",
+        "Süreyi Ayarlar'daki Geç iptal kuralı sayfasından değiştirebilirsin; kural koymak istemezsen iptali her zaman ücretsiz yapabilirsin.",
       ],
-      links: [{ href: "/bugun", label: "Bugün" }],
+      links: [
+        { href: "/bugun", label: "Bugün" },
+        { href: "/ayarlar/iptal-kurali", label: "Geç iptal kuralı" },
+      ],
     },
     {
       id: "danisan-sayfasi",
