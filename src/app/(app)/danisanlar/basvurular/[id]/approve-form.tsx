@@ -16,7 +16,7 @@ export function ApproveForm({ id, today }: { id: string; today: string }) {
       <Field id="startsOn" label="Paket başlangıcı" hint="son kullanım tarihi buna göre hesaplanır">
         <Input id="startsOn" name="startsOn" type="date" defaultValue={today} className="max-w-48" />
       </Field>
-      <Button type="submit" size="lg" disabled={pending} className="sm:self-start">
+      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
         <Check />
         {pending ? "Onaylanıyor…" : "Onayla"}
       </Button>

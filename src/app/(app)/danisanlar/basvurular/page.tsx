@@ -6,6 +6,7 @@ import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listApplications } from "@/db/applications";
 import { getTrainer } from "@/db/queries";
+import { applicationOption, optionLabel } from "@/lib/pricing";
 import { formatDayMonth, formatTRY, formatTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Başvurular" };
@@ -13,6 +14,11 @@ export const metadata: Metadata = { title: "Başvurular" };
 const STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   approved: { label: "Onaylandı", variant: "default" },
   rejected: { label: "Reddedildi", variant: "secondary" },
+};
+
+const optionText = (a: Parameters<typeof applicationOption>[0]) => {
+  const o = applicationOption(a);
+  return o ? ` · ${formatTRY(o.total)}${o.installments > 1 ? ` (${optionLabel(o)})` : ""}` : "";
 };
 
 export default async function ApplicationsPage() {
@@ -51,7 +57,7 @@ export default async function ApplicationsPage() {
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {a.packageName}
-                      {a.packagePrice && ` · ${formatTRY(a.packagePrice)}`} · {formatDayMonth(a.createdAt, timezone)}{" "}
+                      {optionText(a)} · {formatDayMonth(a.createdAt, timezone)}{" "}
                       {formatTime(a.createdAt, timezone)}
                     </p>
                   </div>

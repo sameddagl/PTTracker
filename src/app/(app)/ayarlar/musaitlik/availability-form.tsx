@@ -173,7 +173,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
         </p>
       </fieldset>
 
-      <Button type="submit" size="lg" disabled={pending} className="sm:self-start">
+      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Kaydet"}
       </Button>
     </form>

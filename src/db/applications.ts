@@ -1,5 +1,6 @@
 import "server-only";
 import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { pickOption } from "@/lib/pricing";
 import type { Tx } from "./index";
 import { expiryFor, sellPackage } from "./packages";
 import { applications, clients, packageTemplates } from "./schema";
@@ -29,7 +30,12 @@ const applicationFields = {
   clientStatus: clients.status,
   templateId: packageTemplates.id,
   packageName: packageTemplates.name,
-  packagePrice: packageTemplates.price,
+  // Current template prices; `installments` is the option the applicant picked.
+  price: packageTemplates.price,
+  compareAtPrice: packageTemplates.compareAtPrice,
+  installmentPrice: packageTemplates.installmentPrice,
+  templateInstallments: packageTemplates.installments,
+  installments: applications.installments,
   sessionCount: packageTemplates.sessionCount,
   sessionType: packageTemplates.sessionType,
 };
@@ -66,13 +72,20 @@ export async function getApplication(tx: Tx, trainerId: string, id: string) {
  */
 export async function approveApplication(tx: Tx, trainer: TrainerRef, id: string, { startsOn }: { startsOn: string }) {
   const [app] = await tx
-    .select({ id: applications.id, clientId: applications.clientId, templateId: applications.templateId })
+    .select({
+      id: applications.id,
+      clientId: applications.clientId,
+      templateId: applications.templateId,
+      installments: applications.installments,
+    })
     .from(applications)
     .where(and(eq(applications.id, id), eq(applications.trainerId, trainer.id), eq(applications.status, "pending")))
     .for("update");
   if (!app) return null;
 
   const [t] = await tx.select().from(packageTemplates).where(eq(packageTemplates.id, app.templateId));
+  // The option the applicant picked, at today's template prices.
+  const option = pickOption(t, app.installments);
   const clientPackageId = await sellPackage(tx, trainer.id, {
     clientId: app.clientId,
     templateId: t.id,
@@ -81,9 +94,9 @@ export async function approveApplication(tx: Tx, trainer: TrainerRef, id: string
     totalSessions: t.sessionCount,
     startsOn,
     expiresOn: expiryFor(startsOn, t.validityDays),
-    price: Number(t.price ?? 0),
+    price: option?.total ?? 0,
     makeupAllowance: t.makeupAllowance,
-    installments: t.installments,
+    installments: option?.installments ?? 1,
     payment: null,
   });
 

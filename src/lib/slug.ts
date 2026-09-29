@@ -6,7 +6,7 @@ export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 const RESERVED = new Set([
   "admin", "api", "app", "auth", "ayarlar", "baslangic", "bugun", "danisan", "danisanlar", "ders", "destek",
   "fiyatlar", "giris", "gizlilik", "hakkimizda", "help", "icon", "kayit", "kvkk", "login", "manifest", "odemeler",
-  "p", "pwa-icon", "sozlesme", "takvim", "www",
+  "p", "paketler", "pwa-icon", "sozlesme", "takvim", "www",
 ]);
 
 const TR_MAP: Record<string, string> = { ç: "c", ğ: "g", ı: "i", i̇: "i", ö: "o", ş: "s", ü: "u" };

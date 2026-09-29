@@ -13,7 +13,7 @@ export async function listTemplates(tx: Tx, trainerId: string, { activeOnly = fa
     .where(
       and(eq(packageTemplates.trainerId, trainerId), activeOnly ? eq(packageTemplates.isActive, true) : undefined),
     )
-    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.sessionType), asc(packageTemplates.sessionCount));
+    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.createdAt));
   return rows;
 }
 
@@ -31,21 +31,50 @@ export type TemplateInput = {
   sessionCount: number;
   validityDays: number | null;
   price: number | null;
+  compareAtPrice: number | null;
+  /** Installment total and count; null/1 when the package is cash only. */
+  installmentPrice: number | null;
+  installments: number;
   makeupAllowance: number;
   isPublic: boolean;
   description: string | null;
   features: string[];
-  sortOrder: number;
-  installments: number;
 };
 
-const templateRow = (input: TemplateInput) => ({
-  ...input,
-  price: input.price === null ? null : input.price.toFixed(2),
-});
+const toMoney = (v: number | null) => (v === null ? null : v.toFixed(2));
 
+const templateRow = (input: TemplateInput) => {
+  const hasPlan = input.installments > 1 && input.installmentPrice !== null;
+  return {
+    ...input,
+    price: toMoney(input.price),
+    compareAtPrice: toMoney(input.compareAtPrice),
+    installmentPrice: hasPlan ? toMoney(input.installmentPrice) : null,
+    installments: hasPlan ? input.installments : 1,
+  };
+};
+
+/** New templates go to the end of the list. */
 export async function createTemplate(tx: Tx, trainerId: string, input: TemplateInput) {
-  await tx.insert(packageTemplates).values({ ...templateRow(input), trainerId });
+  const [{ next }] = await tx
+    .select({ next: sql<number>`coalesce(max(${packageTemplates.sortOrder}), -1)::int + 1` })
+    .from(packageTemplates)
+    .where(eq(packageTemplates.trainerId, trainerId));
+  const [row] = await tx
+    .insert(packageTemplates)
+    .values({ ...templateRow(input), sortOrder: next, trainerId })
+    .returning({ id: packageTemplates.id });
+  return row.id;
+}
+
+/** Saves a drag-and-drop order: `ids` is the full list, top first. Unknown ids are ignored. */
+export async function reorderTemplates(tx: Tx, trainerId: string, ids: string[]) {
+  for (const [i, id] of ids.entries()) {
+    await tx
+      .update(packageTemplates)
+      .set({ sortOrder: i })
+      .where(and(eq(packageTemplates.id, id), eq(packageTemplates.trainerId, trainerId)));
+  }
 }
 
 /** Edits a template. Packages already sold keep their own snapshot. */

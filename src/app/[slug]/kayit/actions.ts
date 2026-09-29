@@ -6,6 +6,7 @@ import { authUsers } from "drizzle-orm/supabase";
 import { adminDb } from "@/db";
 import { siteUrl } from "@/lib/config";
 import { formatTRY } from "@/lib/format";
+import { pickOption } from "@/lib/pricing";
 import { layout, sendMail } from "@/lib/mail";
 import { portalUrl } from "@/lib/portal";
 import { getPublicPage } from "@/lib/public-page";
@@ -20,6 +21,8 @@ export async function signupAction(slug: string, _prev: SignupState, formData: F
   const page = await getPublicPage(slug);
   const pkg = page?.packages.find((p) => p.id === formData.get("templateId"));
   const trainerName = page ? page.trainer.businessName || page.trainer.fullName : "";
+  const option = pkg ? pickOption(pkg, Number(formData.get("installments") || 1)) : null;
+  const priceNote = option ? ` (${option.installments > 1 ? `${option.installments} taksit, ` : "peşin "}${formatTRY(option.total)})` : "";
   const clientName = `${formData.get("firstName")} ${formData.get("lastName")}`.trim();
   const url = portalUrl(result.token);
 
@@ -43,7 +46,7 @@ export async function signupAction(slug: string, _prev: SignupState, formData: F
       const { html, text } = layout({
         heading: "Yeni başvuru",
         lines: [
-          `${clientName}, ${pkg?.name ?? "bir paket"}${pkg?.price ? ` (${formatTRY(pkg.price)})` : ""} için başvurdu.`,
+          `${clientName}, ${pkg?.name ?? "bir paket"}${priceNote} için başvurdu.`,
           "Bilgilerine bakıp onaylayabilir ya da reddedebilirsin.",
         ],
         cta: { label: "Başvuruyu gör", url: `${siteUrl()}/danisanlar/basvurular` },

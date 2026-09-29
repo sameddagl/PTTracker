@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { deleteClientAction, restoreClientAction } from "../actions";
 
 export function ArchivedBanner({ clientId, name, archivedOn }: { clientId: string; name: string; archivedOn: string }) {
-  const [pending, startTransition] = useTransition();
+  const [restoring, startRestore] = useTransition();
+  const [erasing, startErase] = useTransition();
 
   const erase = () => {
     const answer = window.prompt(
       `${name} ve tüm kayıtları (paketler, dersler, ödemeler, dekontlar, kayıt formu) kalıcı olarak silinecek. Bu geri alınamaz.\n\nOnaylamak için SİL yaz:`,
     );
     if (answer?.trim().toLocaleUpperCase("tr") !== "SİL") return;
-    startTransition(() => deleteClientAction(clientId));
+    startErase(() => deleteClientAction(clientId));
   };
 
   return (
@@ -23,11 +24,11 @@ export function ArchivedBanner({ clientId, name, archivedOn }: { clientId: strin
         <span className="text-muted-foreground"> · {archivedOn} tarihinde arşivlendi. Listelerde görünmez, portal linki kapalı.</span>
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" disabled={pending} onClick={() => startTransition(() => restoreClientAction(clientId))}>
+        <Button type="button" loading={restoring} disabled={erasing} onClick={() => startRestore(() => restoreClientAction(clientId))}>
           <ArchiveRestore />
           Arşivden çıkar
         </Button>
-        <Button type="button" variant="outline" disabled={pending} onClick={erase} className="text-destructive-strong">
+        <Button type="button" variant="outline" loading={erasing} disabled={restoring} onClick={erase} className="text-destructive-strong">
           <Trash2 />
           Kalıcı olarak sil
         </Button>

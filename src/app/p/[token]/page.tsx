@@ -14,6 +14,7 @@ import {
 import { formatIban, paymentCode } from "@/lib/iban";
 import { installmentPlan, installmentStates } from "@/lib/installments";
 import { getPortalData, portalUrl } from "@/lib/portal";
+import { applicationOption, optionLabel } from "@/lib/pricing";
 import { BookingPanel, UpcomingLessons } from "./booking-panel";
 import { PaymentPanel } from "./payment-panel";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -36,6 +37,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
     `Merhaba, ${application?.packageName ?? "paket"} için başvurdum. Sayfam: ${url}`,
   );
   const pending = application?.status === "pending";
+  const pendingOption = pending ? applicationOption(application) : null;
   const today = todayISO(tz);
   const plans = packages
     .map((p) => ({
@@ -91,7 +93,12 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
               <p className="font-medium">{application.packageName}</p>
               <p className="text-sm text-muted-foreground">Eğitmenin onayı bekleniyor. Onaylanınca sana haber vereceğiz.</p>
             </div>
-            {application.price && <span className="font-semibold tabular-nums">{formatTRY(application.price)}</span>}
+            {pendingOption && (
+              <span className="shrink-0 text-right">
+                <span className="block font-semibold tabular-nums">{formatTRY(pendingOption.total)}</span>
+                <span className="block text-xs text-muted-foreground">{optionLabel(pendingOption)}</span>
+              </span>
+            )}
           </CardContent>
         </Card>
       )}

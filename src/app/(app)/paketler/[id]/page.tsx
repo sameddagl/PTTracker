@@ -7,9 +7,9 @@ import { withTrainer } from "@/db";
 import { getTemplate } from "@/db/packages";
 import { TemplateForm } from "../template-form";
 
-export const metadata: Metadata = { title: "Şablonu düzenle" };
+export const metadata: Metadata = { title: "Paketi düzenle" };
 
-export default async function EditTemplatePage({ params }: PageProps<"/ayarlar/paketler/[id]">) {
+export default async function EditTemplatePage({ params }: PageProps<"/paketler/[id]">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const t = await withTrainer((tx, trainerId) => getTemplate(tx, trainerId, id));
@@ -17,9 +17,9 @@ export default async function EditTemplatePage({ params }: PageProps<"/ayarlar/p
 
   return (
     <>
-      <Link href="/ayarlar/paketler" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/paketler" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="size-4" aria-hidden />
-        Paket şablonları
+        Paketler
       </Link>
       <PageHeader title={t.name} description="Değişiklikler daha önce satılmış paketleri etkilemez." />
       <TemplateForm
@@ -30,11 +30,12 @@ export default async function EditTemplatePage({ params }: PageProps<"/ayarlar/p
           sessionCount: String(t.sessionCount),
           validityDays: t.validityDays ? String(t.validityDays) : "",
           price: t.price ? String(Number(t.price)) : "",
+          compareAtPrice: t.compareAtPrice ? String(Number(t.compareAtPrice)) : "",
+          installmentPrice: t.installmentPrice ? String(Number(t.installmentPrice)) : "",
           makeupAllowance: String(t.makeupAllowance),
           isPublic: t.isPublic,
           description: t.description ?? "",
           features: t.features.join("\n"),
-          sortOrder: t.sortOrder ? String(t.sortOrder) : "",
           installments: String(t.installments),
         }}
       />

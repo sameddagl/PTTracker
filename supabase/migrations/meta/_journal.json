@@ -78,6 +78,13 @@
       "when": 1790707195780,
       "tag": "20260929183955_booking",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790709834171,
+      "tag": "20260929192354_package_pricing",
+      "breakpoints": true
     }
   ]
 }

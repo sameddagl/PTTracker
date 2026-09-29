@@ -23,7 +23,8 @@ export function PendingPaymentCard({
     receiptType: string | null;
   };
 }) {
-  const [pending, startTransition] = useTransition();
+  const [rejecting, startReject] = useTransition();
+  const [confirming, startConfirm] = useTransition();
 
   return (
     <li className="flex flex-col gap-3 rounded-xl border p-4">
@@ -56,12 +57,13 @@ export function PendingPaymentCard({
           type="button"
           size="sm"
           variant="ghost"
-          disabled={pending}
-          className="text-destructive hover:text-destructive"
+          disabled={confirming}
+          loading={rejecting}
+          className="text-destructive-strong hover:text-destructive-strong"
           onClick={() => {
             const reason = window.prompt("Neden onaylamıyorsun? (danışan görecek, boş bırakabilirsin)");
             if (reason === null) return;
-            startTransition(async () => {
+            startReject(async () => {
               const res = await rejectPaymentAction(p.id, reason);
               if (res.ok) toast("Bildirim reddedildi");
               else toast.error("Reddedilemedi");
@@ -74,9 +76,10 @@ export function PendingPaymentCard({
         <Button
           type="button"
           size="sm"
-          disabled={pending}
+          disabled={rejecting}
+          loading={confirming}
           onClick={() =>
-            startTransition(async () => {
+            startConfirm(async () => {
               const res = await confirmPaymentAction(p.id);
               if (res.ok) toast.success(`${formatTRY(p.amount)} ödeme onaylandı`);
               else toast.error(res.error);

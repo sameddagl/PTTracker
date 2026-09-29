@@ -40,6 +40,8 @@ export const getPublicPage = cache(async (slug: string) => {
       sessionCount: packageTemplates.sessionCount,
       validityDays: packageTemplates.validityDays,
       price: packageTemplates.price,
+      compareAtPrice: packageTemplates.compareAtPrice,
+      installmentPrice: packageTemplates.installmentPrice,
       description: packageTemplates.description,
       features: packageTemplates.features,
       installments: packageTemplates.installments,
@@ -52,7 +54,7 @@ export const getPublicPage = cache(async (slug: string) => {
         eq(packageTemplates.isPublic, true),
       ),
     )
-    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.price));
+    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.createdAt));
 
   return { trainer, packages };
 });

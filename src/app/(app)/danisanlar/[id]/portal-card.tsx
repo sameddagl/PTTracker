@@ -24,9 +24,12 @@ export function PortalCard({
 }) {
   const [url, setUrl] = useState(initialUrl);
   const [pending, startTransition] = useTransition();
+  // Which button started the running action, so only that one spins.
+  const [busy, setBusy] = useState<"create" | "renew" | "revoke" | null>(null);
 
   function create(kind: "create" | "renew") {
     if (kind === "renew" && !window.confirm("Yeni link oluşturulursa danışandaki eski link çalışmaz. Devam edilsin mi?")) return;
+    setBusy(kind);
     startTransition(async () => {
       const res = await createPortalLinkAction(clientId);
       if ("error" in res) return void toast.error(res.error);
@@ -37,6 +40,7 @@ export function PortalCard({
 
   function revoke() {
     if (!window.confirm("Link kapatılsın mı? Danışan sayfasını artık açamaz.")) return;
+    setBusy("revoke");
     startTransition(async () => {
       const res = await revokePortalLinkAction(clientId);
       if (!res.ok) return void toast.error("Link kapatılamadı");
@@ -97,11 +101,11 @@ export function PortalCard({
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>{lastOpened ? `Son açılma: ${lastOpened}` : "Danışan henüz açmadı"}</span>
               <span className="flex gap-1">
-                <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={() => create("renew")}>
+                <Button type="button" size="sm" variant="ghost" disabled={pending} loading={pending && busy === "renew"} onClick={() => create("renew")}>
                   <RefreshCw />
                   Yenile
                 </Button>
-                <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={revoke}>
+                <Button type="button" size="sm" variant="ghost" disabled={pending} loading={pending && busy === "revoke"} onClick={revoke}>
                   <Link2Off />
                   Kapat
                 </Button>
@@ -109,7 +113,7 @@ export function PortalCard({
             </div>
           </>
         ) : (
-          <Button type="button" variant="outline" disabled={pending} onClick={() => create("create")} className="self-start">
+          <Button type="button" variant="outline" loading={pending} onClick={() => create("create")} className="self-start">
             <Link2 />
             {pending ? "Oluşturuluyor…" : "Link oluştur"}
           </Button>

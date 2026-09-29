@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Ban, ChevronLeft, Repeat, RotateCcw } from "lucide-react";
 import { AttendanceRow } from "@/components/attendance-row";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
@@ -63,10 +63,10 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
             <p className="flex-1 text-sm">Bu ders iptal edildi. Kimsenin paketinden düşmedi.</p>
             <form action={restoreLessonAction}>
               <input type="hidden" name="lessonId" value={lesson.lessonId} />
-              <Button type="submit" variant="outline" size="sm">
+              <SubmitButton variant="outline" size="sm">
                 <RotateCcw />
                 Geri al
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </Card>
@@ -107,18 +107,18 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
           <div className="flex flex-wrap gap-2">
             <form action={cancelLessonAction}>
               <input type="hidden" name="lessonId" value={lesson.lessonId} />
-              <Button type="submit" variant="ghost" className="text-destructive hover:text-destructive">
+              <SubmitButton variant="ghost" className="text-destructive-strong hover:text-destructive-strong">
                 <Ban />
                 Dersi iptal et
-              </Button>
+              </SubmitButton>
             </form>
             {lesson.seriesId && (
               <form action={cancelLessonAction}>
                 <input type="hidden" name="lessonId" value={lesson.lessonId} />
                 <input type="hidden" name="following" value="true" />
-                <Button type="submit" variant="ghost" className="text-destructive hover:text-destructive">
+                <SubmitButton variant="ghost" className="text-destructive-strong hover:text-destructive-strong">
                   Bu ve sonraki dersleri iptal et
-                </Button>
+                </SubmitButton>
               </form>
             )}
           </div>

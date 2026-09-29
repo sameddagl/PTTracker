@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock, ChevronRight, ClipboardList, Globe, LogOut, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { getClaims, withTrainer } from "@/db";
@@ -46,11 +46,11 @@ export default async function SettingsPage() {
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </Link>
         <Link
-          href="/ayarlar/paketler"
+          href="/paketler"
           className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
         >
           <Package className="size-4 text-muted-foreground" aria-hidden />
-          <span className="flex-1 font-medium">Paket şablonları</span>
+          <span className="flex-1 font-medium">Paketler</span>
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </Link>
         <Link
@@ -75,10 +75,10 @@ export default async function SettingsPage() {
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </Link>
         <form action={signOut}>
-          <Button type="submit" variant="outline">
+          <SubmitButton variant="outline">
             <LogOut />
             Çıkış yap
-          </Button>
+          </SubmitButton>
         </form>
       </div>
     </>

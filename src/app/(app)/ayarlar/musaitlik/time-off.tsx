@@ -56,7 +56,7 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
         <Field id="offNote" label="Not" hint="isteğe bağlı">
           <Input id="offNote" name="note" maxLength={100} placeholder="Örn. bayram" />
         </Field>
-        <Button type="submit" variant="outline" disabled={pending} className="self-start">
+        <Button type="submit" variant="outline" loading={pending} className="self-start">
           İzin ekle
         </Button>
       </form>

@@ -4,18 +4,20 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Check, ShieldCheck } from "lucide-react";
 import { Field, FormError } from "@/components/field";
+import { PriceTag } from "@/components/price-tag";
 import { IntakeInput } from "@/components/intake-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
 import { answerName, type IntakeFieldDef } from "@/lib/intake";
+import { monthlyAmount, paymentOptions, type PricedTemplate } from "@/lib/pricing";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { useScrollIntoView } from "@/lib/use-scroll-into-view";
 import { cn } from "@/lib/utils";
 import type { SignupState } from "./actions";
 
-type Pkg = { id: string; name: string; sessionType: keyof typeof SESSION_TYPE_LABELS; sessionCount: number; price: string | null };
+type Pkg = PricedTemplate & { id: string; name: string; sessionType: keyof typeof SESSION_TYPE_LABELS; sessionCount: number };
 
 export function SignupForm({
   action: serverAction,
@@ -33,6 +35,11 @@ export function SignupForm({
   const [state, action, pending] = useActionState<SignupState, FormData>(serverAction, {});
   const e = state.errors ?? {};
   const [pkgId, setPkgId] = useState(initialPackageId || packages[0]?.id || "");
+  const [installments, setInstallments] = useState(1);
+  const selected = packages.find((p) => p.id === pkgId);
+  const options = selected ? paymentOptions(selected) : [];
+  // Keep the pick valid when switching packages (e.g. one without installments).
+  const plan = options.find((o) => o.installments === installments) ?? options[0];
   const [healthConsent, setHealthConsent] = useState(false);
   const errorRef = useScrollIntoView<HTMLDivElement>(state.errors);
 
@@ -85,12 +92,51 @@ export function SignupForm({
                   {SESSION_TYPE_LABELS[p.sessionType]} · {p.sessionCount} ders
                 </span>
               </span>
-              {p.price && <span className="font-semibold tabular-nums">{formatTRY(p.price)}</span>}
+              {p.price ? (
+                <PriceTag price={p.price} compareAtPrice={p.compareAtPrice} className="max-w-32" />
+              ) : (
+                p.installmentPrice && <span className="font-semibold tabular-nums">{formatTRY(p.installmentPrice)}</span>
+              )}
             </button>
           ))}
         </div>
-        {e.templateId && <p className="mt-2 text-sm text-destructive">{e.templateId}</p>}
+        {e.templateId && <p className="mt-2 text-sm text-destructive-strong">{e.templateId}</p>}
       </fieldset>
+
+      <input type="hidden" name="installments" value={plan?.installments ?? 1} />
+      {options.length > 1 && (
+        <fieldset>
+          <legend className="mb-3 text-base font-semibold">Ödeme şekli</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {options.map((o) => {
+              const on = plan?.installments === o.installments;
+              return (
+                <button
+                  key={o.installments}
+                  type="button"
+                  onClick={() => setInstallments(o.installments)}
+                  aria-pressed={on}
+                  className={cn(
+                    "flex flex-col items-start gap-1 rounded-xl border px-4 py-3 text-left transition-colors",
+                    on ? "border-primary bg-primary/10" : "hover:bg-muted/50",
+                  )}
+                >
+                  <span className="font-medium">{o.installments > 1 ? `${o.installments} taksit` : "Peşin"}</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">
+                    {o.installments > 1
+                      ? `${o.installments} × ${formatTRY(monthlyAmount(o))} · toplam ${formatTRY(o.total)}`
+                      : `Tek seferde ${formatTRY(o.total)}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {e.installments && <p className="mt-2 text-sm text-destructive-strong">{e.installments}</p>}
+          {plan && plan.installments > 1 && (
+            <p className="mt-2 text-sm text-muted-foreground">İlk taksit paket başladığında, sonrakiler 30 gün arayla.</p>
+          )}
+        </fieldset>
+      )}
 
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-3 text-base font-semibold">Bilgilerin</legend>
@@ -168,7 +214,7 @@ export function SignupForm({
         {e.kvkk && <p className="text-sm text-destructive">{e.kvkk}</p>}
       </div>
 
-      <Button type="submit" size="lg" disabled={pending || !pkgId}>
+      <Button type="submit" size="lg" loading={pending} disabled={!pkgId}>
         {pending ? "Gönderiliyor…" : "Başvuruyu gönder"}
       </Button>
     </form>

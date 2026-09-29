@@ -14,7 +14,7 @@ export function DeletePaymentButton({ id, label }: { id: string; label: string }
       type="button"
       variant="ghost"
       size="icon"
-      disabled={pending}
+      loading={pending}
       aria-label={`${label} ödemesini sil`}
       onClick={() => {
         if (!window.confirm(`${label} ödemesi silinsin mi? Bu işlem geri alınamaz.`)) return;

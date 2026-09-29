@@ -111,6 +111,10 @@ export async function getPortalData(token: string) {
       createdAt: applications.createdAt,
       packageName: packageTemplates.name,
       price: packageTemplates.price,
+      compareAtPrice: packageTemplates.compareAtPrice,
+      installmentPrice: packageTemplates.installmentPrice,
+      templateInstallments: packageTemplates.installments,
+      installments: applications.installments,
     })
     .from(applications)
     .innerJoin(packageTemplates, eq(packageTemplates.id, applications.templateId))

@@ -103,7 +103,7 @@ export function ImageUpload({
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium">{label}</p>
         <div className="flex gap-1">
-          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => input.current?.click()}>
+          <Button type="button" size="sm" variant="outline" loading={pending} onClick={() => input.current?.click()}>
             {pending ? "Yükleniyor…" : url ? "Değiştir" : "Yükle"}
           </Button>
           {url && (

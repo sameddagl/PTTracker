@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { CheckCircle2, ChevronLeft, MessageCircle, ShieldCheck, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -16,6 +17,7 @@ import { consents } from "@/db/schema";
 import { SESSION_TYPE_LABELS, formatDayMonth, formatTRY, formatTime, todayISO } from "@/lib/format";
 import { formatAnswer } from "@/lib/intake";
 import { portalUrl } from "@/lib/portal";
+import { applicationOption, optionLabel } from "@/lib/pricing";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
 import { rejectApplicationAction } from "../actions";
 import { ApproveForm } from "./approve-form";
@@ -52,6 +54,8 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
           `Merhaba ${app.clientName.split(" ")[0]}, ${app.packageName} başvurun onaylandı! Paket bilgilerin ve ödeme adımları burada: ${portalUrl(token)}`,
         )
       : null;
+
+  const option = applicationOption(app);
 
   return (
     <>
@@ -104,7 +108,12 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
                 {SESSION_TYPE_LABELS[app.sessionType]} · {app.sessionCount} ders
               </p>
             </div>
-            {app.packagePrice && <p className="text-xl font-semibold tabular-nums">{formatTRY(app.packagePrice)}</p>}
+            {option && (
+              <div className="text-right">
+                <p className="text-xl font-semibold tabular-nums">{formatTRY(option.total)}</p>
+                <p className="text-sm text-muted-foreground">{optionLabel(option)}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -180,10 +189,10 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
           <ApproveForm id={app.id} today={todayISO(tz)} />
           <form action={rejectApplicationAction}>
             <input type="hidden" name="id" value={app.id} />
-            <Button type="submit" variant="ghost" className="text-destructive hover:text-destructive">
+            <SubmitButton variant="ghost" className="text-destructive-strong hover:text-destructive-strong">
               <X />
               Reddet
-            </Button>
+            </SubmitButton>
           </form>
           <p className="text-xs text-muted-foreground">
             Onaylayınca {app.packageName} paketi {trainerName} adına danışana tanımlanır ve kişisel sayfasında görünür.

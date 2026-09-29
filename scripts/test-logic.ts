@@ -29,7 +29,8 @@ import { todayISO } from "../src/lib/format";
 import { installmentPlan, installmentStates, nextPayable } from "../src/lib/installments";
 import { isUniqueViolation } from "../src/lib/pg-errors";
 import { slugError, toSlug } from "../src/lib/slug";
-import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
+import { createTemplate, expiryFor, listTemplates, pickPackage, reorderTemplates, sellPackage } from "../src/db/packages";
+import { discountPercent, paymentOptions, pickOption } from "../src/lib/pricing";
 import {
   MAX_RECEIPT_BYTES,
   confirmPayment,
@@ -465,10 +466,21 @@ async function main() {
   const [tpl] = await asTrainer((tx) =>
     tx
       .insert(schema.packageTemplates)
-      .values({ trainerId: T, name: "8 Ders Özel", sessionType: "private", sessionCount: 8, validityDays: 35, price: "4000", makeupAllowance: 1 })
-      .returning({ id: schema.packageTemplates.id }),
+      .values({
+        trainerId: T,
+        name: "8 Ders Özel",
+        sessionType: "private",
+        sessionCount: 8,
+        validityDays: 35,
+        price: "4000",
+        compareAtPrice: "5000",
+        installmentPrice: "4400",
+        installments: 4,
+        makeupAllowance: 1,
+      })
+      .returning(),
   );
-  const form = { trainerId: T, packageIds: [tpl.id], fields };
+  const form = { trainerId: T, packages: [tpl], fields };
   const fd = (entries: [string, string][]) => {
     const f = new FormData();
     for (const [k, v] of entries) f.append(k, v);
@@ -498,8 +510,17 @@ async function main() {
   assert.equal("errors" in validateSignup(form, fd([...base, ["website", "spam"]])), true, "honeypot");
   assert.equal("errors" in validateSignup(form, fd(base.filter(([k]) => k !== "kvkk"))), true, "KVKK notice is required");
 
-  v = validateSignup(form, fd([...base, ["healthConsent", "on"], [answerName(kilo.id), "61,5"], [answerName(byLabel("Boy").id), "168"]]));
+  // Payment option: cash by default, the package's own installment count, nothing else.
+  v = validateSignup(form, fd(base));
+  assert.ok("data" in v && v.data.installments === 1, "cash unless picked");
+  assert.ok("errors" in validateSignup(form, fd([...base, ["installments", "3"]])), "only the offered plan");
+
+  v = validateSignup(
+    form,
+    fd([...base, ["installments", "4"], ["healthConsent", "on"], [answerName(kilo.id), "61,5"], [answerName(byLabel("Boy").id), "168"]]),
+  );
   assert.ok("data" in v);
+  assert.equal(v.data.installments, 4);
   assert.equal(v.data.email, "deniz@example.com");
   const signupData = v.data;
 
@@ -528,7 +549,11 @@ async function main() {
   const approved = await asTrainer((tx) => approveApplication(tx, trainer, apps[0].id, { startsOn: "2026-10-01" }));
   assert.ok(approved);
   const [ap] = await asTrainer((tx) => tx.select().from(schema.clientPackages).where(eq(schema.clientPackages.id, approved.clientPackageId)));
-  assert.deepEqual([ap.name, ap.totalSessions, ap.expiresOn, ap.price], ["8 Ders Özel", 8, "2026-11-04", "4000.00"]);
+  assert.deepEqual(
+    [ap.name, ap.totalSessions, ap.expiresOn, ap.price, ap.installments],
+    ["8 Ders Özel", 8, "2026-11-04", "4400.00", 4],
+    "installment total and count from the picked option",
+  );
   assert.equal(await asTrainer((tx) => approveApplication(tx, trainer, apps[0].id, { startsOn: "2026-10-01" })), null, "only once");
   const [nowActive] = await db.select({ status: schema.clients.status }).from(schema.clients).where(eq(schema.clients.id, applicant.id));
   assert.equal(nowActive.status, "active");
@@ -751,6 +776,52 @@ async function main() {
   assert.deepEqual([c2.ok, c2.late, c2.makeupUsed], [true, true, true], "1 makeup allowance forgives it");
   await asTrainer((tx) => tx.update(schema.trainers).set({ lateCancelHours: 24 }).where(eq(schema.trainers.id, T)));
   console.log("booking: slots from weekly hours, double booking and non-private packages refused, cancel in time / late");
+
+  // ---- Package pricing and ordering ----
+  assert.equal(discountPercent("5000", "4000"), 20);
+  assert.equal(discountPercent("4000", "4000"), null);
+  assert.equal(discountPercent(null, "4000"), null);
+  const priced = { price: "4000", compareAtPrice: null, installmentPrice: "4500", installments: 3 };
+  assert.deepEqual(paymentOptions(priced), [
+    { installments: 1, total: 4000 },
+    { installments: 3, total: 4500 },
+  ]);
+  assert.deepEqual(pickOption(priced, 3), { installments: 3, total: 4500 });
+  assert.deepEqual(pickOption(priced, 6), { installments: 1, total: 4000 }, "unknown pick falls back to cash");
+  assert.deepEqual(paymentOptions({ ...priced, price: null }), [{ installments: 3, total: 4500 }], "installments only");
+
+  const tplInput = {
+    name: "Sıralama",
+    sessionType: "private" as const,
+    sessionCount: 4,
+    validityDays: null,
+    price: 2000,
+    compareAtPrice: null,
+    installmentPrice: 2200,
+    installments: 1,
+    makeupAllowance: 0,
+    isPublic: true,
+    description: null,
+    features: [],
+  };
+  const x = await asTrainer((tx) => createTemplate(tx, T, tplInput));
+  const y = await asTrainer((tx) => createTemplate(tx, T, { ...tplInput, name: "Sıralama 2", installments: 2 }));
+  const [xRow] = await asTrainer((tx) => tx.select().from(schema.packageTemplates).where(eq(schema.packageTemplates.id, x)));
+  assert.equal(xRow.installmentPrice, null, "installment price dropped without a plan");
+  let order = (await asTrainer((tx) => listTemplates(tx, T))).map((t) => t.id);
+  assert.deepEqual(order.slice(-2), [x, y], "new packages go last");
+  await asTrainer((tx) => reorderTemplates(tx, T, [y, ...order.filter((id) => id !== y)]));
+  order = (await asTrainer((tx) => listTemplates(tx, T))).map((t) => t.id);
+  assert.equal(order[0], y, "drag-and-drop order saved");
+  await assert.rejects(
+    asTrainer((tx) => tx.update(schema.packageTemplates).set({ compareAtPrice: "1000" }).where(eq(schema.packageTemplates.id, x))),
+    "a 'was' price below the price is refused",
+  );
+  await assert.rejects(
+    asTrainer((tx) => tx.update(schema.packageTemplates).set({ installments: 3 }).where(eq(schema.packageTemplates.id, x))),
+    "an installment count needs an installment price",
+  );
+  console.log("pricing: discount percent, cash and installment options, template order");
 
   // ---- Archive, restore and erase a client ----
     const [leaver, stayer] = await asTrainer((tx) =>

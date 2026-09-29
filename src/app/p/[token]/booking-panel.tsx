@@ -109,7 +109,7 @@ export function BookingPanel({
                     </span>
                   </p>
                   <div className="flex gap-2">
-                    <Button type="button" onClick={book} disabled={pending}>
+                    <Button type="button" onClick={book} loading={pending}>
                       {pending ? "Alınıyor…" : "Randevuyu onayla"}
                     </Button>
                     <Button type="button" variant="ghost" onClick={() => setPicked(null)}>

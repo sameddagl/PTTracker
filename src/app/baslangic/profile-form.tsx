@@ -59,7 +59,7 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
         {e.discipline && <p className="text-sm text-destructive">{e.discipline}</p>}
       </fieldset>
 
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" loading={pending}>
         {pending ? "Kaydediliyor…" : "Başla"}
       </Button>
     </form>

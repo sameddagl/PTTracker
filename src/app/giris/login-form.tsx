@@ -44,7 +44,7 @@ function EmailStep({ state, pending }: { state: Extract<LoginState, { step: "ema
           </p>
         )}
       </div>
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" loading={pending}>
         {pending ? "Gönderiliyor…" : "Giriş kodu gönder"}
       </Button>
     </>
@@ -82,7 +82,7 @@ function CodeStep({ state, pending }: { state: Extract<LoginState, { step: "code
           </p>
         )}
       </div>
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" loading={pending}>
         {pending ? "Kontrol ediliyor…" : "Giriş yap"}
       </Button>
       <div className="flex items-center justify-between text-sm">

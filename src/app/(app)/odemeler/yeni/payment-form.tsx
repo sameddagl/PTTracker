@@ -139,7 +139,7 @@ export function PaymentForm({
         <Input id="note" name="note" defaultValue={v?.note} placeholder="Örn. 2. taksit" />
       </Field>
 
-      <Button type="submit" size="lg" disabled={pending} className="sm:self-start">
+      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Ödemeyi kaydet"}
       </Button>
     </form>

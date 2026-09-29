@@ -161,7 +161,7 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
         </Field>
       </fieldset>
 
-      <Button type="submit" size="lg" disabled={pending || !!liveSlugError} className="sm:self-start">
+      <Button type="submit" size="lg" loading={pending} disabled={!!liveSlugError} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Kaydet"}
       </Button>
     </form>

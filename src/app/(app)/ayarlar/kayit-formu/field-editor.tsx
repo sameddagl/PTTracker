@@ -121,7 +121,7 @@ export function FieldEditor({ initial, onDone }: { initial: EditableField; onDon
       </div>
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" loading={pending}>
           {pending ? "Kaydediliyor…" : "Kaydet"}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>

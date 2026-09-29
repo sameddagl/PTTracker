@@ -23,7 +23,7 @@ export function ArchiveCard({ clientId, name, upcoming }: { clientId: string; na
         Artık gelmeyen danışanı listelerden kaldırır. Geçmiş dersler ve ödemeler saklanır; portal linki kapanır
         {upcoming > 0 && `, sıradaki ${upcoming} dersi iptal edilir`}. Arşivden geri alabilir ya da kalıcı olarak silebilirsin.
       </p>
-      <Button type="button" variant="outline" className="sm:self-start" disabled={pending} onClick={archive}>
+      <Button type="button" variant="outline" className="sm:self-start" loading={pending} onClick={archive}>
         <Archive />
         {pending ? "Arşivleniyor…" : "Arşivle"}
       </Button>

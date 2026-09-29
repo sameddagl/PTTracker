@@ -168,7 +168,12 @@ export const packageTemplates = pgTable(
     sessionCount: smallint("session_count").notNull(),
     // null = no expiry
     validityDays: smallint("validity_days"),
+    // Paid at once (peşin).
     price: money("price"),
+    // Optional "was" price shown struck through next to `price`.
+    compareAtPrice: money("compare_at_price"),
+    // Total when paid in `installments` monthly parts; null = no installment option.
+    installmentPrice: money("installment_price"),
     // How many lessons may be cancelled late without burning a credit.
     makeupAllowance: smallint("makeup_allowance").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
@@ -178,12 +183,14 @@ export const packageTemplates = pgTable(
     // Bullet points on the public package card, e.g. "Haftada 2 ders".
     features: text("features").array().notNull().default(sql`'{}'::text[]`),
     sortOrder: smallint("sort_order").notNull().default(0),
-    // Monthly installments the price is split into (1 = paid at once).
+    // Monthly installments of the installment option (1 = cash only).
     installments: smallint("installments").notNull().default(1),
     ...timestamps,
   },
   (t) => [
     check("package_templates_installments_range", sql`${t.installments} between 1 and 12`),
+    check("package_templates_installment_option", sql`(${t.installments} = 1) = (${t.installmentPrice} is null)`),
+    check("package_templates_compare_at_higher", sql`${t.compareAtPrice} is null or ${t.compareAtPrice} > ${t.price}`),
     unique("package_templates_id_trainer_key").on(t.id, t.trainerId),
     index("package_templates_trainer_idx").on(t.trainerId),
     ownRows("package_templates_own", t.trainerId),
@@ -436,6 +443,8 @@ export const applications = pgTable(
     status: applicationStatusEnum("status").notNull().default("pending"),
     // Free-text note from the sign-up form.
     message: text("message"),
+    // Payment option the applicant picked: 1 = cash price, >1 = the template's installment plan.
+    installments: smallint("installments").notNull().default(1),
     decidedAt: timestamp("decided_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

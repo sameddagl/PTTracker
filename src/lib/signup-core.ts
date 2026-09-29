@@ -5,6 +5,7 @@ import { saveIntakeAnswers, toDef, type IntakeField } from "@/db/intake";
 import { createPortalLink, getActivePortalLink } from "@/db/portal";
 import { applications, clients, consents } from "@/db/schema";
 import { answerName, parseAnswer, type IntakeValue } from "./intake";
+import { paymentOptions, type PricedTemplate } from "./pricing";
 import { normalizePhone } from "./whatsapp";
 
 // Sign-up validation and storage, free of Next.js and the connection pool so
@@ -17,13 +18,15 @@ export const HEALTH_CONSENT_VERSION = "saglik-rizasi-2026-09";
 export type SignupErrors = Record<string, string>;
 export type SignupResult = { ok: true; token: string; email: string | null } | { ok: false; errors: SignupErrors };
 
-type SignupForm = { trainerId: string; packageIds: string[]; fields: IntakeField[] };
+type SignupForm = { trainerId: string; packages: (PricedTemplate & { id: string })[]; fields: IntakeField[] };
 
 export type SignupData = {
   fullName: string;
   phone: string;
   email: string | null;
   templateId: string;
+  /** Payment option picked: 1 = cash, otherwise the package's installment plan. */
+  installments: number;
   message: string | null;
   healthConsent: boolean;
   answers: { field: IntakeField; value: IntakeValue }[];
@@ -51,7 +54,12 @@ export function validateSignup(form: SignupForm, formData: FormData): { data: Si
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = "E-posta geçersiz.";
 
   const templateId = get("templateId");
-  if (!form.packageIds.includes(templateId)) errors.templateId = "Bir paket seç.";
+  const pkg = form.packages.find((p) => p.id === templateId);
+  if (!pkg) errors.templateId = "Bir paket seç.";
+  // Unpriced packages have no options; the trainer sets the price on approval.
+  const options = pkg ? paymentOptions(pkg) : [];
+  const installments = Number(get("installments") || options[0]?.installments || 1);
+  if (pkg && options.length > 0 && !options.some((o) => o.installments === installments)) errors.installments = "Ödeme şeklini seç.";
 
   const message = get("message").slice(0, 1000) || null;
   if (formData.get("kvkk") !== "on") errors.kvkk = "Devam etmek için aydınlatma metnini onayla.";
@@ -68,7 +76,7 @@ export function validateSignup(form: SignupForm, formData: FormData): { data: Si
   }
   if (Object.keys(errors).length > 0) return { errors };
   return {
-    data: { fullName: `${firstName} ${lastName}`, phone: phone!, email, templateId, message, healthConsent, answers },
+    data: { fullName: `${firstName} ${lastName}`, phone: phone!, email, templateId, installments, message, healthConsent, answers },
   };
 }
 
@@ -129,7 +137,7 @@ export async function recordSignup(tx: Tx, trainerId: string, d: SignupData): Pr
   if (!pending) {
     const [app] = await tx
       .insert(applications)
-      .values({ trainerId, clientId, templateId: d.templateId, message: d.message })
+      .values({ trainerId, clientId, templateId: d.templateId, installments: d.installments, message: d.message })
       .returning({ id: applications.id });
     await saveIntakeAnswers(tx, { trainerId, clientId, applicationId: app.id, answers: d.answers });
     await tx.insert(consents).values([

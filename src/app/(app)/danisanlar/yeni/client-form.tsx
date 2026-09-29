@@ -84,7 +84,7 @@ export function ClientForm({ client, hasConsent = false }: { client?: ClientValu
         )}
       </fieldset>
 
-      <Button type="submit" size="lg" disabled={pending} className="sm:self-start">
+      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : client ? "Değişiklikleri kaydet" : "Danışanı kaydet"}
       </Button>
     </form>

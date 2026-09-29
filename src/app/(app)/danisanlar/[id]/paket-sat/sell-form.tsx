@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PAYMENT_METHOD_LABELS, SESSION_TYPE_LABELS, formatShortDate, formatTRY } from "@/lib/format";
 import { parseTRY, type FormState } from "@/lib/forms";
 import { INSTALLMENT_OPTIONS, installmentLabel, installmentPlan } from "@/lib/installments";
+import { optionLabel, paymentOptions, type PaymentOption } from "@/lib/pricing";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { cn } from "@/lib/utils";
 import { sellPackageAction, type SellField } from "./actions";
@@ -19,6 +20,8 @@ export type TemplateOption = {
   sessionCount: number;
   validityDays: number | null;
   price: string | null;
+  compareAtPrice: string | null;
+  installmentPrice: string | null;
   makeupAllowance: number;
   installments: number;
 };
@@ -28,15 +31,15 @@ type Values = Record<
   string
 >;
 
-const fromTemplate = (t: TemplateOption): Values => ({
+const fromTemplate = (t: TemplateOption, option: PaymentOption | undefined = paymentOptions(t)[0]): Values => ({
   templateId: t.id,
   name: t.name,
   sessionType: t.sessionType,
   totalSessions: String(t.sessionCount),
   validityDays: t.validityDays ? String(t.validityDays) : "",
-  price: t.price ? String(Number(t.price)) : "",
+  price: option ? String(option.total) : "",
   makeupAllowance: String(t.makeupAllowance),
-  installments: String(t.installments),
+  installments: String(option?.installments ?? 1),
 });
 
 const EMPTY: Values = {
@@ -68,6 +71,8 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
   const set = (key: keyof Values) => (ev: { target: { value: string } }) =>
     setValues((v) => ({ ...v, [key]: ev.target.value }));
 
+  const chosen = templates.find((t) => t.id === values.templateId);
+  const templateOptions = chosen ? paymentOptions(chosen) : [];
   const expiry = expiryPreview(startsOn, values.validityDays);
   const price = parseTRY(values.price);
   const plan = price && Number.isFinite(price) && startsOn ? installmentPlan(price, Number(values.installments), startsOn) : [];
@@ -96,15 +101,31 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
                 <span className="text-sm font-medium">{t.name}</span>
                 <span className="text-xs text-muted-foreground">
                   {t.sessionCount} ders{t.price ? ` · ${formatTRY(t.price)}` : ""}
+                  {t.installments > 1 && t.installmentPrice && ` · ${t.installments} taksit ${formatTRY(t.installmentPrice)}`}
                 </span>
               </button>
             ))}
           </div>
+          {chosen && templateOptions.length > 1 && (
+            <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Ödeme şekli">
+              {templateOptions.map((o) => (
+                <Button
+                  key={o.installments}
+                  type="button"
+                  size="sm"
+                  variant={values.installments === String(o.installments) && values.price === String(o.total) ? "default" : "outline"}
+                  onClick={() => setValues(fromTemplate(chosen, o))}
+                >
+                  {optionLabel(o)} · {formatTRY(o.total)}
+                </Button>
+              ))}
+            </div>
+          )}
         </fieldset>
       ) : (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
           Sık sattığın paketleri{" "}
-          <Link href="/ayarlar/paketler" className="font-medium text-foreground underline underline-offset-2">
+          <Link href="/paketler" className="font-medium text-foreground underline underline-offset-2">
             şablon olarak kaydedersen
           </Link>{" "}
           burada tek dokunuşla seçebilirsin.
@@ -245,7 +266,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
         )}
       </fieldset>
 
-      <Button type="submit" size="lg" disabled={pending} className="sm:self-start">
+      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Paketi sat"}
       </Button>
     </form>

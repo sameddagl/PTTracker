@@ -4,7 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AtSign, Check, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PriceTag } from "@/components/price-tag";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
+import { monthlyAmount, paymentOptions } from "@/lib/pricing";
 import { getPublicPage, type PublicPage } from "@/lib/public-page";
 import { profileImageUrl } from "@/lib/storage";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -131,7 +133,8 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
 }
 
 function PackageCard({ slug, pkg: p }: { slug: string; pkg: PublicPage["packages"][number] }) {
-  const perLesson = p.price && p.sessionCount > 0 ? Number(p.price) / p.sessionCount : null;
+  const plan = paymentOptions(p).find((o) => o.installments > 1);
+  const perLesson = p.price && p.sessionCount > 1 ? Number(p.price) / p.sessionCount : null;
   return (
     <article className="flex flex-col gap-4 rounded-2xl border bg-card p-5">
       <div className="flex items-start justify-between gap-4">
@@ -142,14 +145,20 @@ function PackageCard({ slug, pkg: p }: { slug: string; pkg: PublicPage["packages
             {p.validityDays ? ` · ${p.validityDays} gün geçerli` : ""}
           </p>
         </div>
-        {p.price && (
-          <div className="shrink-0 text-right">
-            <p className="text-xl font-semibold tabular-nums">{formatTRY(p.price)}</p>
-            {p.installments > 1 ? (
-              <p className="text-xs text-muted-foreground">{p.installments} taksitle ödenebilir</p>
+        {(p.price || plan) && (
+          <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+            {p.price ? (
+              <>
+                <PriceTag price={p.price} compareAtPrice={p.compareAtPrice} size="lg" className="max-w-40" />
+                {perLesson && <p className="text-xs text-muted-foreground tabular-nums">peşin · ders başı {formatTRY(perLesson)}</p>}
+              </>
             ) : (
-              perLesson &&
-              p.sessionCount > 1 && <p className="text-xs text-muted-foreground tabular-nums">ders başı {formatTRY(perLesson)}</p>
+              plan && <p className="text-xl font-semibold tabular-nums">{formatTRY(plan.total)}</p>
+            )}
+            {plan && (
+              <p className="text-xs text-muted-foreground tabular-nums">
+                ya da {plan.installments} × {formatTRY(monthlyAmount(plan))} taksit
+              </p>
             )}
           </div>
         )}

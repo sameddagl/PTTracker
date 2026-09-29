@@ -23,7 +23,7 @@ export async function submitSignup(slug: string, formData: FormData): Promise<Si
   const form = await getSignupForm(slug);
   if (!form) return { ok: false, errors: { form: "Bu sayfa artık yayında değil." } };
 
-  const v = validateSignup({ trainerId: form.trainer.id, packageIds: form.packages.map((p) => p.id), fields: form.fields }, formData);
+  const v = validateSignup({ trainerId: form.trainer.id, packages: form.packages, fields: form.fields }, formData);
   if ("errors" in v) return { ok: false, errors: v.errors };
 
   const result = await adminDb.transaction((tx) => recordSignup(tx, form.trainer.id, v.data));

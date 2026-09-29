@@ -182,7 +182,7 @@ export function PaymentPanel({
                         <Input id="note" name="note" maxLength={300} />
                       </Field>
                       <div className="flex gap-2">
-                        <Button type="submit" disabled={pending || preparing}>
+                        <Button type="submit" loading={pending || preparing}>
                           <Paperclip />
                           {preparing ? "Hazırlanıyor…" : pending ? "Gönderiliyor…" : "Bildir"}
                         </Button>
