@@ -13,8 +13,16 @@ export async function listTemplates(tx: Tx, trainerId: string, { activeOnly = fa
     .where(
       and(eq(packageTemplates.trainerId, trainerId), activeOnly ? eq(packageTemplates.isActive, true) : undefined),
     )
-    .orderBy(asc(packageTemplates.sessionType), asc(packageTemplates.sessionCount));
+    .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.sessionType), asc(packageTemplates.sessionCount));
   return rows;
+}
+
+export async function getTemplate(tx: Tx, trainerId: string, id: string) {
+  const [row] = await tx
+    .select()
+    .from(packageTemplates)
+    .where(and(eq(packageTemplates.id, id), eq(packageTemplates.trainerId, trainerId)));
+  return row ?? null;
 }
 
 export type TemplateInput = {
@@ -24,14 +32,29 @@ export type TemplateInput = {
   validityDays: number | null;
   price: number | null;
   makeupAllowance: number;
+  isPublic: boolean;
+  description: string | null;
+  features: string[];
+  sortOrder: number;
 };
 
+const templateRow = (input: TemplateInput) => ({
+  ...input,
+  price: input.price === null ? null : input.price.toFixed(2),
+});
+
 export async function createTemplate(tx: Tx, trainerId: string, input: TemplateInput) {
-  await tx.insert(packageTemplates).values({
-    ...input,
-    price: input.price === null ? null : input.price.toFixed(2),
-    trainerId,
-  });
+  await tx.insert(packageTemplates).values({ ...templateRow(input), trainerId });
+}
+
+/** Edits a template. Packages already sold keep their own snapshot. */
+export async function updateTemplate(tx: Tx, trainerId: string, id: string, input: TemplateInput) {
+  const [row] = await tx
+    .update(packageTemplates)
+    .set(templateRow(input))
+    .where(and(eq(packageTemplates.id, id), eq(packageTemplates.trainerId, trainerId)))
+    .returning({ id: packageTemplates.id });
+  return !!row;
 }
 
 export async function setTemplateActive(tx: Tx, trainerId: string, id: string, isActive: boolean) {

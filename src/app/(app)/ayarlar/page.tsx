@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, LogOut, Package } from "lucide-react";
+import { ChevronRight, Globe, LogOut, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -32,6 +32,19 @@ export default async function SettingsPage() {
             </dl>
           </CardContent>
         </Card>
+        <Link
+          href="/ayarlar/profil"
+          className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+        >
+          <Globe className="size-4 text-muted-foreground" aria-hidden />
+          <span className="flex-1">
+            <span className="block font-medium">Profil ve sayfam</span>
+            <span className="block text-xs text-muted-foreground">
+              {trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil"}
+            </span>
+          </span>
+          <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+        </Link>
         <Link
           href="/ayarlar/paketler"
           className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50"

@@ -1,10 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/giris", "/auth", "/p", "/kvkk", "/gizlilik"];
+// The trainer app. Everything else is public: landing, login, legal pages,
+// client portals (/p/…) and trainers' public pages (/<slug>).
+const PROTECTED_PREFIXES = ["/bugun", "/danisanlar", "/takvim", "/odemeler", "/ayarlar", "/ders", "/baslangic"];
 
-const isPublic = (path: string) =>
-  path === "/" || PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+const isProtected = (path: string) => PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 
 // Refreshes the Supabase session cookie on every request and sends signed-out
 // visitors to the login page. This is an optimistic check only; every data
@@ -32,7 +33,7 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const path = request.nextUrl.pathname;
 
-  if (!data?.claims && !isPublic(path)) {
+  if (!data?.claims && isProtected(path)) {
     const url = request.nextUrl.clone();
     url.pathname = "/giris";
     url.search = path === "/bugun" ? "" : `?next=${encodeURIComponent(path)}`;

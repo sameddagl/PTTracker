@@ -32,9 +32,12 @@ export default async function TemplatesPage() {
           {templates.map((t) => (
             <li key={t.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
-                <p className={t.isActive ? "truncate font-medium" : "truncate font-medium text-muted-foreground line-through"}>
+                <Link
+                  href={`/ayarlar/paketler/${t.id}`}
+                  className={t.isActive ? "block truncate font-medium hover:underline" : "block truncate font-medium text-muted-foreground line-through"}
+                >
                   {t.name}
-                </p>
+                </Link>
                 <p className="truncate text-xs text-muted-foreground">
                   {SESSION_TYPE_LABELS[t.sessionType]} · {t.sessionCount} ders
                   {t.validityDays ? ` · ${t.validityDays} gün` : " · süresiz"}
@@ -43,6 +46,7 @@ export default async function TemplatesPage() {
               </div>
               {t.price && <span className="text-sm font-medium tabular-nums">{formatTRY(t.price)}</span>}
               {!t.isActive && <Badge variant="secondary">Pasif</Badge>}
+              {t.isActive && !t.isPublic && <Badge variant="outline">Gizli</Badge>}
               <form action={toggleTemplateAction}>
                 <input type="hidden" name="id" value={t.id} />
                 <input type="hidden" name="active" value={String(!t.isActive)} />

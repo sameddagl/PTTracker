@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   date,
   foreignKey,
   index,
@@ -69,9 +70,26 @@ export const trainers = pgTable(
     lateCancelHours: smallint("late_cancel_hours").notNull().default(24),
     timezone: text("timezone").notNull().default("Europe/Istanbul"),
     onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+
+    // Public page at /<slug>: the link trainers put in their Instagram bio.
+    slug: text("slug").unique(),
+    publicPageEnabled: boolean("public_page_enabled").notNull().default(false),
+    headline: text("headline"),
+    bio: text("bio"),
+    city: text("city"),
+    instagram: text("instagram"),
+    specialties: text("specialties").array().notNull().default(sql`'{}'::text[]`),
+    // Paths inside the "profile" storage bucket.
+    avatarPath: text("avatar_path"),
+    coverPath: text("cover_path"),
+
+    // Shown to approved clients so they can pay by bank transfer.
+    iban: text("iban"),
+    ibanHolder: text("iban_holder"),
     ...timestamps,
   },
   (t) => [
+    check("trainers_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$'`),
     // Rows are created by the on_auth_user_created trigger, never by the client.
     pgPolicy("trainers_select_own", { for: "select", to: authenticatedRole, using: sql`${t.id} = ${authUid}` }),
     pgPolicy("trainers_update_own", {
@@ -125,6 +143,12 @@ export const packageTemplates = pgTable(
     // How many lessons may be cancelled late without burning a credit.
     makeupAllowance: smallint("makeup_allowance").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
+    // Listed on the trainer's public page (when active).
+    isPublic: boolean("is_public").notNull().default(true),
+    description: text("description"),
+    // Bullet points on the public package card, e.g. "Haftada 2 ders".
+    features: text("features").array().notNull().default(sql`'{}'::text[]`),
+    sortOrder: smallint("sort_order").notNull().default(0),
     ...timestamps,
   },
   (t) => [

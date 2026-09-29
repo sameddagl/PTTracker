@@ -22,6 +22,20 @@
       "when": 1790698440530,
       "tag": "20260929161400_fk_names_and_package_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790703194313,
+      "tag": "20260929173314_public_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790703206658,
+      "tag": "20260929173326_profile_storage",
+      "breakpoints": true
     }
   ]
 }

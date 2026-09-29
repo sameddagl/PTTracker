@@ -17,6 +17,8 @@ import {
 } from "../src/db/lessons";
 import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
 import { recurringDates, startOfWeek } from "../src/lib/dates";
+import { isUniqueViolation } from "../src/lib/pg-errors";
+import { slugError, toSlug } from "../src/lib/slug";
 import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
 import { deletePayment, listDebtors, listRecentPayments, recordPayment } from "../src/db/payments";
 import {
@@ -408,8 +410,30 @@ async function main() {
   assert.equal(await asTrainer((tx) => getActivePortalLink(tx, zeynep.id)), null);
   console.log("portal links: derived, hashed at rest, re-showable, renew/revoke work");
 
+  // ---- Public page slugs ----
+  assert.equal(toSlug("Çağla Işık Öztürk"), "cagla-isik-ozturk");
+  assert.equal(toSlug("İREM ŞEN Pilates"), "irem-sen-pilates");
+  assert.equal(slugError("bugun"), "Bu adres kullanılamıyor.");
+  assert.ok(slugError("ab"));
+  assert.equal(slugError("samed-hoca"), null);
+  await asTrainer((tx) => tx.update(schema.trainers).set({ slug: "samed-hoca" }).where(eq(schema.trainers.id, T)));
+  const otherId = "00000000-0000-0000-0000-0000000000b2";
+  await addUsers(pg, [{ id: otherId }]);
+  const taken = await db
+    .transaction(async (tx) => {
+      await tx.execute(sql`select set_config('request.jwt.claim.sub', ${otherId}, true)`);
+      await tx.execute(sql`set local role authenticated`);
+      await tx.update(schema.trainers).set({ slug: "samed-hoca" }).where(eq(schema.trainers.id, otherId));
+    })
+    .then(() => null, (e) => e);
+  assert.ok(isUniqueViolation(taken), "a second trainer can't take the same slug");
+  await assert.rejects(
+    asTrainer((tx) => tx.update(schema.trainers).set({ slug: "Büyük Harf" }).where(eq(schema.trainers.id, T))),
+    "database rejects malformed slugs",
+  );
+  console.log("slugs: Turkish transliteration, reserved words, uniqueness, format check");
+
   // Another trainer's attendee id is invisible (RLS) → null, nothing changed.
-  await addUsers(pg, [{ id: "00000000-0000-0000-0000-0000000000b2" }]);
   const other = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b2', true)`);
     await tx.execute(sql`set local role authenticated`);
