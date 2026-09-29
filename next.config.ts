@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Keep the dev badge clear of the mobile bottom navigation.
+  devIndicators: { position: "top-right" },
 };
 
 export default nextConfig;
