@@ -19,10 +19,20 @@ import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
 import { recurringDates, startOfWeek } from "../src/lib/dates";
 import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
 import { deletePayment, listDebtors, listRecentPayments, recordPayment } from "../src/db/payments";
+import {
+  PORTAL_TOKEN_PATTERN,
+  createPortalLink,
+  getActivePortalLink,
+  getActivePortalTokens,
+  hashToken,
+  revokePortalLinks,
+  tokenFor,
+} from "../src/db/portal";
 import * as schema from "../src/db/schema";
 import { addUsers, createTestDb } from "./pglite";
 
 const T = "00000000-0000-0000-0000-0000000000a1";
+process.env.PORTAL_SECRET ??= "test-secret-test-secret-test-secret";
 const trainer = { id: T, timezone: "Europe/Istanbul" };
 
 async function main() {
@@ -374,6 +384,30 @@ async function main() {
     ],
   );
 
+  // ---- Portal links ----
+  const link = await asTrainer((tx) => createPortalLink(tx, T, zeynep.id));
+  assert.match(link.token, PORTAL_TOKEN_PATTERN);
+  assert.equal(link.token, tokenFor(link.id), "token is derived from the id");
+  assert.notEqual(tokenFor(link.id, "x".repeat(32)), link.token, "a different secret gives a different token");
+  const [stored] = await asTrainer((tx) =>
+    tx.select().from(schema.portalTokens).where(eq(schema.portalTokens.id, link.id)),
+  );
+  assert.equal(stored.tokenHash, hashToken(link.token));
+  assert.ok(!Object.values(stored).includes(link.token), "the token itself is never stored");
+  assert.equal((await asTrainer((tx) => getActivePortalLink(tx, zeynep.id)))?.token, link.token, "same link can be shown again");
+
+  const renewed = await asTrainer((tx) => createPortalLink(tx, T, zeynep.id));
+  assert.notEqual(renewed.token, link.token);
+  const [old] = await asTrainer((tx) =>
+    tx.select().from(schema.portalTokens).where(eq(schema.portalTokens.id, link.id)),
+  );
+  assert.ok(old.revokedAt, "renewing revokes the old link");
+  const tokens = await asTrainer((tx) => getActivePortalTokens(tx, [zeynep.id, ali.id]));
+  assert.deepEqual([...tokens.entries()], [[zeynep.id, renewed.token]]);
+  await asTrainer((tx) => revokePortalLinks(tx, zeynep.id));
+  assert.equal(await asTrainer((tx) => getActivePortalLink(tx, zeynep.id)), null);
+  console.log("portal links: derived, hashed at rest, re-showable, renew/revoke work");
+
   // Another trainer's attendee id is invisible (RLS) → null, nothing changed.
   await addUsers(pg, [{ id: "00000000-0000-0000-0000-0000000000b2" }]);
   const other = await db.transaction(async (tx) => {
@@ -389,6 +423,14 @@ async function main() {
     return deletePayment(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", someone.id);
   });
   assert.equal(deletedByOther, null);
+  await assert.rejects(
+    db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b2', true)`);
+      await tx.execute(sql`set local role authenticated`);
+      return createPortalLink(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", zeynep.id);
+    }),
+    "another trainer cannot open a portal link for my client",
+  );
   assert.ok(await asTrainer((tx) => deletePayment(tx, T, someone.id)), "owner can delete");
   console.log("cross-tenant attendance and payment delete blocked\n\nall logic checks passed");
 }

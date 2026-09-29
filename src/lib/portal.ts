@@ -1,40 +1,33 @@
 import "server-only";
-import { createHash, randomBytes } from "node:crypto";
-import { and, asc, desc, eq, gte, inArray, isNull } from "drizzle-orm";
-import { adminDb, type Tx } from "@/db";
+import { and, asc, desc, eq, gte, inArray, isNull, lt } from "drizzle-orm";
+import { adminDb } from "@/db";
+import { PORTAL_TOKEN_PATTERN, hashToken } from "@/db/portal";
 import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessons, portalTokens, trainers } from "@/db/schema";
+import { siteUrl } from "./config";
 
-// Client portal links: /p/<token>. The token is shown once and only its hash
-// is stored, so a database leak does not expose working links.
-
-const hash = (token: string) => createHash("sha256").update(token).digest("hex");
-
-/** Creates a new link for a client, revoking earlier ones. Call inside withTrainer. */
-export async function createPortalToken(tx: Tx, trainerId: string, clientId: string) {
-  const token = randomBytes(24).toString("base64url");
-  await tx
-    .update(portalTokens)
-    .set({ revokedAt: new Date() })
-    .where(and(eq(portalTokens.clientId, clientId), isNull(portalTokens.revokedAt)));
-  await tx.insert(portalTokens).values({ trainerId, clientId, tokenHash: hash(token) });
-  return token;
-}
+export const portalUrl = (token: string) => `${siteUrl()}/p/${token}`;
 
 /**
  * Resolves a portal token without a signed-in user. Uses adminDb (no RLS), so
  * every query below is filtered by the client id bound to the token.
  */
 export async function getPortalData(token: string) {
-  if (!/^[A-Za-z0-9_-]{32}$/.test(token)) return null;
+  if (!PORTAL_TOKEN_PATTERN.test(token)) return null;
 
   const [link] = await adminDb
-    .select({ id: portalTokens.id, clientId: portalTokens.clientId, trainerId: portalTokens.trainerId })
+    .select({ id: portalTokens.id, clientId: portalTokens.clientId })
     .from(portalTokens)
-    .where(and(eq(portalTokens.tokenHash, hash(token)), isNull(portalTokens.revokedAt)));
+    .where(and(eq(portalTokens.tokenHash, hashToken(token)), isNull(portalTokens.revokedAt)));
   if (!link) return null;
 
   const [client] = await adminDb
-    .select({ fullName: clients.fullName, trainerName: trainers.fullName, businessName: trainers.businessName, timezone: trainers.timezone })
+    .select({
+      fullName: clients.fullName,
+      trainerName: trainers.fullName,
+      businessName: trainers.businessName,
+      trainerPhone: trainers.phone,
+      timezone: trainers.timezone,
+    })
     .from(clients)
     .innerJoin(trainers, eq(trainers.id, clients.trainerId))
     .where(and(eq(clients.id, link.clientId), isNull(clients.archivedAt)));
@@ -55,22 +48,34 @@ export async function getPortalData(token: string) {
     .where(and(eq(clientPackages.clientId, link.clientId), inArray(clientPackageBalances.state, ["active", "frozen"])))
     .orderBy(desc(clientPackages.startsOn));
 
-  const upcoming = await adminDb
-    .select({ startsAt: lessons.startsAt, sessionType: lessons.sessionType })
-    .from(lessonAttendees)
-    .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
-    .where(
-      and(
-        eq(lessonAttendees.clientId, link.clientId),
-        eq(lessonAttendees.status, "scheduled"),
-        eq(lessons.status, "scheduled"),
-        gte(lessons.startsAt, new Date()),
-      ),
-    )
-    .orderBy(asc(lessons.startsAt))
-    .limit(5);
+  const now = new Date();
+  const lessonRows = (when: "upcoming" | "past") =>
+    adminDb
+      .select({
+        id: lessonAttendees.id,
+        startsAt: lessons.startsAt,
+        sessionType: lessons.sessionType,
+        status: lessonAttendees.status,
+        makeupUsed: lessonAttendees.makeupUsed,
+      })
+      .from(lessonAttendees)
+      .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+      .where(
+        and(
+          eq(lessonAttendees.clientId, link.clientId),
+          eq(lessons.status, "scheduled"),
+          when === "upcoming"
+            ? and(eq(lessonAttendees.status, "scheduled"), gte(lessons.startsAt, now))
+            : and(inArray(lessonAttendees.status, ["attended", "no_show", "late_cancel"]), lt(lessons.startsAt, now)),
+        ),
+      )
+      .orderBy(when === "upcoming" ? asc(lessons.startsAt) : desc(lessons.startsAt))
+      .limit(5);
 
-  await adminDb.update(portalTokens).set({ lastUsedAt: new Date() }).where(eq(portalTokens.id, link.id));
+  const upcoming = await lessonRows("upcoming");
+  const recent = await lessonRows("past");
 
-  return { client, packages, upcoming };
+  await adminDb.update(portalTokens).set({ lastUsedAt: now }).where(eq(portalTokens.id, link.id));
+
+  return { client, packages, upcoming, recent };
 }

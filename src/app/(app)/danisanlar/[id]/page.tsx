@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listRecentPayments } from "@/db/payments";
+import { getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
 import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessons } from "@/db/schema";
 import {
@@ -20,7 +21,9 @@ import {
   formatTRY,
   formatTime,
 } from "@/lib/format";
+import { portalUrl } from "@/lib/portal";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
+import { PortalCard } from "./portal-card";
 
 export const metadata: Metadata = { title: "Danışan" };
 
@@ -59,26 +62,38 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
       .innerJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, clientPackages.id))
       .where(eq(clientPackages.clientId, id))
       .orderBy(desc(clientPackages.startsOn));
-    const history = await tx
-      .select({
-        id: lessonAttendees.id,
-        startsAt: lessons.startsAt,
-        sessionType: lessons.sessionType,
-        status: lessonAttendees.status,
-        makeupUsed: lessonAttendees.makeupUsed,
-      })
-      .from(lessonAttendees)
-      .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
-      .where(eq(lessonAttendees.clientId, id))
-      .orderBy(desc(lessons.startsAt))
-      .limit(10);
+    const lessonRows = (when: "upcoming" | "past") =>
+      tx
+        .select({
+          id: lessonAttendees.id,
+          lessonId: lessons.id,
+          startsAt: lessons.startsAt,
+          sessionType: lessons.sessionType,
+          status: lessonAttendees.status,
+          makeupUsed: lessonAttendees.makeupUsed,
+        })
+        .from(lessonAttendees)
+        .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+        .where(
+          and(
+            eq(lessonAttendees.clientId, id),
+            // Lessons the trainer cancelled never happened; leave them out of the history.
+            eq(lessons.status, "scheduled"),
+            when === "upcoming" ? gte(lessons.startsAt, sql`now()`) : lt(lessons.startsAt, sql`now()`),
+          ),
+        )
+        .orderBy(when === "upcoming" ? asc(lessons.startsAt) : desc(lessons.startsAt))
+        .limit(when === "upcoming" ? 5 : 10);
+    const upcoming = await lessonRows("upcoming");
+    const history = await lessonRows("past");
     const paymentHistory = await listRecentPayments(tx, trainerId, { clientId: id, limit: 10 });
+    const portal = await getActivePortalLink(tx, id);
     const { timezone } = await getTrainer(tx, trainerId);
-    return { client, packages, history, paymentHistory, timezone };
+    return { client, packages, upcoming, history, paymentHistory, portal, timezone };
   });
   if (!data) notFound();
 
-  const { client, packages, history, paymentHistory, timezone } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, timezone } = data;
   const totalDue = packages.filter((p) => p.state !== "cancelled").reduce((sum, p) => sum + Number(p.due), 0);
   const wa = whatsappLink(client.phone, `Merhaba ${client.fullName.split(" ")[0]},`);
 
@@ -163,6 +178,35 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         )}
       </section>
 
+      <div className="mb-8">
+        <PortalCard
+          clientId={client.id}
+          clientName={client.fullName}
+          phone={client.phone}
+          url={portal ? portalUrl(portal.token) : null}
+          lastOpened={portal?.lastUsedAt ? `${formatDayMonth(portal.lastUsedAt, timezone)} ${formatTime(portal.lastUsedAt, timezone)}` : null}
+        />
+      </div>
+
+      {upcoming.length > 0 && (
+        <section aria-labelledby="upcoming-heading" className="mb-8">
+          <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+            Sıradaki dersler
+          </h2>
+          <ul className="divide-y rounded-xl border">
+            {upcoming.map((h) => (
+              <li key={h.id}>
+                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50">
+                  <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
+                  <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
+                  <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="history-heading" className="mb-8">
         <h2 id="history-heading" className="mb-3 text-sm font-medium text-muted-foreground">
           Son dersler
@@ -172,14 +216,16 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         ) : (
           <ul className="divide-y rounded-xl border">
             {history.map((h) => (
-              <li key={h.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
-                <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
-                <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
-                <Badge variant={h.status === "attended" ? "default" : h.status === "scheduled" ? "outline" : "secondary"}>
-                  {ATTENDANCE_LABELS[h.status]}
-                  {h.makeupUsed && " · telafi"}
-                </Badge>
+              <li key={h.id}>
+                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50">
+                  <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
+                  <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
+                  <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
+                  <Badge variant={h.status === "attended" ? "default" : h.status === "scheduled" ? "outline" : "secondary"}>
+                    {ATTENDANCE_LABELS[h.status]}
+                    {h.makeupUsed && " · telafi"}
+                  </Badge>
+                </Link>
               </li>
             ))}
           </ul>

@@ -20,6 +20,10 @@ export function formatPhone(raw: string | null | undefined): string | null {
   return m ? `+90 ${m[1]} ${m[2]} ${m[3]} ${m[4]}` : `+${n}`;
 }
 
+/** Appends the client's portal link to a message, when they have one. */
+export const withPortal = (text: string, url: string | null | undefined) =>
+  url ? `${text}\n\nDerslerin ve ödemen: ${url}` : text;
+
 export function whatsappLink(phone: string | null | undefined, text: string): string | null {
   const n = normalizePhone(phone);
   return n ? `https://wa.me/${n}?text=${encodeURIComponent(text)}` : null;
@@ -36,5 +40,7 @@ export const messages = {
     `Merhaba ${firstName(name)}, paketinin son kullanım tarihi ${date}. Kalan derslerini planlayalım mı?`,
   paymentDue: (name: string, amount: string) =>
     `Merhaba ${firstName(name)}, paket ödemesinden kalan ${amount} tutarı hatırlatmak istedim. Teşekkürler!`,
+  portalInvite: (name: string, url: string) =>
+    `Merhaba ${firstName(name)}, kalan derslerini, randevularını ve ödeme durumunu buradan görebilirsin: ${url}`,
   reminder: (name: string, when: string) => `Merhaba ${firstName(name)}, ${when} dersimizi hatırlatırım. Görüşmek üzere!`,
 };

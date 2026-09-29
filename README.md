@@ -23,7 +23,12 @@ cp .env.example .env.local
    - **Transaction pooler** (port 6543) adresini `DATABASE_URL` olarak yaz.
    - *(İsteğe bağlı)* **Session pooler** (port 5432) adresini `DATABASE_URL_DIRECT` olarak yaz. Boş bırakırsan migration'lar `DATABASE_URL`'i 5432 portuyla kullanır. **Direct connection**'ı kullanma: yalnızca IPv6 destekler, çoğu ev ağında bağlanamaz.
    - `[YOUR-PASSWORD]` yerine proje açılırken belirlediğin veritabanı şifresini yaz. Unuttuysan **Project Settings → Database → Reset database password** ile yenileyebilirsin.
-4. Migration'ları uygula:
+4. Danışan portal linkleri için bir gizli anahtar üret ve `PORTAL_SECRET` olarak yaz:
+   ```bash
+   openssl rand -base64 32
+   ```
+   Bu değer değişirse daha önce paylaşılan tüm linkler geçersiz olur. Canlı ortamda ayrı bir değer kullan.
+5. Migration'ları uygula:
    ```bash
    pnpm db:migrate
    pnpm db:check   # tabloları, RLS'i, view'ı ve trigger'ı doğrular
@@ -74,6 +79,9 @@ pnpm dev
 - **Paket bakiyesi:**
   - Tek doğruluk kaynağı `lesson_attendees.consumes_credit` (geldi / gelmedi / telafi hakkı kullanılmamış geç iptal).
   - `client_package_balances` view'ı kalan dersi, dondurmayla uzayan son tarihi, ödenen ve kalan tutarı ve durumu hesaplar.
-- **Danışan portalı:** `/p/<token>` salt okunurdur. Veritabanında token'ın yalnızca SHA-256 hash'i tutulur.
+- **Danışan portalı:** `/p/<token>` salt okunurdur ve giriş gerektirmez.
+  - Token, link kaydının id'sinden `PORTAL_SECRET` ile HMAC olarak türetilir. Bu sayede trainer aynı linki istediği zaman tekrar kopyalayabilir.
+  - Veritabanında yalnızca token'ın SHA-256 hash'i tutulur; anahtar olmadan sızan veritabanından çalışan link üretilemez.
+  - "Yenile" eski linki geçersiz kılar. WhatsApp hatırlatmaları aktif linki mesajın sonuna ekler.
 - **WhatsApp:** MVP'de `wa.me` linkleri kullanılır ([src/lib/whatsapp.ts](src/lib/whatsapp.ts)). Onay veya şirket gerektirmez.
 - **KVKK:** Sağlık notları opsiyoneldir ve danışanın açık rızasıyla kaydedilir (`consents` tablosu). [KVKK metni](src/app/kvkk/page.tsx) taslaktır, hukuki inceleme gerekiyor.

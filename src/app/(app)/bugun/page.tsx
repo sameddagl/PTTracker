@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { getLessons } from "@/db/lessons";
+import { getActivePortalTokens } from "@/db/portal";
 import { getPackageAlerts, getTrainer, type PackageAlert } from "@/db/queries";
 import {
   SESSION_TYPE_LABELS,
@@ -16,19 +17,21 @@ import {
   greeting,
   todayISO,
 } from "@/lib/format";
-import { messages, whatsappLink } from "@/lib/whatsapp";
+import { portalUrl } from "@/lib/portal";
+import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
 import { AttendanceRow } from "@/components/attendance-row";
 
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
     const lessons = await getLessons(tx, trainer, { from: today, to: today });
     const alerts = await getPackageAlerts(tx, trainer);
-    return { trainer, lessons, alerts };
+    const portals = await getActivePortalTokens(tx, [...new Set(alerts.map((a) => a.clientId))]);
+    return { trainer, lessons, alerts, portals };
   });
 
   const now = new Date();
@@ -98,7 +101,7 @@ export default async function TodayPage() {
         ) : (
           <ul className="flex flex-col gap-2">
             {alerts.map((a) => (
-              <AlertRow key={a.clientPackageId} alert={a} />
+              <AlertRow key={a.clientPackageId} alert={a} portalToken={portals.get(a.clientId)} />
             ))}
           </ul>
         )}
@@ -107,7 +110,7 @@ export default async function TodayPage() {
   );
 }
 
-function AlertRow({ alert: a }: { alert: PackageAlert }) {
+function AlertRow({ alert: a, portalToken }: { alert: PackageAlert; portalToken?: string }) {
   const reasons: string[] = [];
   if (a.lowBalance) reasons.push(a.remaining === 0 ? "Paket bitti" : `${a.remaining} ders kaldı`);
   if (a.expiringSoon && a.expiresOn) reasons.push(`Son tarih ${formatShortDate(a.expiresOn)}`);
@@ -119,7 +122,7 @@ function AlertRow({ alert: a }: { alert: PackageAlert }) {
     : a.expiringSoon && a.expiresOn
       ? messages.expiring(a.clientName, formatShortDate(a.expiresOn))
       : messages.paymentDue(a.clientName, formatTRY(a.due));
-  const href = whatsappLink(a.clientPhone, text);
+  const href = whatsappLink(a.clientPhone, withPortal(text, portalToken && portalUrl(portalToken)));
 
   return (
     <li>

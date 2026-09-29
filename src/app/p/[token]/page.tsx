@@ -2,7 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CalendarClock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { SESSION_TYPE_LABELS, formatLongDate, formatShortDate, formatTRY, formatTime } from "@/lib/format";
+import {
+  ATTENDANCE_LABELS,
+  SESSION_TYPE_LABELS,
+  formatDayMonth,
+  formatLongDate,
+  formatShortDate,
+  formatTRY,
+  formatTime,
+} from "@/lib/format";
 import { getPortalData } from "@/lib/portal";
 
 // Personal links must never be indexed or leak through referrers.
@@ -13,7 +21,7 @@ export default async function PortalPage({ params }: PageProps<"/p/[token]">) {
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming } = data;
+  const { client, packages, upcoming, recent } = data;
   const tz = client.timezone;
 
   return (
@@ -77,7 +85,7 @@ export default async function PortalPage({ params }: PageProps<"/p/[token]">) {
         ) : (
           <ul className="flex flex-col gap-2">
             {upcoming.map((l) => (
-              <li key={l.startsAt.toISOString()} className="flex items-center gap-3 rounded-lg border px-4 py-3">
+              <li key={l.id} className="flex items-center gap-3 rounded-lg border px-4 py-3">
                 <CalendarClock className="size-4 text-primary" aria-hidden />
                 <span className="flex-1 capitalize">{formatLongDate(l.startsAt, tz)}</span>
                 <span className="text-sm tabular-nums">{formatTime(l.startsAt, tz)}</span>
@@ -87,6 +95,29 @@ export default async function PortalPage({ params }: PageProps<"/p/[token]">) {
           </ul>
         )}
       </section>
+
+      {recent.length > 0 && (
+        <section aria-labelledby="recent-heading">
+          <h2 id="recent-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+            Son derslerin
+          </h2>
+          <ul className="divide-y rounded-lg border text-sm">
+            {recent.map((l) => (
+              <li key={l.id} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="w-14 tabular-nums">{formatDayMonth(l.startsAt, tz)}</span>
+                <span className="flex-1 text-muted-foreground tabular-nums">{formatTime(l.startsAt, tz)}</span>
+                <span className={l.status === "attended" ? "" : "text-muted-foreground"}>
+                  {l.makeupUsed ? "Geç iptal (telafi)" : ATTENDANCE_LABELS[l.status]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <footer className="mt-auto pt-6 text-center text-xs text-muted-foreground">
+        Bu sayfa sadece sana özel. Linki başkasıyla paylaşma.
+      </footer>
     </main>
   );
 }
