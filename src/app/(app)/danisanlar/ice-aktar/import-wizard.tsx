@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { CircleCheck, Download, FileSpreadsheet, RotateCcw, ShieldAlert, Upload } from "lucide-react";
+import { CircleCheck, Download, FileSpreadsheet, RotateCcw, ShieldCheck, Upload } from "lucide-react";
 import { Field, FormError, NativeSelect } from "@/components/field";
 import { SectionTitle } from "@/components/page-header";
 import { StatTile } from "@/components/stat-tile";
@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatShortDate, formatTRY } from "@/lib/format";
 import {
+  HEALTH_FIELD_LABEL,
   IMPORT_FIELDS,
   IMPORT_FIELD_LABELS,
   MAX_IMPORT_ROWS,
-  isHealthHeader,
   summarize,
   validateRows,
   type ColumnMapping,
@@ -25,6 +25,10 @@ import { formatPhone } from "@/lib/whatsapp";
 import { importClientsAction, readImportFileAction, type ImportState, type ParsedFile, type ReadFileState } from "./actions";
 
 const PREVIEW_ROWS = 10;
+
+// Same look as the intake form's choice chips.
+const CHIP =
+  "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-sm transition-colors md:min-h-9 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
 
 const FIELD_HINTS: Partial<Record<ImportField, string>> = {
   fullName: "zorunlu",
@@ -76,7 +80,6 @@ export function ImportWizard() {
           henüz hiçbir şey kaydetmez.
         </p>
       </form>
-      <HealthNotice />
     </div>
   );
 }
@@ -84,23 +87,29 @@ export function ImportWizard() {
 function HealthNotice() {
   return (
     <p className="flex items-start gap-3 rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-      <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <span>
-        Sağlık bilgisi aktarılmaz: KVKK gereği danışanın açık rızasını gerektirir. Aktardıktan sonra danışanın sayfasından, rızasını alarak
-        ekleyebilirsin.
-      </span>
+      <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <span>Sağlık bilgisi hassas veridir; aktarmadan önce danışanlarının açık rızasını aldığından emin ol.</span>
     </p>
   );
 }
 
 /** Only the mapped columns travel back to the server, re-indexed from 0. */
-function project(rows: string[][], mapping: ColumnMapping) {
-  const used = [...new Set(Object.values(mapping).filter((i): i is number => i !== null))];
+function project(headers: string[], rows: string[][], mapping: ColumnMapping) {
+  const single = IMPORT_FIELDS.map((f) => mapping[f]).filter((i): i is number => i !== null);
+  const used = [...new Set([...single, ...mapping.healthNotes])];
   const index = new Map(used.map((col, i) => [col, i]));
-  const projected = Object.fromEntries(
-    IMPORT_FIELDS.map((f) => [f, mapping[f] === null ? null : index.get(mapping[f]!)!]),
-  ) as ColumnMapping;
-  return { rows: rows.map((r) => used.map((col) => r[col] ?? "")), mapping: projected };
+  const projected: ColumnMapping = {
+    ...(Object.fromEntries(IMPORT_FIELDS.map((f) => [f, mapping[f] === null ? null : index.get(mapping[f]!)!])) as Record<
+      ImportField,
+      number | null
+    >),
+    healthNotes: mapping.healthNotes.map((col) => index.get(col)!),
+  };
+  return {
+    headers: used.map((col) => headers[col] ?? ""),
+    rows: rows.map((r) => used.map((col) => r[col] ?? "")),
+    mapping: projected,
+  };
 }
 
 function Review({ file, onReset }: { file: ParsedFile; onReset: () => void }) {
@@ -110,7 +119,7 @@ function Review({ file, onReset }: { file: ParsedFile; onReset: () => void }) {
 
   const existing = useMemo(() => new Set(file.existingPhones), [file.existingPhones]);
   const results = useMemo(
-    () => validateRows(file.rows, mapping, { existingPhones: existing, today: file.today, lines: file.lines }),
+    () => validateRows(file.rows, mapping, { existingPhones: existing, today: file.today, lines: file.lines, headers: file.headers }),
     [file, mapping, existing],
   );
   const summary = summarize(results);
@@ -125,9 +134,16 @@ function Review({ file, onReset }: { file: ParsedFile; onReset: () => void }) {
       return next;
     });
 
+  // Health columns keep file order, so the joined note reads like the sheet.
+  const toggleHealth = (column: number, on: boolean) =>
+    setMapping((m) => ({
+      ...m,
+      healthNotes: on ? [...new Set([...m.healthNotes, column])].sort((a, b) => a - b) : m.healthNotes.filter((c) => c !== column),
+    }));
+
   const runImport = () =>
     startImport(async () => {
-      const payload = project(file.rows, mapping);
+      const payload = project(file.headers, file.rows, mapping);
       setOutcome(await importClientsAction({ ...payload, lines: file.lines }));
     });
 
@@ -164,16 +180,34 @@ function Review({ file, onReset }: { file: ParsedFile; onReset: () => void }) {
                 {file.headers.map((h, i) => (
                   <option key={i} value={i}>
                     {h}
-                    {isHealthHeader(h) ? " (sağlık)" : ""}
                   </option>
                 ))}
               </NativeSelect>
             </Field>
           ))}
+          <fieldset className="flex flex-col gap-2 sm:col-span-2" disabled={pending}>
+            <legend className="mb-2 text-sm font-medium">
+              {HEALTH_FIELD_LABEL}
+              <span className="font-normal text-muted-foreground"> · birden fazla sütun seçersen başlıklarıyla alt alta eklenir</span>
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {file.headers.map((h, i) => {
+                const checked = mapping.healthNotes.includes(i);
+                return (
+                  <label key={i} className={CHIP}>
+                    <input type="checkbox" className="sr-only" checked={checked} onChange={(e) => toggleHealth(i, e.target.checked)} />
+                    {h || `Sütun ${i + 1}`}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
         </div>
-        <div className="mt-3">
-          <HealthNotice />
-        </div>
+        {mapping.healthNotes.length > 0 && (
+          <div className="mt-3">
+            <HealthNotice />
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="preview-title">
@@ -233,6 +267,7 @@ function PreviewRow({ row }: { row: RowResult }) {
           {[
             c.phone && formatPhone(c.phone),
             c.email,
+            c.healthNotes && "sağlık notu var",
             pkg &&
               [
                 pkg.totalSessions > 0 ? `${pkg.totalSessions} ders` : null,

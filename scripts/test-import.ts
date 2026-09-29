@@ -17,6 +17,7 @@ import {
   DEBT_PACKAGE_NAME,
   DEFAULT_PACKAGE_NAME,
   IMPORT_FIELDS,
+  MAX_HEALTH_NOTES,
   detectMapping,
   emptyMapping,
   isHealthHeader,
@@ -59,6 +60,7 @@ function pureChecks() {
     packageName: 6,
     expiresOn: 7,
     debt: 8,
+    healthNotes: [],
   });
   const m2 = detectMapping(["Ad", "Soyad", "GSM", "Email", "Kalan Seans", "Son tarih", "Borç"]);
   assert.equal(m2.fullName, null);
@@ -74,14 +76,21 @@ function pureChecks() {
   assert.equal(m3.phone, 1);
   assert.equal(m3.packageName, 2);
   assert.equal(m3.notes, 3, "Açıklama → notes");
-  assert.ok(!Object.values(m3).includes(4), "health column is never mapped");
+  assert.deepEqual(m3.healthNotes, [4], "Sağlık notları → health notes, not notes");
   assert.ok(isHealthHeader("Sağlık durumu") && !isHealthHeader("Notlar"));
+  for (const h of ["Sağlık", "Sağlık notu", "Sakatlık", "Rahatsızlık", "İlaç", "Kullandığı ilaçlar", "Health", "Injuries", "Medical", "Alerji"]) {
+    assert.ok(isHealthHeader(h), `${h} is a health header`);
+  }
+  const m5 = detectMapping(["Ad Soyad", "Sakatlık", "Notlar", "İlaç", "Health notes", "Telefon"]);
+  assert.deepEqual(m5.healthNotes, [1, 3, 4], "every health column is mapped, in file order");
+  assert.equal(m5.notes, 2);
+  assert.equal(m5.phone, 5);
   const m4 = detectMapping(["Full name", "Phone", "Email", "Remaining sessions", "Package", "Expires"]);
   assert.deepEqual([m4.fullName, m4.phone, m4.email, m4.remaining, m4.packageName, m4.expiresOn], [0, 1, 2, 3, 4, 5]);
   assert.equal(detectMapping(["Danışan telefonu", "Danışan adı"]).phone, 0, "phone word wins over the client prefix");
   assert.equal(detectMapping(["Danışan telefonu", "Danışan adı"]).fullName, 1);
   assert.deepEqual(detectMapping(["x", "y"]), emptyMapping());
-  console.log("import: header detection (TR/EN synonyms, first/last name, health columns skipped)");
+  console.log("import: header detection (TR/EN synonyms, first/last name, health columns)");
 
   // Dates.
   assert.equal(parseImportDate("31.12.2026"), "2026-12-31");
@@ -139,6 +148,7 @@ function pureChecks() {
     email: "ayse@ornek.com",
     goals: null,
     notes: null,
+    healthNotes: null,
     package: { name: "Reformer 10", totalSessions: 8, expiresOn: "2026-12-31", price: 1500 },
   });
   assert.equal(at(3).status, "error");
@@ -169,7 +179,27 @@ function pureChecks() {
   assert.equal(split[0].line, 4);
   assert.equal(split[1].client.fullName, "Tek");
   assert.equal(split[1].status, "ok", "a last name alone is still a name");
-  console.log("import: row validation (missing name, bad phone, duplicates, existing, dates, debt-only)");
+
+  // Health notes: one column as is, several joined with their headers.
+  const hHeaders = ["Ad Soyad", "Sakatlık", "İlaç"];
+  const hRows = [
+    ["Can Ak", " Sol diz menisküs ", "Yok"],
+    ["Ece Su", "", "Tansiyon ilacı"],
+    ["Ali Veli", "", ""],
+  ];
+  const both = validateRows(hRows, mapOf({ fullName: 0, healthNotes: [1, 2] }), { existingPhones: new Set(), today: TODAY, headers: hHeaders });
+  assert.equal(both[0].client.healthNotes, "Sakatlık: Sol diz menisküs\nİlaç: Yok");
+  assert.equal(both[1].client.healthNotes, "İlaç: Tansiyon ilacı", "empty cells are left out");
+  assert.equal(both[2].client.healthNotes, null);
+  const one = validateRows(hRows, mapOf({ fullName: 0, healthNotes: [1] }), { existingPhones: new Set(), today: TODAY, headers: hHeaders });
+  assert.equal(one[0].client.healthNotes, "Sol diz menisküs", "a single column needs no label");
+  const long = validateRows([["Uzun Not", "x".repeat(3000), "y".repeat(3000)]], mapOf({ fullName: 0, healthNotes: [1, 2] }), {
+    existingPhones: new Set(),
+    today: TODAY,
+    headers: hHeaders,
+  });
+  assert.equal(long[0].client.healthNotes!.length, MAX_HEALTH_NOTES);
+  console.log("import: row validation (missing name, bad phone, duplicates, existing, dates, debt-only, health notes)");
 }
 
 async function spreadsheetChecks() {
@@ -211,12 +241,15 @@ async function spreadsheetChecks() {
   assert.equal(t.rows.length, 2);
   const tm = detectMapping(t.headers);
   for (const f of IMPORT_FIELDS.filter((f) => f !== "firstName" && f !== "lastName")) assert.notEqual(tm[f], null, `template maps ${f}`);
-  const tr = validateRows(t.rows, tm, { existingPhones: new Set(), today: TODAY });
+  assert.deepEqual(tm.healthNotes, [TEMPLATE_HEADERS.indexOf("Sağlık notu")], "template maps the health column");
+  const tr = validateRows(t.rows, tm, { existingPhones: new Set(), today: TODAY, headers: t.headers });
   assert.deepEqual(
     tr.map((r) => r.status),
     ["ok", "ok"],
   );
   assert.deepEqual(tr[0].client.package, { name: "10 derslik reformer", totalSessions: 8, expiresOn: "2026-12-31", price: 1500 });
+  assert.equal(tr[0].client.healthNotes, "Bel fıtığı, doktor onaylı");
+  assert.equal(tr[1].client.healthNotes, null);
 
   // An xlsx with real date cells and numeric phones, a blank row and a second (empty) sheet.
   const wb = new ExcelJS.Workbook();
@@ -263,14 +296,15 @@ async function dbChecks() {
   assert.deepEqual([...(await as(T, (tx) => existingPhones(tx, T)))], ["905441112233"], "RLS: only own phones");
 
   const rows = [
-    ["Ayşe Yılmaz", "0532 123 45 67", "8", "Reformer 10", "31.12.2026", "1.500", "Duruş"],
-    ["Mevcut Tekrar", "0544 111 22 33", "", "", "", "", ""],
-    ["", "0555 000 00 00", "", "", "", "", ""],
-    ["Borçlu Ben", "", "", "", "", "600", ""],
-    ["Sadece İsim", "", "", "", "", "", ""],
+    ["Ayşe Yılmaz", "0532 123 45 67", "8", "Reformer 10", "31.12.2026", "1.500", "Duruş", "Sol diz", "Yok"],
+    ["Mevcut Tekrar", "0544 111 22 33", "", "", "", "", "", "", ""],
+    ["", "0555 000 00 00", "", "", "", "", "", "", ""],
+    ["Borçlu Ben", "", "", "", "", "600", "", "", "Tansiyon ilacı"],
+    ["Sadece İsim", "", "", "", "", "", "", "", ""],
   ];
-  const mapping = mapOf({ fullName: 0, phone: 1, remaining: 2, packageName: 3, expiresOn: 4, debt: 5, goals: 6 });
-  const result = await as(T, (tx) => importClients(tx, trainer, rows, mapping));
+  const headers = ["Ad Soyad", "Telefon", "Kalan", "Paket", "Bitiş", "Borç", "Hedef", "Sakatlık", "İlaç"];
+  const mapping = mapOf({ fullName: 0, phone: 1, remaining: 2, packageName: 3, expiresOn: 4, debt: 5, goals: 6, healthNotes: [7, 8] });
+  const result = await as(T, (tx) => importClients(tx, trainer, rows, mapping, { headers }));
   assert.equal(result.created, 3);
   assert.equal(result.packages, 2);
   assert.deepEqual(result.skipped, [
@@ -285,7 +319,7 @@ async function dbChecks() {
   assert.equal(ayse.goals, "Duruş");
   assert.equal(ayse.source, "manual");
   assert.equal(ayse.status, "active");
-  assert.equal(ayse.healthNotes, null);
+  assert.equal(ayse.healthNotes, "Sakatlık: Sol diz\nİlaç: Yok");
 
   const B = schema.clientPackageBalances;
   const balances = await as(T, (tx) =>
@@ -305,11 +339,13 @@ async function dbChecks() {
   assert.equal(String(ayseBal.b.dueAmount), "1500.00");
   const borclu = created.find((c) => c.fullName === "Borçlu Ben")!;
   const borcluBal = balances.find((p) => p.clientId === borclu.id)!;
+  assert.equal(borclu.healthNotes, "İlaç: Tansiyon ilacı");
+  assert.equal(created.find((c) => c.fullName === "Sadece İsim")!.healthNotes, null);
   assert.equal(borcluBal.name, DEBT_PACKAGE_NAME);
   assert.equal(borcluBal.b.state, "finished");
   assert.equal(String(borcluBal.b.dueAmount), "600.00");
   assert.equal(balances.length, 2);
-  console.log("import db: clients and packages created, existing phone skipped, invalid rows skipped");
+  console.log("import db: clients, health notes and packages created, existing phone skipped, invalid rows skipped");
 
   // Importing the same file again adds nobody with a phone twice.
   const again = await as(T, (tx) => importClients(tx, trainer, rows.slice(0, 1), mapping));
@@ -384,7 +420,20 @@ async function dbChecks() {
   assert.equal(ayseRow[6], "Aktif");
   assert.equal(ayseRow[7], "Hayır");
   assert.ok(ayseRow[8] instanceof Date);
+  assert.equal(ayseRow[5], "Sakatlık: Sol diz\nİlaç: Yok");
   assert.equal(clientSheet.length, 5, "header + 4 clients");
+
+  // Round trip: the exported client sheet imports again with its health notes.
+  const exported = await readSpreadsheet(toArrayBuffer(new Uint8Array(await wb.xlsx.writeBuffer())), "xlsx");
+  assert.deepEqual(exported.headers, clientSheet[0], "the clients sheet is read first");
+  const em = detectMapping(exported.headers);
+  assert.deepEqual([em.fullName, em.phone, em.email, em.goals, em.notes], [0, 1, 2, 3, 4]);
+  assert.deepEqual(em.healthNotes, [5], "Sağlık notu → health notes");
+  const reimport = validateRows(exported.rows, em, { existingPhones: new Set(), today: TODAY, headers: exported.headers });
+  const back1 = reimport.find((r) => r.client.fullName === "Ayşe Yılmaz")!;
+  assert.equal(back1.client.healthNotes, ayse.healthNotes);
+  assert.equal(back1.client.phone, ayse.phone);
+  assert.equal(reimport.find((r) => r.client.fullName === "Borçlu Ben")!.client.healthNotes, "İlaç: Tansiyon ilacı");
 
   const pkgSheet = values(SHEET_NAMES.packages);
   const pkgRow = pkgSheet.find((r) => r[1] === "Reformer 10")!;

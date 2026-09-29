@@ -201,6 +201,20 @@
   html {
     @apply font-sans;
   }
+  /* iOS Safari draws date/time inputs natively with an intrinsic width that
+     ignores w-full, so they spill out of narrow grid columns. */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    min-width: 0;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
   h1,
   h2,
   h3 {

@@ -18,18 +18,21 @@ export function TrainerThread({
   timeZone: string;
   archived: boolean;
 }) {
+  // data-chat drops the page's bottom padding that makes room for the (hidden here) tab bar.
   return (
-    <ChatThread
-      initial={initial}
-      me="trainer"
-      timeZone={timeZone}
-      send={(body) => sendMessageAction(clientId, body)}
-      poll={() => fetchThreadAction(clientId)}
-      markRead={() => markThreadReadAction(clientId)}
-      emptyText={`${firstName} ile henüz mesajlaşmadınız. İlk mesajı sen yaz.`}
-      placeholder={`${firstName} için mesaj yaz`}
-      closed={archived ? "Danışan arşivde. Mesaj göndermek için önce arşivden çıkar." : undefined}
-      className="h-[calc(100dvh-17rem)] min-h-80 md:h-[calc(100dvh-14rem)]"
-    />
+    <div data-chat>
+      <ChatThread
+        initial={initial}
+        me="trainer"
+        timeZone={timeZone}
+        send={(body) => sendMessageAction(clientId, body)}
+        poll={() => fetchThreadAction(clientId)}
+        markRead={() => markThreadReadAction(clientId)}
+        emptyText={`${firstName} ile henüz mesajlaşmadınız. İlk mesajı sen yaz.`}
+        placeholder={`${firstName} için mesaj yaz`}
+        closed={archived ? "Danışan arşivde. Mesaj göndermek için önce arşivden çıkar." : undefined}
+        className="h-[calc(100dvh-14rem-env(safe-area-inset-bottom))] min-h-80 md:h-[calc(100dvh-14rem)]"
+      />
+    </div>
   );
 }

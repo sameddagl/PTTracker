@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { AlertTriangle, Repeat, Search } from "lucide-react";
+import { AlertTriangle, Check, Repeat, Search } from "lucide-react";
+import { Avatar } from "@/components/avatar";
 import { Field, NativeSelect } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ export function LessonForm({
   // Follows the number of selected clients until the trainer picks a type by hand.
   const [typeOverride, setTypeOverride] = useState<SessionType | null>(null);
   const [date, setDate] = useState(defaultDate);
-  const [status, setStatus] = useState<"scheduled" | "attended">(defaultDate < today ? "attended" : "scheduled");
+  const [done, setDone] = useState(true);
   const [repeat, setRepeat] = useState(false);
   const [weekdays, setWeekdays] = useState<number[]>(() => [isoWeekday(defaultDate)]);
   const [weeks, setWeeks] = useState(4);
@@ -65,9 +66,6 @@ export function LessonForm({
 
   function changeDate(value: string) {
     setDate(value);
-    // A lesson in the past has almost always already happened.
-    if (value < today && !repeat) setStatus("attended");
-    if (value >= today && status === "attended") setStatus("scheduled");
     // Keep the repeat starting on the chosen day.
     if (value && weekdays.length <= 1) setWeekdays([isoWeekday(value)]);
   }
@@ -97,20 +95,28 @@ export function LessonForm({
             />
           </div>
         )}
-        <ul className="max-h-64 divide-y overflow-y-auto rounded-lg border">
-          {visible.map((c) => (
-            <li key={c.id}>
-              <label className="flex cursor-pointer items-center gap-3 px-3 py-3 hover:bg-muted/50">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(c.id)}
-                  onChange={() => toggle(c.id)}
-                  className="size-4 accent-[var(--primary)]"
-                />
-                <span className="text-sm">{c.fullName}</span>
-              </label>
-            </li>
-          ))}
+        <ul className="max-h-72 divide-y overflow-y-auto surface">
+          {visible.map((c) => {
+            const on = selected.includes(c.id);
+            return (
+              <li key={c.id}>
+                <label className={cn("flex min-h-14 cursor-pointer items-center gap-3 px-4 py-2 transition-colors hover:bg-muted/50", on && "bg-muted/60")}>
+                  <input type="checkbox" checked={on} onChange={() => toggle(c.id)} className="peer sr-only" />
+                  <Avatar name={c.fullName} size="sm" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.fullName}</span>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring",
+                      on ? "border-transparent bg-primary text-primary-foreground" : "border-border",
+                    )}
+                  >
+                    {on && <Check className="size-3.5" strokeWidth={3} />}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
           {visible.length === 0 && <li className="px-3 py-4 text-center text-sm text-muted-foreground">Sonuç yok</li>}
         </ul>
         {e.clientIds && <p className="text-sm text-destructive-strong">{e.clientIds}</p>}
@@ -155,7 +161,6 @@ export function LessonForm({
             checked={repeat}
             onChange={(ev) => {
               setRepeat(ev.target.checked);
-              if (ev.target.checked) setStatus("scheduled");
             }}
             className="size-4 accent-[var(--primary)]"
           />
@@ -206,36 +211,17 @@ export function LessonForm({
         )}
       </fieldset>
 
-      {!repeat && (
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium">Durum</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ["scheduled", "Planlandı", "Yoklamayı ders günü al"],
-                ["attended", "Yapıldı", "Geldi olarak işle, paketten düş"],
-              ] as const
-            ).map(([value, label, hint]) => (
-              <label key={value} className={cn(chip, "flex-col items-start gap-1 px-3 py-3")}>
-                <input
-                  type="radio"
-                  name="status"
-                  value={value}
-                  checked={status === value}
-                  onChange={() => setStatus(value)}
-                  className="sr-only"
-                />
-                <span className="text-sm font-medium">{label}</span>
-                <span className="text-xs font-normal text-muted-foreground">{hint}</span>
-              </label>
-            ))}
-          </div>
-          {isPast && status === "scheduled" && (
-            <p className="mt-2 text-sm text-warning-strong">Geçmiş tarihli bir dersi planlıyorsun.</p>
-          )}
-        </fieldset>
+      {/* A lesson in the past is usually being recorded after the fact. */}
+      <input type="hidden" name="status" value={!repeat && isPast && done ? "attended" : "scheduled"} />
+      {!repeat && isPast && (
+        <label className="flex cursor-pointer items-start gap-3 surface p-4">
+          <input type="checkbox" checked={done} onChange={(ev) => setDone(ev.target.checked)} className="mt-0.5 size-4 accent-[var(--primary)]" />
+          <span className="text-sm">
+            <span className="block font-medium">Bu ders yapıldı</span>
+            <span className="block text-muted-foreground">Geçmiş tarihli. Danışanları &quot;Geldi&quot; olarak işlenir, dersler paketlerinden düşer.</span>
+          </span>
+        </label>
       )}
-      {repeat && <input type="hidden" name="status" value="scheduled" />}
       {e.status && <p className="text-sm text-destructive-strong">{e.status}</p>}
 
       <Field id="note" label="Not" hint="isteğe bağlı">
@@ -265,8 +251,8 @@ export function LessonForm({
           ? "Kaydediliyor…"
           : repeat
             ? `${occurrences.length || ""} dersi planla`.trim()
-            : status === "attended"
-              ? "Dersi işle"
+            : isPast && done
+              ? "Dersi kaydet"
               : "Dersi planla"}
       </Button>
     </form>

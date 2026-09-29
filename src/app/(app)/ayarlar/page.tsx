@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, MessagesSquare, Package, TimerOff, UsersRound } from "lucide-react";
+import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader, SectionTitle } from "@/components/page-header";
 import { PushToggle } from "@/components/push-toggle";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
@@ -30,7 +30,6 @@ export default async function SettingsPage() {
       title: "Profil ve sayfam",
       hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
     },
-    { href: "/mesajlar", icon: MessagesSquare, title: "Mesajlar", hint: "Danışanlarınla uygulama içinden yazış" },
     { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
     { href: "/takvim/grup", icon: UsersRound, title: "Grup dersleri", hint: "Kapasite ve sabit yerler" },
     {
@@ -46,7 +45,6 @@ export default async function SettingsPage() {
       hint: trainer.lateCancelHours === 0 ? "Kural yok, iptal her zaman ücretsiz" : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz`,
     },
     { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Danışandan istenen bilgiler" },
-    { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Paket, yoklama, ödeme ve diğer akışlar adım adım" },
   ];
 
   return (
@@ -77,40 +75,51 @@ export default async function SettingsPage() {
           </section>
         )}
 
-        <PushToggle
-          subscribe={subscribeTrainerAction}
-          unsubscribe={unsubscribeTrainerAction}
-          description="Yeni başvuru, randevu, iptal, ödeme bildirimi, mesaj ve pazartesi haftalık özetin bu cihaza gelsin."
-        />
+        <section aria-labelledby="studio-heading">
+          <SectionTitle id="studio-heading">Stüdyon</SectionTitle>
+          <ul className="divide-y overflow-hidden surface">
+            {rows.map(({ href, icon: Icon, title, hint }) => (
+              <li key={href}>
+                <Link href={href} className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                  <RowIcon>
+                    <Icon aria-hidden />
+                  </RowIcon>
+                  <RowText title={title} hint={hint} />
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-        <ul className="divide-y overflow-hidden surface">
-          {rows.map(({ href, icon: Icon, title, hint }) => (
-            <li key={href}>
-              <Link href={href} className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted [&_svg]:size-[18px]">
-                  <Icon aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{title}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{hint}</span>
-                </span>
+        <section aria-labelledby="account-heading" className="flex flex-col gap-3">
+          <SectionTitle id="account-heading">Uygulama ve hesap</SectionTitle>
+          <PushToggle
+            subscribe={subscribeTrainerAction}
+            unsubscribe={unsubscribeTrainerAction}
+            description="Yeni başvuru, randevu, iptal, ödeme, mesaj ve haftalık özet bu cihaza gelsin."
+          />
+          <ul className="divide-y overflow-hidden surface">
+            <li>
+              <Link href="/yardim" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                <RowIcon>
+                  <CircleHelp aria-hidden />
+                </RowIcon>
+                <RowText title="Yardım" hint="Paket, yoklama, ödeme ve diğer akışlar adım adım" />
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
               </Link>
             </li>
-          ))}
-          <li>
-            {/* A plain link, so the browser downloads the file instead of routing to it. */}
-            <a href="/ayarlar/disa-aktar" download className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted [&_svg]:size-[18px]">
-                <Download aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-medium">Verilerini dışa aktar</span>
-                <span className="block truncate text-xs text-muted-foreground">Excel dosyası: danışanlar, paketler, dersler, ödemeler</span>
-              </span>
-            </a>
-          </li>
-        </ul>
+            <li>
+              {/* A plain link, so the browser downloads the file instead of routing to it. */}
+              <a href="/ayarlar/disa-aktar" download className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                <RowIcon>
+                  <Download aria-hidden />
+                </RowIcon>
+                <RowText title="Verilerini dışa aktar" hint="Excel: danışanlar, paketler, dersler, ödemeler" />
+              </a>
+            </li>
+          </ul>
+        </section>
 
         <form action={signOut}>
           <SubmitButton variant="outline">
@@ -124,5 +133,18 @@ export default async function SettingsPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function RowIcon({ children }: { children: React.ReactNode }) {
+  return <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted [&_svg]:size-[18px]">{children}</span>;
+}
+
+function RowText({ title, hint }: { title: string; hint: string }) {
+  return (
+    <span className="min-w-0 flex-1">
+      <span className="block font-medium">{title}</span>
+      <span className="block truncate text-xs text-muted-foreground">{hint}</span>
+    </span>
   );
 }

@@ -41,11 +41,21 @@ export const IMPORT_FIELD_LABELS: Record<ImportField, string> = {
   debt: "Borç",
 };
 
-/** Column index per field, or null when the file has no such column. */
-export type ColumnMapping = Record<ImportField, number | null>;
+/** Health notes (`clients.health_notes`) can come from several columns, joined into one note. */
+export const HEALTH_FIELD_LABEL = "Sağlık notu";
+/** Same limit as the other free-text fields, with room for several joined columns. */
+export const MAX_HEALTH_NOTES = 4000;
 
-export const emptyMapping = (): ColumnMapping =>
-  Object.fromEntries(IMPORT_FIELDS.map((f) => [f, null])) as ColumnMapping;
+/**
+ * Column index per field, or null when the file has no such column.
+ * `healthNotes` lists every column that goes into the health note, in file order.
+ */
+export type ColumnMapping = Record<ImportField, number | null> & { healthNotes: number[] };
+
+export const emptyMapping = (): ColumnMapping => ({
+  ...(Object.fromEntries(IMPORT_FIELDS.map((f) => [f, null])) as Record<ImportField, null>),
+  healthNotes: [],
+});
 
 /** "Kalan Seans (adet)" → "kalanseansadet": lower case, Turkish letters folded, only a–z and digits. */
 export function normalizeHeader(raw: string) {
@@ -84,8 +94,8 @@ const SYNONYMS: Record<ImportField, string[]> = {
 // as sessions, and "Paket bitiş" the expiry before "paket" is taken as the name.
 const DETECT_ORDER: ImportField[] = ["phone", "email", "debt", "expiresOn", "remaining", "packageName", "fullName", "lastName", "firstName", "goals", "notes"];
 
-/** Health columns are never mapped automatically: health data needs explicit consent and is not imported. */
-const HEALTH_HEADER = /saglik|health|hastalik|sakatlik|ilac|ameliyat|rahatsizlik|teshis/;
+/** Headers that hold health information ("Sağlık notu", "Sakatlık", "İlaç", "Injuries", "Medical"…). */
+const HEALTH_HEADER = /saglik|health|hastalik|sakatlik|rahatsizlik|ilac|ameliyat|teshis|tibbi|kronik|alerji|medical|medication|injur|allerg/;
 export const isHealthHeader = (raw: string) => HEALTH_HEADER.test(normalizeHeader(raw));
 
 const loose = (h: string, s: string) => (s.length >= 3 && h.startsWith(s)) || (s.length >= 5 && h.includes(s));
@@ -93,8 +103,10 @@ const loose = (h: string, s: string) => (s.length >= 3 && h.startsWith(s)) || (s
 /** Guesses which column holds which field from the header row. */
 export function detectMapping(headers: string[]): ColumnMapping {
   const mapping = emptyMapping();
+  // Health columns first, so "Sağlık notları" never ends up as a plain note.
+  mapping.healthNotes = headers.flatMap((h, i) => (isHealthHeader(h) ? [i] : []));
   const normalized = headers.map((h) => (isHealthHeader(h) ? "" : normalizeHeader(h)));
-  const taken = new Set<number>();
+  const taken = new Set<number>(mapping.healthNotes);
 
   // Exact matches first, so "Ad" never swallows "Ad Soyad" through a prefix.
   for (const exact of [true, false]) {
@@ -179,6 +191,7 @@ export type ImportClient = {
   email: string | null;
   goals: string | null;
   notes: string | null;
+  healthNotes: string | null;
   /** A package is created when sessions are left or money is owed. */
   package: { name: string; totalSessions: number; expiresOn: string | null; price: number } | null;
 };
@@ -203,10 +216,26 @@ export type ValidateOptions = {
   today: string;
   /** File line number of each row (defaults to 2, 3, … after a header on line 1). */
   lines?: number[];
+  /** Header row, to label each part when several columns go into the health note. */
+  headers?: string[];
 };
 
+/**
+ * One column: its text as is. Several: one line per non-empty cell, labelled
+ * with its header ("Sakatlık: Sol diz\nİlaç: Yok").
+ */
+function joinHealth(row: string[], columns: number[], headers: string[] | undefined) {
+  const parts = columns.flatMap((i) => {
+    const value = (row[i] ?? "").trim();
+    if (!value) return [];
+    const label = clip((headers?.[i] ?? "").trim().replace(/\s+/g, " "), 60);
+    return [columns.length > 1 && label ? `${label}: ${value}` : value];
+  });
+  return clip(parts.join("\n"), MAX_HEALTH_NOTES) || null;
+}
+
 /** Checks every data row against the mapping. Order matters: the first row with a phone wins, later duplicates are errors. */
-export function validateRows(rows: string[][], mapping: ColumnMapping, { existingPhones, today, lines }: ValidateOptions): RowResult[] {
+export function validateRows(rows: string[][], mapping: ColumnMapping, { existingPhones, today, lines, headers }: ValidateOptions): RowResult[] {
   const seen = new Map<string, number>();
   const cell = (row: string[], field: ImportField) => {
     const i = mapping[field];
@@ -285,6 +314,7 @@ export function validateRows(rows: string[][], mapping: ColumnMapping, { existin
         email,
         goals: text(row, "goals", 500),
         notes: text(row, "notes", 2000),
+        healthNotes: joinHealth(row, mapping.healthNotes, headers),
         package: pkg,
       },
     };

@@ -62,13 +62,17 @@ export async function readImportFileAction(_prev: ReadFileState, formData: FormD
   };
 }
 
+const column = z.number().int().min(0).max(39);
+
 const importSchema = z.object({
   rows: z.array(z.array(z.string().max(2000)).max(40)).min(1).max(MAX_IMPORT_ROWS),
   lines: z.array(z.number().int().positive()).max(MAX_IMPORT_ROWS),
-  mapping: z.object(Object.fromEntries(IMPORT_FIELDS.map((f) => [f, z.number().int().min(0).max(39).nullable()])) as Record<
-    (typeof IMPORT_FIELDS)[number],
-    z.ZodNullable<z.ZodNumber>
-  >),
+  /** Header of each sent column, used to label joined health notes. */
+  headers: z.array(z.string().max(200)).max(40),
+  mapping: z.object({
+    ...(Object.fromEntries(IMPORT_FIELDS.map((f) => [f, column.nullable()])) as Record<(typeof IMPORT_FIELDS)[number], z.ZodNullable<typeof column>>),
+    healthNotes: z.array(column).max(40),
+  }),
 });
 
 export type ImportInput = z.input<typeof importSchema>;
@@ -78,12 +82,12 @@ export type ImportState = { error?: string; result?: ImportResult };
 export async function importClientsAction(input: ImportInput): Promise<ImportState> {
   const parsed = importSchema.safeParse(input);
   if (!parsed.success) return { error: "Dosya okunamadı, baştan yükleyip tekrar dene." };
-  const { rows, lines, mapping } = parsed.data;
+  const { rows, lines, headers, mapping } = parsed.data;
   if (mapping.fullName === null && mapping.firstName === null) return { error: "Ad soyad sütununu seç." };
 
   const result = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
-    return importClients(tx, trainer, rows, mapping, { lines });
+    return importClients(tx, trainer, rows, mapping, { lines, headers });
   });
   if (result.created > 0) revalidatePath("/", "layout");
   return { result };

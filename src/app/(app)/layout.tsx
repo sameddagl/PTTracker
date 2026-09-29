@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Activity } from "lucide-react";
 import { redirect } from "next/navigation";
-import { BottomNav, MessagesPill, SideNav } from "@/components/app-nav";
+import { BottomNav, MobileTopBar, SideNav } from "@/components/app-nav";
 import { withTrainer } from "@/db";
 import { countPendingApplications } from "@/db/applications";
 import { countUnread } from "@/db/messages";
@@ -32,11 +32,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <SideNav badges={badges} />
         </div>
       </aside>
+      <MobileTopBar name={trainer.fullName} appName={APP_NAME} />
       {/* Pages opt into a wider column by rendering an element with data-wide (the week calendar). */}
-      <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-32 md:px-8 md:pt-10 md:pb-12">
+      <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-5 pb-[calc(8.5rem+env(safe-area-inset-bottom))] has-[[data-chat]]:pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8 md:pt-10 md:pb-12">
         {children}
       </main>
-      <MessagesPill unread={unread} />
       <BottomNav badges={badges} />
     </div>
   );

@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Check, CalendarPlus, MessageCircle, Sunrise, Users, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, ClipboardCheck, CalendarPlus, MessageCircle, Sunrise, Users, Wallet } from "lucide-react";
 import { StatTile } from "@/components/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EmptyState, PageHeader } from "@/components/page-header";
+import { EmptyState, PageHeader, SectionTitle } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { ApplicationsBanner, PaymentsBanner } from "@/components/applications-banner";
+import { ApplicationsBanner, AttendanceBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
 import { LOST_AFTER_DAYS, lostClients, tomorrowAttendees } from "@/db/engagement";
 import { ensureGroupOccurrences } from "@/db/groups";
-import { getLessons } from "@/db/lessons";
+import { countPendingAttendance, getLessons } from "@/db/lessons";
 import { countPendingPayments, getPaymentSummary } from "@/db/payments";
 import { getGuideFacts } from "@/db/guide";
 import { getActivePortalTokens } from "@/db/portal";
@@ -38,7 +38,7 @@ import { GettingStarted, GuideComplete } from "./getting-started";
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
@@ -47,6 +47,7 @@ export default async function TodayPage() {
     const alerts = await getPackageAlerts(tx, trainer);
     const tomorrow = await tomorrowAttendees(tx, trainer);
     const lost = await lostClients(tx, trainer, 5);
+    const unmarked = await countPendingAttendance(tx, trainer);
     const portals = await getActivePortalTokens(tx, [
       ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId)]),
     ]);
@@ -55,7 +56,7 @@ export default async function TodayPage() {
     const money = await getPaymentSummary(tx, trainer);
     // Skip the checklist counts once the trainer has hidden it.
     const guideFacts = trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
-    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost };
+    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked };
   });
 
   const now = new Date();
@@ -105,17 +106,28 @@ export default async function TodayPage() {
         />
       </section>
 
-      {(pending > 0 || pendingPayments > 0) && (
+      {(pending > 0 || pendingPayments > 0 || unmarked > 0) && (
         <div className="mb-6">
           <ApplicationsBanner count={pending} />
           <PaymentsBanner count={pendingPayments} />
+          <AttendanceBanner count={unmarked} />
         </div>
       )}
 
       <section aria-labelledby="lessons-heading" className="mb-8">
-        <h2 id="lessons-heading" className="mb-3 text-base font-semibold">
+        <SectionTitle
+          id="lessons-heading"
+          action={
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/yoklama">
+                <ClipboardCheck />
+                Yoklama
+              </Link>
+            </Button>
+          }
+        >
           Bugünün dersleri
-        </h2>
+        </SectionTitle>
         {lessons.length === 0 ? (
           <EmptyState icon={<Sunrise />} title="Bugün planlı ders yok">
             <Button asChild variant="outline" size="sm" className="mt-2">

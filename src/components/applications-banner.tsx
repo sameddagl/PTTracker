@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Inbox, Wallet } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Inbox, Wallet } from "lucide-react";
 
 function Banner({ href, icon, text }: { href: string; icon: React.ReactNode; text: string }) {
   return (
@@ -28,4 +28,9 @@ export function PaymentsBanner({ count }: { count: number }) {
       text={count === 1 ? "1 ödeme bildirimi onay bekliyor" : `${count} ödeme bildirimi onay bekliyor`}
     />
   );
+}
+
+export function AttendanceBanner({ count }: { count: number }) {
+  if (count === 0) return null;
+  return <Banner href="/yoklama" icon={<ClipboardCheck aria-hidden />} text={`Geçmiş günlerden ${count} yoklama bekliyor`} />;
 }

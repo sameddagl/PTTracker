@@ -29,26 +29,26 @@ export type ImportResult = {
 /**
  * Creates the valid rows as clients (source "manual"), each with a package
  * when sessions are left or money is owed. Rows are re-validated here, so the
- * browser preview is only a convenience. Health data is never imported: it
- * needs the client's explicit consent.
+ * browser preview is only a convenience. Health notes are imported as they
+ * are; the wizard reminds the trainer that they need the client's consent.
  */
 export async function importClients(
   tx: Tx,
   trainer: TrainerRef,
   rows: string[][],
   mapping: ColumnMapping,
-  { lines }: { lines?: number[] } = {},
+  { lines, headers }: { lines?: number[]; headers?: string[] } = {},
 ): Promise<ImportResult> {
   if (rows.length > MAX_IMPORT_ROWS) throw new Error(`At most ${MAX_IMPORT_ROWS} rows`);
   const today = todayISO(trainer.timezone);
-  const results = validateRows(rows, mapping, { existingPhones: await existingPhones(tx, trainer.id), today, lines });
+  const results = validateRows(rows, mapping, { existingPhones: await existingPhones(tx, trainer.id), today, lines, headers });
 
   // Ids are generated here so each package can point at its client without
   // relying on the order of a bulk insert's RETURNING rows.
   const toCreate = results.filter((r) => r.status === "ok").map((r) => ({ id: randomUUID(), ...r.client }));
   for (let i = 0; i < toCreate.length; i += 100) {
     await tx.insert(clients).values(
-      toCreate.slice(i, i + 100).map(({ id, fullName, phone, email, goals, notes }) => ({
+      toCreate.slice(i, i + 100).map(({ id, fullName, phone, email, goals, notes, healthNotes }) => ({
         id,
         trainerId: trainer.id,
         fullName,
@@ -56,6 +56,7 @@ export async function importClients(
         email,
         goals,
         notes,
+        healthNotes,
         source: "manual" as const,
         status: "active" as const,
       })),

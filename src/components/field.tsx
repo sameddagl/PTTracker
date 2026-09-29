@@ -19,7 +19,7 @@ export function Field({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-2", className)}>
       <Label htmlFor={id}>
         {label}
         {hint && <span className="font-normal text-muted-foreground">· {hint}</span>}

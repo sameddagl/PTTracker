@@ -11,7 +11,7 @@ import { isISODate } from "@/lib/dates";
 import { nextHourISO, todayISO } from "@/lib/format";
 import { LessonForm } from "./lesson-form";
 
-export const metadata: Metadata = { title: "Ders ekle" };
+export const metadata: Metadata = { title: "Ders planla" };
 
 export default async function NewLessonPage({ searchParams }: PageProps<"/ders/yeni">) {
   const { danisan, next, tarih, saat } = await searchParams;
@@ -30,7 +30,19 @@ export default async function NewLessonPage({ searchParams }: PageProps<"/ders/y
         <ChevronLeft className="size-4" aria-hidden />
         Geri
       </Link>
-      <PageHeader title="Ders ekle" />
+      <PageHeader
+        title="Ders planla"
+        description={
+          <>
+            Danışanına özel ders koy; iki ya da üç kişi seçersen düet/trio olur. Geçmiş bir dersi de buradan kaydedebilirsin. Grup
+            dersleri için{" "}
+            <Link href="/takvim/grup" className="font-medium text-foreground underline underline-offset-2">
+              Grup dersleri
+            </Link>
+            .
+          </>
+        }
+      />
       {clients.length === 0 ? (
         <EmptyState icon={<UserPlus />} title="Önce bir danışan ekle">
           <Button asChild size="sm" className="mt-2">

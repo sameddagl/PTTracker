@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
 import { addDays, recurringDates } from "@/lib/dates";
+import { todayISO } from "@/lib/format";
 import type { Tx } from "./index";
 import { pickPackage, type SessionType } from "./packages";
 import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessonSeries, lessons } from "./schema";
@@ -363,4 +364,24 @@ export async function listClientOptions(tx: Tx, trainerId: string) {
     .from(clients)
     .where(and(eq(clients.trainerId, trainerId), eq(clients.status, "active"), sql`${clients.archivedAt} is null`));
   return rows.sort((a, b) => a.fullName.localeCompare(b.fullName, "tr"));
+}
+
+/** Attendees still unmarked on lessons from the last `days` days before today (Bugün handles today). */
+export async function countPendingAttendance(tx: Tx, trainer: TrainerRef, days = 14) {
+  const today = todayISO(trainer.timezone);
+  const tz = trainer.timezone;
+  const [row] = await tx
+    .select({ n: sql<number>`count(*)::int` })
+    .from(lessonAttendees)
+    .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+    .where(
+      and(
+        eq(lessons.trainerId, trainer.id),
+        eq(lessons.status, "scheduled"),
+        eq(lessonAttendees.status, "scheduled"),
+        gte(lessons.startsAt, sql`((${today}::date - ${days}::int)::timestamp at time zone ${tz})`),
+        lt(lessons.startsAt, sql`(${today}::date::timestamp at time zone ${tz})`),
+      ),
+    );
+  return row?.n ?? 0;
 }
