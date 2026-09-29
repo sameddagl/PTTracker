@@ -109,7 +109,7 @@ export function LessonPicker({
           <p className="rounded-xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">Önümüzdeki günlerde uygun ders yok.</p>
         ) : (
           <>
-            <ol className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5" aria-label="Günler">
+            <ol className="-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:scroll-px-5 sm:px-5" aria-label="Günler">
               {days.map((d) => {
                 const on = d === day;
                 const hasGroup = group?.slots.some((s) => s.date === d);
@@ -132,9 +132,10 @@ export function LessonPicker({
                       <span className={on ? "opacity-80" : "text-muted-foreground"}>{WEEKDAY_LABELS[isoWeekday(d) - 1]}</span>
                       <span className="text-xl leading-tight font-semibold tabular-nums">{dayOfMonth(d)}</span>
                       <span className={on ? "opacity-80" : "text-muted-foreground"}>{monthShort(d)}</span>
-                      <span className="mt-1 flex h-1.5 gap-1" aria-hidden>
+                      {/* On the selected (filled) day the dots sit on a small card chip, so they keep the legend's colours. */}
+                      <span className={cn("mt-1 flex h-2.5 items-center gap-1 rounded-full px-1", on && (hasGroup || hasPrivate) && "bg-card")} aria-hidden>
                         {hasGroup && <span className="size-1.5 rounded-full bg-lime ring-1 ring-lime-foreground/20" />}
-                        {hasPrivate && <span className={cn("size-1.5 rounded-full", on ? "bg-primary-foreground" : "bg-foreground")} />}
+                        {hasPrivate && <span className="size-1.5 rounded-full bg-foreground" />}
                       </span>
                     </button>
                   </li>
