@@ -114,6 +114,11 @@ export const trainers = pgTable(
     bookingMinNoticeHours: smallint("booking_min_notice_hours").notNull().default(12),
     // How far ahead the calendar is open, in days.
     bookingHorizonDays: smallint("booking_horizon_days").notNull().default(21),
+
+    // Getting-started checklist on Bugün: hidden by the trainer, and the one
+    // step the app can't see for itself (link added to the Instagram bio).
+    guideDismissedAt: timestamp("guide_dismissed_at", { withTimezone: true }),
+    bioLinkAddedAt: timestamp("bio_link_added_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [

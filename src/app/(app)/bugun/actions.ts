@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
+import { setBioLinkAdded, setGuideDismissed } from "@/db/guide";
 import { setAttendance, type AttendanceResult } from "@/db/lessons";
 
 const input = z.object({
@@ -24,4 +25,19 @@ export async function markAttendanceAction(attendeeId: string, status: string): 
   revalidatePath("/ders", "layout");
   revalidatePath("/danisanlar", "layout");
   return result;
+}
+
+/** Hides (or brings back) the getting-started checklist on Bugün. */
+export async function setGuideDismissedAction(dismissed: boolean): Promise<{ ok: true }> {
+  await withTrainer((tx, trainerId) => setGuideDismissed(tx, trainerId, dismissed === true));
+  revalidatePath("/bugun");
+  revalidatePath("/yardim");
+  return { ok: true };
+}
+
+/** The trainer confirms the public page link is in their Instagram bio. */
+export async function setBioLinkAddedAction(added: boolean): Promise<{ ok: true }> {
+  await withTrainer((tx, trainerId) => setBioLinkAdded(tx, trainerId, added === true));
+  revalidatePath("/bugun");
+  return { ok: true };
 }

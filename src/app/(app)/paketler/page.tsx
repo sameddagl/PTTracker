@@ -27,8 +27,19 @@ export default async function PackagesPage() {
         }
       />
       {templates.length === 0 ? (
-        <EmptyState icon={<Package />} title="Henüz paket yok">
-          8 ya da 12 derslik paketlerini ekle; danışana satarken tek dokunuşla seçersin.
+        <EmptyState
+          icon={<Package />}
+          title="Henüz paket yok"
+          action={
+            <Button asChild size="sm">
+              <Link href="/paketler/yeni">
+                <Plus />
+                İlk paketini ekle
+              </Link>
+            </Button>
+          }
+        >
+          8 ya da 12 derslik paketlerini bir kez ekle; sayfanda görünür ve danışana satarken tek dokunuşla seçersin.
         </EmptyState>
       ) : (
         <>

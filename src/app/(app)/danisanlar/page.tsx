@@ -39,8 +39,19 @@ export default async function ClientsPage() {
       <ApplicationsBanner count={pending} />
 
       {clients.length === 0 ? (
-        <EmptyState icon={<Users />} title="Henüz danışan yok">
-          İlk danışanını ekle. Yakında Excel listeni de tek seferde içe aktarabileceksin.
+        <EmptyState
+          icon={<Users />}
+          title="Henüz danışan yok"
+          action={
+            <Button asChild size="sm">
+              <Link href="/danisanlar/yeni">
+                <UserPlus />
+                İlk danışanını ekle
+              </Link>
+            </Button>
+          }
+        >
+          Danışanlarının paketlerini, derslerini ve ödemelerini buradan takip edersin. Sayfandan kayıt olanlar da onaylayınca buraya gelir.
         </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden surface">

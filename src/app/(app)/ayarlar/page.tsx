@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, ChevronRight, ClipboardList, ExternalLink, Globe, LogOut, Package, UsersRound } from "lucide-react";
+import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, ExternalLink, Globe, LogOut, Package, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
@@ -37,6 +37,7 @@ export default async function SettingsPage() {
       hint: trainer.bookingEnabled ? "Danışanlar randevu alabiliyor" : "Randevu kapalı",
     },
     { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Danışandan istenen bilgiler" },
+    { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Paket, yoklama, ödeme ve diğer akışlar adım adım" },
   ];
 
   return (

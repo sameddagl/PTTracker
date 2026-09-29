@@ -99,6 +99,13 @@
       "when": 1790714927869,
       "tag": "20260929204847_profile_storage_select",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790718725450,
+      "tag": "20260929215205_getting_started_guide",
+      "breakpoints": true
     }
   ]
 }

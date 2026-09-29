@@ -24,12 +24,14 @@ export function PageHeader({
   );
 }
 
-export function EmptyState({ icon, title, children }: { icon: ReactNode; title: string; children?: ReactNode }) {
+/** `children` says in a sentence what the screen is for; `action` is the one button that fills it. */
+export function EmptyState({ icon, title, children, action }: { icon: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/50 px-6 py-12 text-center">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground [&_svg]:size-6">{icon}</div>
       <p className="font-semibold">{title}</p>
       {children && <div className="max-w-sm text-sm text-muted-foreground">{children}</div>}
+      {action && <div className="mt-1">{action}</div>}
     </div>
   );
 }

@@ -112,8 +112,19 @@ export default async function PaymentsPage() {
           Son ödemeler
         </h2>
         {recent.length === 0 ? (
-          <EmptyState icon={<Wallet />} title="Henüz ödeme yok">
-            Paket satarken ya da buradan aldığın ödemeler burada listelenir.
+          <EmptyState
+            icon={<Wallet />}
+            title="Henüz ödeme yok"
+            action={
+              <Button asChild size="sm">
+                <Link href="/odemeler/yeni">
+                  <Plus />
+                  Ödeme al
+                </Link>
+              </Button>
+            }
+          >
+            Paket satarken ya da buradan kaydettiğin ödemeler burada listelenir; danışanın havale bildirimleri de onayına düşer.
           </EmptyState>
         ) : (
           <ul className="divide-y overflow-hidden surface">

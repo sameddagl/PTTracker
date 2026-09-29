@@ -37,8 +37,19 @@ export default async function GroupClassesPage() {
         }
       />
       {classes.length === 0 ? (
-        <EmptyState icon={<UsersRound />} title="Henüz grup dersi yok">
-          Örneğin Salı ve Perşembe 18:00, 8 kişilik bir Grup Reformer dersi oluştur.
+        <EmptyState
+          icon={<UsersRound />}
+          title="Henüz grup dersi yok"
+          action={
+            <Button asChild size="sm">
+              <Link href="/takvim/grup/yeni">
+                <Plus />
+                Grup dersi oluştur
+              </Link>
+            </Button>
+          }
+        >
+          Dersi bir kez oluştur, her hafta takvime kendiliğinden eklensin. Örneğin Salı ve Perşembe 18:00, 8 kişilik Grup Reformer.
         </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden surface">

@@ -122,7 +122,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
         </ol>
 
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">{dayLong(selected)}</h2>
-        <DayAgenda lessons={byDay.get(selected)!} addHref={`/ders/yeni?tarih=${selected}&next=${back}`} />
+        <DayAgenda lessons={byDay.get(selected)!} weekEmpty={lessons.length === 0} addHref={`/ders/yeni?tarih=${selected}&next=${back}`} />
       </div>
 
       {/* Tablets and up: week grid */}
@@ -164,12 +164,16 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
   );
 }
 
-function DayAgenda({ lessons, addHref }: { lessons: CalendarLesson[]; addHref: string }) {
+function DayAgenda({ lessons, addHref, weekEmpty }: { lessons: CalendarLesson[]; addHref: string; weekEmpty: boolean }) {
   if (lessons.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center">
-        <p className="text-sm text-muted-foreground">Bu gün ders yok.</p>
-        <Button asChild variant="outline" size="sm">
+        <p className="max-w-sm text-sm text-muted-foreground">
+          {weekEmpty
+            ? "Bu hafta ders yok. Tekrarlayan bir ders ya da grup dersi planla; takvimin her hafta kendiliğinden dolar."
+            : "Bu gün ders yok."}
+        </p>
+        <Button asChild variant={weekEmpty ? "default" : "outline"} size="sm">
           <Link href={addHref}>
             <CalendarPlus />
             Ders ekle

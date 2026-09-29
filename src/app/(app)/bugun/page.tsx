@@ -11,6 +11,7 @@ import { countPendingApplications } from "@/db/applications";
 import { ensureGroupOccurrences } from "@/db/groups";
 import { getLessons } from "@/db/lessons";
 import { countPendingPayments, getPaymentSummary } from "@/db/payments";
+import { getGuideFacts } from "@/db/guide";
 import { getActivePortalTokens } from "@/db/portal";
 import { getPackageAlerts, getTrainer, type PackageAlert } from "@/db/queries";
 import {
@@ -22,17 +23,20 @@ import {
   greeting,
   todayISO,
 } from "@/lib/format";
+import { siteUrl } from "@/lib/config";
+import { buildGuide, guideMode } from "@/lib/guide";
 import { portalUrl } from "@/lib/portal";
 import { cn } from "@/lib/utils";
 import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
 import { AttendanceRow } from "@/components/attendance-row";
 import { Avatar } from "@/components/avatar";
 import { takenPlaces } from "../takvim/lesson-summary";
+import { GettingStarted, GuideComplete } from "./getting-started";
 
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals, pending, pendingPayments, money } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
@@ -43,7 +47,9 @@ export default async function TodayPage() {
     const pending = await countPendingApplications(tx, trainerId);
     const pendingPayments = await countPendingPayments(tx, trainerId);
     const money = await getPaymentSummary(tx, trainer);
-    return { trainer, lessons, alerts, portals, pending, pendingPayments, money };
+    // Skip the checklist counts once the trainer has hidden it.
+    const guideFacts = trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
+    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts };
   });
 
   const now = new Date();
@@ -51,6 +57,9 @@ export default async function TodayPage() {
   const live = lessons.filter((l) => l.lessonStatus === "scheduled");
   const next = live.find((l) => l.endsAt > now);
   const people = live.reduce((sum, l) => sum + l.attendees.filter((a) => a.status !== "cancelled").length, 0);
+  const guide = guideFacts && buildGuide(guideFacts);
+  const guideView = guide ? guideMode(guide, false) : "hidden";
+  const pageUrl = trainer.publicPageEnabled && trainer.slug ? `${siteUrl()}/${trainer.slug}` : null;
 
   return (
     <>
@@ -66,6 +75,9 @@ export default async function TodayPage() {
           </Button>
         }
       />
+
+      {guide && guideView === "checklist" && <GettingStarted guide={guide} pageUrl={pageUrl} />}
+      {guideView === "congrats" && <GuideComplete />}
 
       <section aria-label="Özet" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatTile

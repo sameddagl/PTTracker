@@ -48,6 +48,8 @@ import { todayISO } from "../src/lib/format";
 import { installmentPlan, installmentStates, nextPayable } from "../src/lib/installments";
 import { isUniqueViolation } from "../src/lib/pg-errors";
 import { slugError, toSlug } from "../src/lib/slug";
+import { buildGuide, guideMode } from "../src/lib/guide";
+import { getGuideFacts, setBioLinkAdded, setGuideDismissed } from "../src/db/guide";
 import { createTemplate, expiryFor, listTemplates, pickPackage, reorderTemplates, sellPackage } from "../src/db/packages";
 import { discountPercent, paymentOptions, pickOption } from "../src/lib/pricing";
 import {
@@ -1078,6 +1080,53 @@ async function main() {
     "database rejects malformed slugs",
   );
   console.log("slugs: Turkish transliteration, reserved words, uniqueness, format check");
+
+  // Getting-started guide: progress from real counts, optional steps don't count.
+  const fresh = {
+    pagePublished: false,
+    bookingEnabled: false,
+    templates: 0,
+    availabilityRules: 0,
+    intakeFields: 0,
+    activeClients: 0,
+    lessons: 0,
+    bioLinkAdded: false,
+  };
+  const empty = buildGuide(fresh);
+  assert.equal(empty.total, 6, "availability is optional while booking is off");
+  assert.equal(empty.done, 0);
+  assert.equal(guideMode(empty, false), "checklist");
+  assert.equal(guideMode(empty, true), "hidden");
+  const partial = buildGuide({ ...fresh, templates: 2, activeClients: 1, availabilityRules: 3 });
+  assert.equal(partial.done, 2, "optional availability step done but not counted");
+  assert.ok(partial.steps.find((s) => s.id === "availability")?.done);
+  const booking = buildGuide({ ...fresh, bookingEnabled: true });
+  assert.equal(booking.total, 7, "working hours are required once booking is on");
+  const all = buildGuide({ ...fresh, pagePublished: true, templates: 1, intakeFields: 4, activeClients: 1, lessons: 1, bioLinkAdded: true });
+  assert.ok(all.complete);
+  assert.equal(guideMode(all, false), "congrats");
+  assert.equal(guideMode(all, true), "hidden");
+
+  const facts = await asTrainer(async (tx) => {
+    const [row] = await tx.select().from(schema.trainers).where(eq(schema.trainers.id, T));
+    return getGuideFacts(tx, row);
+  });
+  assert.equal(facts.pagePublished, false, "slug alone isn't a published page");
+  assert.ok(facts.templates > 0 && facts.activeClients > 0 && facts.lessons > 0, "counts come from the trainer's rows");
+  assert.equal(facts.bioLinkAdded, false);
+  await asTrainer(async (tx) => {
+    await setBioLinkAdded(tx, T, true);
+    await setGuideDismissed(tx, T, true);
+  });
+  const [flags] = await asTrainer((tx) =>
+    tx
+      .select({ bio: schema.trainers.bioLinkAddedAt, dismissed: schema.trainers.guideDismissedAt })
+      .from(schema.trainers)
+      .where(eq(schema.trainers.id, T)),
+  );
+  assert.ok(flags.bio && flags.dismissed, "trainer can store their own guide flags (RLS)");
+  await asTrainer((tx) => setGuideDismissed(tx, T, false));
+  console.log("guide: progress from real data, optional steps, dismiss and bio link stored");
 
   // Another trainer's attendee id is invisible (RLS) → null, nothing changed.
   const other = await db.transaction(async (tx) => {
