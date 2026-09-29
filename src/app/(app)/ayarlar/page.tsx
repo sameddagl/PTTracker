@@ -7,14 +7,18 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { getClaims, withTrainer } from "@/db";
-import { getTrainer } from "@/db/queries";
+import { getTrainer, listClients } from "@/db/queries";
 import { siteUrl } from "@/lib/config";
 import { signOut } from "../../giris/actions";
+import { DeleteAccount } from "./delete-account";
 
 export const metadata: Metadata = { title: "Ayarlar" };
 
 export default async function SettingsPage() {
-  const [trainer, claims] = await Promise.all([withTrainer((tx, id) => getTrainer(tx, id)), getClaims()]);
+  const [{ trainer, clientCount }, claims] = await Promise.all([
+    withTrainer(async (tx, id) => ({ trainer: await getTrainer(tx, id), clientCount: (await listClients(tx, id)).length })),
+    getClaims(),
+  ]);
 
   const pageUrl = trainer.publicPageEnabled && trainer.slug ? `${siteUrl()}/${trainer.slug}` : null;
   const rows = [
@@ -87,6 +91,10 @@ export default async function SettingsPage() {
             Çıkış yap
           </SubmitButton>
         </form>
+
+        <div className="mt-6 border-t pt-6">
+          <DeleteAccount trainerId={trainer.id} clientCount={clientCount} />
+        </div>
       </div>
     </>
   );

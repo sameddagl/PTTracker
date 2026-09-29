@@ -11,7 +11,7 @@ const ERRORS: Record<string, string> = {
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
-  const { next, hata } = await searchParams;
+  const { next, hata, silindi } = await searchParams;
   const error = typeof hata === "string" ? ERRORS[hata] : undefined;
 
   return (
@@ -28,6 +28,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
             <h1 className="text-3xl font-semibold">Hoş geldin</h1>
             <p className="text-sm text-muted-foreground">Şifre yok. E-postana gelen kodla gir.</p>
           </div>
+          {silindi === "1" && (
+            <p role="status" className="rounded-xl bg-success/10 px-4 py-3 text-sm text-success-strong">
+              Hesabın ve tüm verilerin silindi. İstersen yeniden hesap açabilirsin.
+            </p>
+          )}
           {error && (
             <p role="alert" className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive-strong">
               {error}

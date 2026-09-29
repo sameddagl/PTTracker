@@ -117,8 +117,9 @@ export default function KvkkPage() {
       <Section id="saklama" title="4. Saklama süresi ve silme">
         <p>
           Eğitmen verileri hesap açık kaldığı sürece saklanır. Eğitmen bir danışanı kalıcı olarak sildiğinde o danışana ait
-          paket, ders, ödeme, dekont ve form kayıtlarının tamamı silinir. Hesap kapatıldığında veriler, yasal saklama
-          yükümlülükleri saklı kalmak kaydıyla silinir ya da anonim hâle getirilir. Güvenlik kayıtları sınırlı bir süre tutulur.
+          paket, ders, ödeme, dekont ve form kayıtlarının tamamı silinir. Eğitmen hesabını <strong>Ayarlar &gt; Hesabımı
+          sil</strong> adımıyla sildiğinde hesabı, danışanları ve tüm kayıtları hemen ve kalıcı olarak silinir; teknik yedeklerde
+          kalan kopyalar da kısa süre içinde kendiliğinden silinir. Güvenlik kayıtları sınırlı bir süre tutulur.
         </p>
       </Section>
 

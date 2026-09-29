@@ -58,7 +58,7 @@ export default function TermsPage() {
           <li>Verileri uygun teknik ve idari tedbirlerle korur; her eğitmen yalnızca kendi kayıtlarına erişebilir.</li>
           <li>Verileri yalnızca aşağıdaki altyapı sağlayıcılarıyla paylaşır ve bir değişiklik olursa sizi bilgilendirir.</li>
           <li>Bir veri ihlalini öğrendiğinde sizi gecikmeksizin haberdar eder.</li>
-          <li>Hesabınız kapandığında danışan verilerini, yasal yükümlülükler saklı kalmak kaydıyla siler.</li>
+          <li>Hesabınızı sildiğinizde danışan verilerini de kalıcı olarak siler.</li>
         </ul>
         <ul>
           {SUBPROCESSORS.map((s) => (
@@ -85,7 +85,8 @@ export default function TermsPage() {
 
       <Section title="6. Hesabın kapatılması ve değişiklikler">
         <p>
-          Hesabınızı dilediğiniz zaman kapatabilirsiniz. Bu koşulları ağır biçimde ihlal eden hesaplar kapatılabilir. Koşullarda
+          Hesabınızı dilediğiniz zaman <strong>Ayarlar &gt; Hesabımı sil</strong> adımıyla silebilirsiniz; hesabınız ve
+          danışanlarınıza ait tüm kayıtlar kalıcı olarak silinir. Bu koşulları ağır biçimde ihlal eden hesaplar kapatılabilir. Koşullarda
           önemli bir değişiklik olduğunda e-postayla bildirim yapılır. Bu koşullara Türk hukuku uygulanır.
         </p>
         <p>

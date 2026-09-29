@@ -73,6 +73,7 @@ import {
   tokenFor,
 } from "../src/db/portal";
 import { listClients } from "../src/db/queries";
+import { deleteTrainerAccount } from "../src/db/account";
 import * as schema from "../src/db/schema";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -1084,7 +1085,28 @@ async function main() {
     return getReceipt(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", withReceiptId);
   });
   assert.equal(otherTrainerReceipt, null, "receipts are private to their trainer");
-  console.log("cross-tenant attendance and payment delete blocked\n\nall logic checks passed");
+  console.log("cross-tenant attendance and payment delete blocked");
+
+  // Deleting the account removes every row the trainer owns, in every table.
+  const owned = async () => {
+    const tables = await pg.query<{ table_name: string }>(
+      `select table_name from information_schema.columns
+        where table_schema = 'public' and column_name = 'trainer_id'
+          and table_name in (select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE')`,
+    );
+    let total = 0;
+    for (const { table_name } of tables.rows) {
+      const r = await pg.query<{ n: number }>(`select count(*)::int as n from "${table_name}" where trainer_id = $1`, [T]);
+      total += r.rows[0].n;
+    }
+    return total;
+  };
+  assert.ok((await owned()) > 0);
+  assert.equal(await db.transaction((tx) => deleteTrainerAccount(tx as unknown as Tx, T)), true);
+  assert.equal(await owned(), 0, "nothing left behind");
+  assert.equal((await pg.query("select 1 from trainers where id = $1", [T])).rows.length, 0);
+  assert.equal(await db.transaction((tx) => deleteTrainerAccount(tx as unknown as Tx, T)), false, "already gone");
+  console.log("account deletion: auth user and all owned rows removed\n\nall logic checks passed");
 }
 
 main().catch((e) => {
