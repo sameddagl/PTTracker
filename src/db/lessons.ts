@@ -351,6 +351,6 @@ export async function listClientOptions(tx: Tx, trainerId: string) {
   const rows = await tx
     .select({ id: clients.id, fullName: clients.fullName })
     .from(clients)
-    .where(and(eq(clients.trainerId, trainerId), sql`${clients.archivedAt} is null`));
+    .where(and(eq(clients.trainerId, trainerId), eq(clients.status, "active"), sql`${clients.archivedAt} is null`));
   return rows.sort((a, b) => a.fullName.localeCompare(b.fullName, "tr"));
 }

@@ -58,7 +58,7 @@ export async function listClients(tx: Tx, trainerId: string) {
   const rows = await tx
     .select({ id: clients.id, fullName: clients.fullName, phone: clients.phone, tags: clients.tags })
     .from(clients)
-    .where(and(eq(clients.trainerId, trainerId), isNull(clients.archivedAt)));
+    .where(and(eq(clients.trainerId, trainerId), eq(clients.status, "active"), isNull(clients.archivedAt)));
   rows.sort((a, b) => a.fullName.localeCompare(b.fullName, "tr"));
 
   if (rows.length === 0) return [];

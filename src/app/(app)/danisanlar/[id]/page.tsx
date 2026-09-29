@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
-import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus, Wallet } from "lucide-react";
+import { CalendarPlus, ChevronLeft, History, MessageCircle, Package, PackagePlus, ShieldCheck, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listRecentPayments } from "@/db/payments";
+import { listIntakeAnswers } from "@/db/intake";
 import { getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
 import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessons } from "@/db/schema";
@@ -21,6 +22,7 @@ import {
   formatTRY,
   formatTime,
 } from "@/lib/format";
+import { formatAnswer } from "@/lib/intake";
 import { portalUrl } from "@/lib/portal";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
 import { PortalCard } from "./portal-card";
@@ -88,12 +90,15 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
     const history = await lessonRows("past");
     const paymentHistory = await listRecentPayments(tx, trainerId, { clientId: id, limit: 10 });
     const portal = await getActivePortalLink(tx, id);
+    const intake = await listIntakeAnswers(tx, { clientId: id });
     const { timezone } = await getTrainer(tx, trainerId);
-    return { client, packages, upcoming, history, paymentHistory, portal, timezone };
+    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone };
   });
   if (!data) notFound();
 
-  const { client, packages, upcoming, history, paymentHistory, portal, timezone } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone } = data;
+  // Answers are ordered oldest first, so the latest answer to each question wins.
+  const latestAnswers = [...new Map(intake.map((a) => [a.label, a])).values()].sort((a, b) => a.sortOrder - b.sortOrder);
   const totalDue = packages.filter((p) => p.state !== "cancelled").reduce((sum, p) => sum + Number(p.due), 0);
   const wa = whatsappLink(client.phone, `Merhaba ${client.fullName.split(" ")[0]},`);
 
@@ -250,6 +255,27 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
             ))}
           </ul>
         </section>
+      )}
+
+      {latestAnswers.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-base">Kayıt bilgileri</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+              {latestAnswers.map((a) => (
+                <div key={a.id}>
+                  <dt className="flex items-center gap-1.5 text-muted-foreground">
+                    {a.label}
+                    {a.isHealth && <ShieldCheck className="size-3.5 text-primary" aria-label="Sağlık bilgisi" />}
+                  </dt>
+                  <dd className="whitespace-pre-wrap">{formatAnswer(a)}</dd>
+                </div>
+              ))}
+            </dl>
+          </CardContent>
+        </Card>
       )}
 
       {(client.notes || client.healthNotes) && (

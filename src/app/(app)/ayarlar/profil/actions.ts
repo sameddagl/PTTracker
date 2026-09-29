@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
+import { ensureDefaultIntakeFields } from "@/db/intake";
 import { trainers } from "@/db/schema";
 import { fieldErrors, readForm, type FormState } from "@/lib/forms";
 import { isUniqueViolation } from "@/lib/pg-errors";
@@ -82,7 +83,11 @@ export async function saveProfileAction(_prev: FormState<ProfileField>, formData
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
 
   try {
-    await withTrainer((tx, trainerId) => tx.update(trainers).set(parsed.data).where(eq(trainers.id, trainerId)));
+    await withTrainer(async (tx, trainerId) => {
+      await tx.update(trainers).set(parsed.data).where(eq(trainers.id, trainerId));
+      // Publishing without ever opening the form settings still gets the default questions.
+      if (parsed.data.publicPageEnabled) await ensureDefaultIntakeFields(tx, trainerId);
+    });
   } catch (e) {
     if (isUniqueViolation(e)) return { errors: { slug: "Bu adres başka biri tarafından alınmış." }, values: raw };
     throw e;

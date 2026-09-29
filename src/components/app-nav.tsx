@@ -13,12 +13,14 @@ const ITEMS = [
   { href: "/ayarlar", label: "Ayarlar", icon: Settings },
 ] as const;
 
+type Badges = Partial<Record<(typeof ITEMS)[number]["href"], number>>;
+
 function useIsActive() {
   const pathname = usePathname();
   return (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SideNav() {
+export function SideNav({ badges = {} }: { badges?: Badges }) {
   const isActive = useIsActive();
   return (
     <nav className="flex flex-col gap-1" aria-label="Ana menü">
@@ -33,14 +35,19 @@ export function SideNav() {
           )}
         >
           <Icon className="size-4" aria-hidden />
-          {label}
+          <span className="flex-1">{label}</span>
+          {!!badges[href] && (
+            <span className="rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
+              {badges[href]}
+            </span>
+          )}
         </Link>
       ))}
     </nav>
   );
 }
 
-export function BottomNav() {
+export function BottomNav({ badges = {} }: { badges?: Badges }) {
   const isActive = useIsActive();
   return (
     <nav
@@ -53,12 +60,20 @@ export function BottomNav() {
             <Link
               href={href}
               aria-current={isActive(href) ? "page" : undefined}
+              aria-label={badges[href] ? `${label}, ${badges[href]} yeni başvuru` : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-muted-foreground",
                 isActive(href) && "text-primary",
               )}
             >
-              <Icon className="size-5" aria-hidden />
+              <span className="relative">
+                <Icon className="size-5" aria-hidden />
+                {!!badges[href] && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 font-semibold text-primary-foreground tabular-nums">
+                    {badges[href]}
+                  </span>
+                )}
+              </span>
               {label}
             </Link>
           </li>

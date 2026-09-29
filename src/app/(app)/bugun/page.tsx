@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { ApplicationsBanner } from "@/components/applications-banner";
+import { countPendingApplications } from "@/db/applications";
 import { getLessons } from "@/db/lessons";
 import { getActivePortalTokens } from "@/db/portal";
 import { getPackageAlerts, getTrainer, type PackageAlert } from "@/db/queries";
@@ -24,14 +26,15 @@ import { AttendanceRow } from "@/components/attendance-row";
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals, pending } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
     const lessons = await getLessons(tx, trainer, { from: today, to: today });
     const alerts = await getPackageAlerts(tx, trainer);
     const portals = await getActivePortalTokens(tx, [...new Set(alerts.map((a) => a.clientId))]);
-    return { trainer, lessons, alerts, portals };
+    const pending = await countPendingApplications(tx, trainerId);
+    return { trainer, lessons, alerts, portals, pending };
   });
 
   const now = new Date();
@@ -51,6 +54,8 @@ export default async function TodayPage() {
           </Button>
         }
       />
+
+      <ApplicationsBanner count={pending} />
 
       <section aria-labelledby="lessons-heading" className="mb-8">
         <h2 id="lessons-heading" className="mb-3 text-sm font-medium text-muted-foreground">

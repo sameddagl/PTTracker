@@ -1,8 +1,18 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, isNull, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { adminDb } from "@/db";
 import { PORTAL_TOKEN_PATTERN, hashToken } from "@/db/portal";
-import { clientPackageBalances, clientPackages, clients, lessonAttendees, lessons, portalTokens, trainers } from "@/db/schema";
+import {
+  applications,
+  clientPackageBalances,
+  clientPackages,
+  clients,
+  lessonAttendees,
+  lessons,
+  packageTemplates,
+  portalTokens,
+  trainers,
+} from "@/db/schema";
 import { siteUrl } from "./config";
 
 export const portalUrl = (token: string) => `${siteUrl()}/p/${token}`;
@@ -30,7 +40,8 @@ export async function getPortalData(token: string) {
     })
     .from(clients)
     .innerJoin(trainers, eq(trainers.id, clients.trainerId))
-    .where(and(eq(clients.id, link.clientId), isNull(clients.archivedAt)));
+    // A rejected applicant is archived but should still see why their link shows no package.
+    .where(and(eq(clients.id, link.clientId), or(isNull(clients.archivedAt), eq(clients.status, "applicant"))));
   if (!client) return null;
 
   const packages = await adminDb
@@ -75,7 +86,21 @@ export async function getPortalData(token: string) {
   const upcoming = await lessonRows("upcoming");
   const recent = await lessonRows("past");
 
+  // The latest sign-up from the public page, to show "waiting for approval".
+  const [application] = await adminDb
+    .select({
+      status: applications.status,
+      createdAt: applications.createdAt,
+      packageName: packageTemplates.name,
+      price: packageTemplates.price,
+    })
+    .from(applications)
+    .innerJoin(packageTemplates, eq(packageTemplates.id, applications.templateId))
+    .where(eq(applications.clientId, link.clientId))
+    .orderBy(desc(applications.createdAt))
+    .limit(1);
+
   await adminDb.update(portalTokens).set({ lastUsedAt: now }).where(eq(portalTokens.id, link.id));
 
-  return { client, packages, upcoming, recent };
+  return { client, packages, upcoming, recent, application: application ?? null };
 }

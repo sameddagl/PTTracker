@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, CheckCircle2, Hourglass, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ATTENDANCE_LABELS,
@@ -11,27 +12,78 @@ import {
   formatTRY,
   formatTime,
 } from "@/lib/format";
-import { getPortalData } from "@/lib/portal";
+import { getPortalData, portalUrl } from "@/lib/portal";
+import { whatsappLink } from "@/lib/whatsapp";
 
 // Personal links must never be indexed or leak through referrers.
 export const metadata: Metadata = { title: "Derslerim", robots: { index: false, follow: false }, referrer: "no-referrer" };
 
-export default async function PortalPage({ params }: PageProps<"/p/[token]">) {
+export default async function PortalPage({ params, searchParams }: PageProps<"/p/[token]">) {
   const { token } = await params;
+  const { yeni } = await searchParams;
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent } = data;
+  const { client, packages, upcoming, recent, application } = data;
   const tz = client.timezone;
+  const trainerName = client.businessName || client.trainerName;
+  const url = portalUrl(token);
+  const toTrainer = whatsappLink(
+    client.trainerPhone,
+    `Merhaba, ${application?.packageName ?? "paket"} için başvurdum. Sayfam: ${url}`,
+  );
+  const pending = application?.status === "pending";
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 py-8">
       <header>
-        <p className="text-sm text-muted-foreground">{client.businessName || client.trainerName}</p>
+        <p className="text-sm text-muted-foreground">{trainerName}</p>
         <h1 className="text-2xl font-semibold tracking-tight">Merhaba {client.fullName.split(" ")[0]}</h1>
       </header>
 
-      {packages.length === 0 ? (
+      {yeni && (
+        <Card className="border-emerald-600/40 bg-emerald-600/10">
+          <CardContent className="flex flex-col gap-3">
+            <p className="flex items-center gap-2 font-semibold">
+              <CheckCircle2 className="size-5 text-emerald-600" aria-hidden />
+              Başvurun alındı
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Bu sayfa senin kişisel sayfan. Paketini, derslerini ve ödeme bilgilerini buradan takip edeceksin. Kaybetmemek için
+              linki kendine kaydet ya da eğitmenine gönder.
+            </p>
+            {toTrainer && (
+              <Button asChild>
+                <a href={toTrainer} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle />
+                  Linki WhatsApp&apos;tan {trainerName}&apos;a gönder
+                </a>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {pending && (
+        <Card>
+          <CardContent className="flex items-center gap-3">
+            <Hourglass className="size-5 shrink-0 text-amber-500" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{application.packageName}</p>
+              <p className="text-sm text-muted-foreground">Eğitmenin onayı bekleniyor. Onaylanınca sana haber vereceğiz.</p>
+            </div>
+            {application.price && <span className="font-semibold tabular-nums">{formatTRY(application.price)}</span>}
+          </CardContent>
+        </Card>
+      )}
+
+      {application?.status === "rejected" && packages.length === 0 && (
+        <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          Başvurun şu an kabul edilemedi. Detaylar için {trainerName} ile iletişime geçebilirsin.
+        </p>
+      )}
+
+      {pending || (application?.status === "rejected" && packages.length === 0) ? null : packages.length === 0 ? (
         <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
           Şu an aktif paketin yok.
         </p>
@@ -76,6 +128,7 @@ export default async function PortalPage({ params }: PageProps<"/p/[token]">) {
         ))
       )}
 
+      {(packages.length > 0 || upcoming.length > 0) && (
       <section aria-labelledby="upcoming-heading">
         <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-foreground">
           Sıradaki derslerin
@@ -95,6 +148,7 @@ export default async function PortalPage({ params }: PageProps<"/p/[token]">) {
           </ul>
         )}
       </section>
+      )}
 
       {recent.length > 0 && (
         <section aria-labelledby="recent-heading">

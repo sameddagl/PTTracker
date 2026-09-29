@@ -37,6 +37,19 @@ export const attendanceStatusEnum = pgEnum("attendance_status", [
 ]);
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank_transfer", "card", "other"]);
 export const consentKindEnum = pgEnum("consent_kind", ["kvkk_notice", "health_data"]);
+// "applicant": signed up on the trainer's public page, not approved yet.
+export const clientStatusEnum = pgEnum("client_status", ["applicant", "active"]);
+export const clientSourceEnum = pgEnum("client_source", ["manual", "public_page"]);
+export const applicationStatusEnum = pgEnum("application_status", ["pending", "approved", "rejected"]);
+export const intakeFieldTypeEnum = pgEnum("intake_field_type", [
+  "short_text",
+  "long_text",
+  "number",
+  "date",
+  "single_choice",
+  "multi_choice",
+  "yes_no",
+]);
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -117,11 +130,14 @@ export const clients = pgTable(
     // Special-category data under KVKK: only stored with explicit consent (see consents).
     healthNotes: text("health_notes"),
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+    status: clientStatusEnum("status").notNull().default("active"),
+    source: clientSourceEnum("source").notNull().default("manual"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
     unique("clients_id_trainer_key").on(t.id, t.trainerId),
+    index("clients_trainer_phone_idx").on(t.trainerId, t.phone),
     index("clients_trainer_idx").on(t.trainerId, t.archivedAt),
     ownRows("clients_own", t.trainerId),
   ],
@@ -357,6 +373,112 @@ export const portalTokens = pgTable(
       "cascade",
     ),
     ownRows("portal_tokens_own", t.trainerId),
+  ],
+);
+
+// A sign-up from the trainer's public page: who and which package. Answers to
+// the trainer's own questions live in intake_answers. Approving it activates
+// the client and creates their package.
+export const applications = pgTable(
+  "applications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    templateId: uuid("template_id").notNull(),
+    // Set on approval.
+    clientPackageId: uuid("client_package_id"),
+    status: applicationStatusEnum("status").notNull().default("pending"),
+    // Free-text note from the sign-up form.
+    message: text("message"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({ name: "applications_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    foreignKey({
+      name: "applications_template_fk",
+      columns: [t.templateId, t.trainerId],
+      foreignColumns: [packageTemplates.id, packageTemplates.trainerId],
+    }),
+    foreignKey({
+      name: "applications_package_fk",
+      columns: [t.clientPackageId, t.trainerId],
+      foreignColumns: [clientPackages.id, clientPackages.trainerId],
+    }),
+    index("applications_trainer_status_idx").on(t.trainerId, t.status, t.createdAt),
+    ownRows("applications_own", t.trainerId),
+  ],
+);
+
+// Questions the trainer asks on their sign-up form (beyond name, phone and
+// email, which every form has).
+export const intakeFields = pgTable(
+  "intake_fields",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    type: intakeFieldTypeEnum("type").notNull(),
+    helpText: text("help_text"),
+    // number fields
+    unit: text("unit"),
+    min: numeric("min"),
+    max: numeric("max"),
+    // single_choice / multi_choice
+    options: text("options").array().notNull().default(sql`'{}'::text[]`),
+    required: boolean("required").notNull().default(false),
+    // Health data under KVKK: only asked (and only required) when the client
+    // gives explicit consent on the form.
+    isHealth: boolean("is_health").notNull().default(false),
+    sortOrder: smallint("sort_order").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [
+    unique("intake_fields_id_trainer_key").on(t.id, t.trainerId),
+    index("intake_fields_trainer_idx").on(t.trainerId, t.sortOrder),
+    ownRows("intake_fields_own", t.trainerId),
+  ],
+);
+
+// A client's answer to one intake question. Label and unit are copied at
+// answer time so history stays readable after the trainer edits the form.
+export const intakeAnswers = pgTable(
+  "intake_answers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    // null once the trainer deletes the question
+    fieldId: uuid("field_id"),
+    applicationId: uuid("application_id"),
+    label: text("label").notNull(),
+    type: intakeFieldTypeEnum("type").notNull(),
+    unit: text("unit"),
+    isHealth: boolean("is_health").notNull().default(false),
+    valueText: text("value_text"),
+    valueNumber: numeric("value_number"),
+    valueDate: date("value_date"),
+    valueOptions: text("value_options").array(),
+    valueBool: boolean("value_bool"),
+    sortOrder: smallint("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({ name: "intake_answers_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    foreignKey({ name: "intake_answers_field_fk", columns: [t.fieldId], foreignColumns: [intakeFields.id] }).onDelete("set null"),
+    foreignKey({ name: "intake_answers_application_fk", columns: [t.applicationId], foreignColumns: [applications.id] }).onDelete(
+      "set null",
+    ),
+    index("intake_answers_client_idx").on(t.clientId),
+    ownRows("intake_answers_own", t.trainerId),
   ],
 );
 

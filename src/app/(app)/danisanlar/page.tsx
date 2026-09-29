@@ -5,13 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { ApplicationsBanner } from "@/components/applications-banner";
+import { countPendingApplications } from "@/db/applications";
 import { listClients } from "@/db/queries";
 import { formatTRY } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Danışanlar" };
 
 export default async function ClientsPage() {
-  const clients = await withTrainer((tx, trainerId) => listClients(tx, trainerId));
+  const { clients, pending } = await withTrainer(async (tx, trainerId) => ({
+    clients: await listClients(tx, trainerId),
+    pending: await countPendingApplications(tx, trainerId),
+  }));
 
   return (
     <>
@@ -27,6 +32,8 @@ export default async function ClientsPage() {
           </Button>
         }
       />
+
+      <ApplicationsBanner count={pending} />
 
       {clients.length === 0 ? (
         <EmptyState icon={<Users />} title="Henüz danışan yok">

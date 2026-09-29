@@ -11,11 +11,16 @@ import {
   getLesson,
   getLessons,
   lessonDates,
+  listClientOptions,
   rescheduleLesson,
   restoreLesson,
   setAttendance,
 } from "../src/db/lessons";
 import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
+import { approveApplication, countPendingApplications, rejectApplication } from "../src/db/applications";
+import { createIntakeField, ensureDefaultIntakeFields, listIntakeFields, toDef, updateIntakeField } from "../src/db/intake";
+import { DEFAULT_INTAKE_FIELDS, answerName, formatAnswer, parseAnswer } from "../src/lib/intake";
+import { recordSignup, validateSignup } from "../src/lib/signup-core";
 import { recurringDates, startOfWeek } from "../src/lib/dates";
 import { isUniqueViolation } from "../src/lib/pg-errors";
 import { slugError, toSlug } from "../src/lib/slug";
@@ -409,6 +414,129 @@ async function main() {
   await asTrainer((tx) => revokePortalLinks(tx, zeynep.id));
   assert.equal(await asTrainer((tx) => getActivePortalLink(tx, zeynep.id)), null);
   console.log("portal links: derived, hashed at rest, re-showable, renew/revoke work");
+
+  // ---- Intake questions and public sign-up ----
+  const num = { type: "number" as const, min: 100, max: 230, options: [], unit: "cm" };
+  assert.deepEqual(parseAnswer(num, ["172,5"]), { value: { kind: "number", number: 172.5 } });
+  assert.deepEqual(parseAnswer(num, ["90"]), { error: "En az 100 cm olmalı." });
+  assert.deepEqual(parseAnswer(num, [""]), { value: null });
+  const multi = { type: "multi_choice" as const, min: null, max: null, unit: null, options: ["Sabah", "Öğle", "Akşam"] };
+  assert.deepEqual(parseAnswer(multi, ["Akşam", "Sabah", "Akşam"]), { value: { kind: "options", options: ["Sabah", "Akşam"] } });
+  assert.ok("error" in parseAnswer(multi, ["Gece"]));
+  assert.deepEqual(parseAnswer({ ...multi, type: "yes_no" }, ["yes"]), { value: { kind: "bool", bool: true } });
+  assert.equal(formatAnswer({ type: "number", unit: "kg", valueNumber: "62.5", valueText: null, valueDate: null, valueOptions: null, valueBool: null }), "62,5 kg");
+
+  await asTrainer((tx) => ensureDefaultIntakeFields(tx, T));
+  await asTrainer((tx) => ensureDefaultIntakeFields(tx, T));
+  let fields = await asTrainer((tx) => listIntakeFields(tx, T, { activeOnly: true }));
+  assert.equal(fields.length, DEFAULT_INTAKE_FIELDS.length, "defaults seeded once");
+  // Make "Kilo" (a health question) required, and add a required non-health one.
+  const kilo = fields.find((f) => f.label === "Kilo")!;
+  await asTrainer((tx) => updateIntakeField(tx, T, kilo.id, { ...toDef(kilo), required: true }));
+  await asTrainer((tx) =>
+    createIntakeField(tx, T, { label: "Meslek", type: "short_text", helpText: null, unit: null, min: null, max: null, options: [], required: true, isHealth: false }),
+  );
+  fields = await asTrainer((tx) => listIntakeFields(tx, T, { activeOnly: true }));
+  const byLabel = (l: string) => fields.find((f) => f.label === l)!;
+
+  const [tpl] = await asTrainer((tx) =>
+    tx
+      .insert(schema.packageTemplates)
+      .values({ trainerId: T, name: "8 Ders Özel", sessionType: "private", sessionCount: 8, validityDays: 35, price: "4000", makeupAllowance: 1 })
+      .returning({ id: schema.packageTemplates.id }),
+  );
+  const form = { trainerId: T, packageIds: [tpl.id], fields };
+  const fd = (entries: [string, string][]) => {
+    const f = new FormData();
+    for (const [k, v] of entries) f.append(k, v);
+    return f;
+  };
+  const base: [string, string][] = [
+    ["firstName", "Deniz"],
+    ["lastName", "Yıldız"],
+    ["phone", "0555 111 22 33"],
+    ["email", "Deniz@Example.com"],
+    ["templateId", tpl.id],
+    ["kvkk", "on"],
+    [answerName(byLabel("Meslek").id), "Mimar"],
+  ];
+
+  // Missing required non-health answer → error; missing required health answer without consent → fine.
+  let v = validateSignup(form, fd(base.filter(([k]) => k !== answerName(byLabel("Meslek").id))));
+  assert.ok("errors" in v && v.errors[answerName(byLabel("Meslek").id)] === "Bu alan zorunlu.");
+  v = validateSignup(form, fd(base));
+  assert.ok("data" in v, "health questions are optional without consent");
+  // With consent, the required health question is enforced and health answers are kept.
+  v = validateSignup(form, fd([...base, ["healthConsent", "on"]]));
+  assert.ok("errors" in v && v.errors[answerName(kilo.id)] === "Bu alan zorunlu.");
+  // Health answers sent without consent are dropped, not stored.
+  v = validateSignup(form, fd([...base, [answerName(kilo.id), "61"], [answerName(byLabel("Boy").id), "168"]]));
+  assert.ok("data" in v && v.data.answers.every((a) => !a.field.isHealth));
+  assert.equal("errors" in validateSignup(form, fd([...base, ["website", "spam"]])), true, "honeypot");
+  assert.equal("errors" in validateSignup(form, fd(base.filter(([k]) => k !== "kvkk"))), true, "KVKK notice is required");
+
+  v = validateSignup(form, fd([...base, ["healthConsent", "on"], [answerName(kilo.id), "61,5"], [answerName(byLabel("Boy").id), "168"]]));
+  assert.ok("data" in v);
+  assert.equal(v.data.email, "deniz@example.com");
+  const signupData = v.data;
+
+  // recordSignup runs as the database owner, like adminDb on the public page.
+  const first = await db.transaction((tx) => recordSignup(tx as unknown as Tx, T, signupData));
+  assert.equal(first.limited, false);
+  const again = await db.transaction((tx) => recordSignup(tx as unknown as Tx, T, signupData));
+  assert.deepEqual(again, first, "double submit → same link, no second application");
+  const [applicant] = await db.select().from(schema.clients).where(eq(schema.clients.phone, "905551112233"));
+  assert.deepEqual([applicant.status, applicant.source, applicant.fullName], ["applicant", "public_page", "Deniz Yıldız"]);
+  const apps = await db.select().from(schema.applications).where(eq(schema.applications.clientId, applicant.id));
+  assert.equal(apps.length, 1);
+  const storedAnswers = await db.select().from(schema.intakeAnswers).where(eq(schema.intakeAnswers.clientId, applicant.id));
+  assert.deepEqual(
+    storedAnswers.map((a) => [a.label, formatAnswer(a)]).sort(),
+    [["Boy", "168 cm"], ["Kilo", "61,5 kg"], ["Meslek", "Mimar"]],
+  );
+  const storedConsents = await db.select({ kind: schema.consents.kind }).from(schema.consents).where(eq(schema.consents.clientId, applicant.id));
+  assert.deepEqual(storedConsents.map((c) => c.kind).sort(), ["health_data", "kvkk_notice"]);
+  // Applicants don't appear in the client list yet.
+  assert.ok(!(await asTrainer((tx) => listClientOptions(tx, T))).some((c) => c.id === applicant.id));
+  assert.equal(await asTrainer((tx) => countPendingApplications(tx, T)), 1);
+  console.log("sign-up: answers validated per type, consent gates health data, applicant + application stored once");
+
+  // Approve → active client with the template's package from the chosen start date.
+  const approved = await asTrainer((tx) => approveApplication(tx, trainer, apps[0].id, { startsOn: "2026-10-01" }));
+  assert.ok(approved);
+  const [ap] = await asTrainer((tx) => tx.select().from(schema.clientPackages).where(eq(schema.clientPackages.id, approved.clientPackageId)));
+  assert.deepEqual([ap.name, ap.totalSessions, ap.expiresOn, ap.price], ["8 Ders Özel", 8, "2026-11-04", "4000.00"]);
+  assert.equal(await asTrainer((tx) => approveApplication(tx, trainer, apps[0].id, { startsOn: "2026-10-01" })), null, "only once");
+  const [nowActive] = await db.select({ status: schema.clients.status }).from(schema.clients).where(eq(schema.clients.id, applicant.id));
+  assert.equal(nowActive.status, "active");
+
+  // Same phone signing up again (now an existing client) reuses the record.
+  const repeatSignup = await db.transaction((tx) => recordSignup(tx as unknown as Tx, T, { ...signupData, answers: [] }));
+  assert.equal(repeatSignup.limited, false);
+  assert.equal((await db.select().from(schema.clients).where(eq(schema.clients.phone, "905551112233"))).length, 1);
+
+  // A stranger who gets rejected is archived, and signing up again brings the same record back.
+  const strangerData = { ...signupData, phone: "905559998877", fullName: "Test Kişi", email: null, answers: [] };
+  await db.transaction((tx) => recordSignup(tx as unknown as Tx, T, strangerData));
+  const [stranger] = await db.select().from(schema.clients).where(eq(schema.clients.phone, "905559998877"));
+  const [strangerApp] = await db.select().from(schema.applications).where(eq(schema.applications.clientId, stranger.id));
+  await asTrainer((tx) => rejectApplication(tx, T, strangerApp.id));
+  const [archived] = await db.select({ archivedAt: schema.clients.archivedAt }).from(schema.clients).where(eq(schema.clients.id, stranger.id));
+  assert.ok(archived.archivedAt, "rejected applicant archived");
+
+  const moreTemplates = await asTrainer((tx) =>
+    tx
+      .insert(schema.packageTemplates)
+      .values(["A", "B", "C"].map((n) => ({ trainerId: T, name: `Paket ${n}`, sessionType: "private" as const, sessionCount: 4 })))
+      .returning({ id: schema.packageTemplates.id }),
+  );
+  const tryWith = (templateId: string) => db.transaction((tx) => recordSignup(tx as unknown as Tx, T, { ...strangerData, templateId }));
+  assert.equal((await tryWith(moreTemplates[0].id)).limited, false);
+  const strangers = await db.select().from(schema.clients).where(eq(schema.clients.phone, "905559998877"));
+  assert.deepEqual([strangers.length, strangers[0].id, strangers[0].archivedAt], [1, stranger.id, null], "same record, unarchived");
+  assert.equal((await tryWith(moreTemplates[1].id)).limited, false, "3rd application in 24h still allowed");
+  assert.equal((await tryWith(moreTemplates[2].id)).limited, true, "4th application from one phone in 24h is refused");
+  console.log("approve/reject: package created from template, applicants archived on rejection, rate limit applies");
 
   // ---- Public page slugs ----
   assert.equal(toSlug("Çağla Işık Öztürk"), "cagla-isik-ozturk");

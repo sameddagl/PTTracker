@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Globe, LogOut, Package } from "lucide-react";
+import { ChevronRight, ClipboardList, Globe, LogOut, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -51,6 +51,14 @@ export default async function SettingsPage() {
         >
           <Package className="size-4 text-muted-foreground" aria-hidden />
           <span className="flex-1 font-medium">Paket şablonları</span>
+          <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+        </Link>
+        <Link
+          href="/ayarlar/kayit-formu"
+          className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+        >
+          <ClipboardList className="size-4 text-muted-foreground" aria-hidden />
+          <span className="flex-1 font-medium">Kayıt formu</span>
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </Link>
         <form action={signOut}>
