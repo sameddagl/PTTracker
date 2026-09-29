@@ -16,6 +16,7 @@ import { installmentPlan, installmentStates } from "@/lib/installments";
 import { getPortalData, portalUrl } from "@/lib/portal";
 import { applicationOption, optionLabel } from "@/lib/pricing";
 import { BookingPanel, UpcomingLessons } from "./booking-panel";
+import { GroupPanel } from "./group-panel";
 import { PaymentPanel } from "./payment-panel";
 import { whatsappLink } from "@/lib/whatsapp";
 
@@ -28,7 +29,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, reported, booking, bookable } = data;
+  const { client, packages, upcoming, recent, application, reported, booking, bookable, groups } = data;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
   const url = portalUrl(token);
@@ -179,6 +180,11 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           lessonMinutes={booking.lessonMinutes}
           credits={booking.packages.reduce((sum, p) => sum + p.free, 0)}
         />
+      )}
+
+      {/* Only for clients group classes are for: a group package, a fixed place, or a booking already. */}
+      {groups && groups.slots.length > 0 && (groups.credits > 0 || groups.fixed.length > 0 || groups.slots.some((sl) => sl.joined)) && (
+        <GroupPanel token={token} timezone={tz} credits={groups.credits} fixed={groups.fixed} slots={groups.slots} />
       )}
 
       {(packages.length > 0 || upcoming.length > 0) && (

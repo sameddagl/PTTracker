@@ -6,6 +6,7 @@ import { authUsers } from "drizzle-orm/supabase";
 import { z } from "zod";
 import { adminDb, type Tx } from "@/db";
 import { bookSlot, cancelBooking } from "@/db/booking";
+import { joinGroupLesson } from "@/db/groups";
 import { clients, trainers } from "@/db/schema";
 import { siteUrl } from "@/lib/config";
 import { dayLong } from "@/lib/dates";
@@ -73,4 +74,29 @@ export async function cancelBookingAction(
   );
   revalidatePath(`/p/${token}`);
   return { ok: true, late: result.late, makeupUsed: result.makeupUsed };
+}
+
+export async function joinGroupAction(token: string, lessonId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const link = await resolvePortalToken(token);
+  if (!link || !z.uuid().safeParse(lessonId).success) return { ok: false, error: "Geçersiz istek." };
+
+  const result = await adminDb.transaction((tx) => joinGroupLesson(tx as unknown as Tx, link, lessonId));
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: {
+        not_found: "Ders bulunamadı.",
+        full: "Bu ders az önce doldu.",
+        no_credit: "Grup paketinde kullanılabilir ders kalmadı.",
+        already: "Bu derste zaten yerin var.",
+        too_late: "Bu derse katılmak için süre geçti.",
+      }[result.reason],
+    };
+  }
+
+  const [trainer] = await adminDb.select({ tz: trainers.timezone }).from(trainers).where(eq(trainers.id, link.trainerId));
+  const tz = trainer?.tz ?? "Europe/Istanbul";
+  await notifyTrainer(link.clientId, "Grup dersine katılım", `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} ${result.title} dersine katıldı.`);
+  revalidatePath(`/p/${token}`);
+  return { ok: true };
 }

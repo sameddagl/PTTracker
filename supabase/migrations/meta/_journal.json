@@ -85,6 +85,13 @@
       "when": 1790709834171,
       "tag": "20260929192354_package_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790710901716,
+      "tag": "20260929194141_group_classes",
+      "breakpoints": true
     }
   ]
 }

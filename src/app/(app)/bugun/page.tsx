@@ -7,6 +7,7 @@ import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { ApplicationsBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
+import { ensureGroupOccurrences } from "@/db/groups";
 import { getLessons } from "@/db/lessons";
 import { countPendingPayments } from "@/db/payments";
 import { getActivePortalTokens } from "@/db/portal";
@@ -23,6 +24,7 @@ import {
 import { portalUrl } from "@/lib/portal";
 import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
 import { AttendanceRow } from "@/components/attendance-row";
+import { lessonTitle } from "../takvim/lesson-summary";
 
 export const metadata: Metadata = { title: "Bugün" };
 
@@ -31,6 +33,7 @@ export default async function TodayPage() {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
+    await ensureGroupOccurrences(tx, trainer);
     const lessons = await getLessons(tx, trainer, { from: today, to: today });
     const alerts = await getPackageAlerts(tx, trainer);
     const portals = await getActivePortalTokens(tx, [...new Set(alerts.map((a) => a.clientId))]);
@@ -87,10 +90,12 @@ export default async function TodayPage() {
                       <span className="text-base font-semibold tabular-nums">
                         {formatTime(l.startsAt, trainer.timezone)}–{formatTime(l.endsAt, trainer.timezone)}
                       </span>
-                      <span className="text-xs text-muted-foreground">{SESSION_TYPE_LABELS[l.sessionType]}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {l.groupClassId ? lessonTitle(l) : SESSION_TYPE_LABELS[l.sessionType]}
+                      </span>
                     </Link>
                     {l.attendees.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">{l.title || "Danışan eklenmemiş"}</p>
+                      <p className="text-sm text-muted-foreground">{l.groupClassId ? "Henüz katılan yok" : l.title || "Danışan eklenmemiş"}</p>
                     ) : (
                       l.attendees.map((a) => <AttendanceRow key={a.id} attendee={a} />)
                     )}

@@ -141,7 +141,7 @@ export async function sellPackage(tx: Tx, trainerId: string, input: SellInput) {
  * type if possible, soonest to expire first (so older packages are used up
  * before newer ones).
  */
-export async function pickPackage(tx: Tx, clientId: string, sessionType: SessionType) {
+export async function pickPackage(tx: Tx, clientId: string, sessionType: SessionType, { strict = false } = {}) {
   const candidates = await tx
     .select({
       id: clientPackages.id,
@@ -162,5 +162,7 @@ export async function pickPackage(tx: Tx, clientId: string, sessionType: Session
       asc(clientPackages.startsOn),
     );
 
-  return (candidates.find((c) => c.sessionType === sessionType) ?? candidates[0])?.id ?? null;
+  const same = candidates.find((c) => c.sessionType === sessionType);
+  // Strict: only a package of this session type (group classes never draw on private credits).
+  return (same ?? (strict ? undefined : candidates[0]))?.id ?? null;
 }

@@ -209,6 +209,7 @@ export async function cancelBooking(tx: Tx, who: Who, attendeeId: string, { conf
       lessonId: lessons.id,
       startsAt: lessons.startsAt,
       lateCancelHours: trainers.lateCancelHours,
+      groupClassId: lessons.groupClassId,
       attendees: sql<number>`(select count(*)::int from ${lessonAttendees} la where la.lesson_id = ${lessons.id})`,
     })
     .from(lessonAttendees)
@@ -235,8 +236,8 @@ export async function cancelBooking(tx: Tx, who: Who, attendeeId: string, { conf
   }
 
   await tx.update(lessonAttendees).set({ status: "cancelled", markedAt: new Date() }).where(eq(lessonAttendees.id, attendeeId));
-  // A private lesson with nobody left frees the slot for others.
-  if (row.attendees <= 1) await tx.update(lessons).set({ status: "cancelled" }).where(eq(lessons.id, row.lessonId));
+  // A private lesson with nobody left frees the slot for others; a group class runs on.
+  if (row.attendees <= 1 && !row.groupClassId) await tx.update(lessons).set({ status: "cancelled" }).where(eq(lessons.id, row.lessonId));
   return { ok: true, late: false, makeupUsed: false, startsAt: row.startsAt };
 }
 
@@ -248,6 +249,7 @@ export async function upcomingForClient(tx: Tx, who: Who) {
       startsAt: lessons.startsAt,
       endsAt: lessons.endsAt,
       sessionType: lessons.sessionType,
+      title: lessons.title,
       lateCancelHours: trainers.lateCancelHours,
     })
     .from(lessonAttendees)

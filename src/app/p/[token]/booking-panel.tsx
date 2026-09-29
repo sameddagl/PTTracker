@@ -133,11 +133,12 @@ export function UpcomingLessons({
   lateCancelHours,
 }: {
   token: string;
-  lessons: { attendeeId: string; startsAt: Date; lateIfCancelledNow: boolean }[];
+  lessons: { attendeeId: string; startsAt: Date; title: string | null; lateIfCancelledNow: boolean }[];
   timezone: string;
   lateCancelHours: number;
 }) {
   const [pending, startTransition] = useTransition();
+  const [busy, setBusy] = useState<string | null>(null);
 
   function cancel(l: (typeof lessons)[number]) {
     const when = `${formatLongDate(l.startsAt, timezone)} ${formatTime(l.startsAt, timezone)}`;
@@ -145,6 +146,7 @@ export function UpcomingLessons({
       ? `Derse ${lateCancelHours} saatten az kaldı. İptal edersen bu ders paketinden düşer (telafi hakkın varsa o kullanılır). ${when} dersini iptal etmek istiyor musun?`
       : `${when} dersini iptal etmek istiyor musun?`;
     if (!window.confirm(question)) return;
+    setBusy(l.attendeeId);
     startTransition(async () => {
       const res = await cancelBookingAction(token, l.attendeeId, l.lateIfCancelledNow);
       if (res.ok) {
@@ -168,9 +170,20 @@ export function UpcomingLessons({
           {lessons.map((l) => (
             <li key={l.attendeeId} className="flex items-center gap-3 rounded-lg border py-2 pr-2 pl-4">
               <CalendarClock className="size-4 shrink-0 text-primary" aria-hidden />
-              <span className="flex-1 text-sm capitalize">{formatLongDate(l.startsAt, timezone)}</span>
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="block capitalize">{formatLongDate(l.startsAt, timezone)}</span>
+                {l.title && <span className="block truncate text-xs text-muted-foreground">{l.title}</span>}
+              </span>
               <span className="text-sm tabular-nums">{formatTime(l.startsAt, timezone)}</span>
-              <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={() => cancel(l)} aria-label="Dersi iptal et">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={pending}
+                loading={pending && busy === l.attendeeId}
+                onClick={() => cancel(l)}
+                aria-label="Dersi iptal et"
+              >
                 <X />
                 <span className="max-sm:sr-only">İptal</span>
               </Button>

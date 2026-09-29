@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
+import { addAttendee } from "@/db/groups";
 import { cancelLessons, findConflicts, rescheduleLesson, restoreLesson } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { dayShort } from "@/lib/dates";
@@ -64,4 +65,19 @@ export async function restoreLessonAction(formData: FormData) {
   const lessonId = z.uuid().parse(formData.get("lessonId"));
   await withTrainer((tx, trainerId) => restoreLesson(tx, trainerId, lessonId));
   revalidateLessonViews(lessonId);
+}
+
+export async function addAttendeeAction(lessonId: string, clientId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!z.uuid().safeParse(clientId).success) return { ok: false, error: "Danışan seç." };
+  const res = await withTrainer(async (tx, trainerId) => addAttendee(tx, await getTrainer(tx, trainerId), lessonId, clientId));
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: { full: "Ders dolu. Kapasiteyi grup dersinin ayarlarından artırabilirsin.", already: "Bu danışan zaten derste.", not_found: "Ders bulunamadı." }[
+        res.reason
+      ],
+    };
+  }
+  revalidateLessonViews(lessonId);
+  return { ok: true };
 }

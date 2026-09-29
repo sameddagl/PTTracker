@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { cache } from "react";
 import { adminDb } from "@/db";
-import { packageTemplates, trainers } from "@/db/schema";
+import { groupClasses, packageTemplates, trainers } from "@/db/schema";
 import { SLUG_PATTERN } from "./slug";
 
 /**
@@ -56,7 +56,26 @@ export const getPublicPage = cache(async (slug: string) => {
     )
     .orderBy(asc(packageTemplates.sortOrder), asc(packageTemplates.createdAt));
 
-  return { trainer, packages };
+  // Weekly group schedule (live classes), a draw for people who see the page on Instagram.
+  const groups = await adminDb
+    .select({
+      id: groupClasses.id,
+      title: groupClasses.title,
+      weekdays: groupClasses.weekdays,
+      startTime: groupClasses.startTime,
+      durationMinutes: groupClasses.durationMinutes,
+      capacity: groupClasses.capacity,
+    })
+    .from(groupClasses)
+    .where(
+      and(
+        eq(groupClasses.trainerId, trainer.id),
+        or(isNull(groupClasses.endsOn), gte(groupClasses.endsOn, sql`current_date`)),
+      ),
+    )
+    .orderBy(asc(groupClasses.startTime));
+
+  return { trainer, packages, groups };
 });
 
 export type PublicPage = NonNullable<Awaited<ReturnType<typeof getPublicPage>>>;

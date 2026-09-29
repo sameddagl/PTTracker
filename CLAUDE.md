@@ -16,3 +16,5 @@
 - Every route under `src/app/(app)` has a `loading.tsx` built from `src/components/skeletons.tsx`, so tab switches show the new page's frame at once. Add one when adding a route.
 - Buttons that start a server action use `loading={pending}` (spinner + disabled); plain `<form action>` forms use `SubmitButton`. Only the clicked button spins.
 - Package prices: `price` is cash, `installmentPrice` + `installments` the optional plan, `compareAtPrice` the struck-through price. Read them through `src/lib/pricing.ts`.
+- Group classes (`src/db/groups.ts`): occurrences are lessons generated `GROUP_HORIZON_DAYS` ahead by `ensureGroupOccurrences` (called by the calendar, Bugün, group pages and the portal) and keyed by `(group_class_id, occurrence_date)`. A place is held by attendance `scheduled`/`attended`/`no_show`. Group lessons only draw on group packages (`pickPackage(..., { strict: true })`).
+- In raw `sql` subqueries on a single-table select, write the outer column as `"table"."column"`; Drizzle leaves `${table.column}` unqualified there.

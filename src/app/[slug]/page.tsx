@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AtSign, Check, MapPin, MessageCircle } from "lucide-react";
+import { AtSign, Check, MapPin, MessageCircle, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/price-tag";
+import { weekdayList } from "@/lib/dates";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
 import { monthlyAmount, paymentOptions } from "@/lib/pricing";
 import { getPublicPage, type PublicPage } from "@/lib/public-page";
@@ -29,7 +30,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
   const page = await getPublicPage(slug);
   if (!page) notFound();
 
-  const { trainer, packages } = page;
+  const { trainer, packages, groups } = page;
   const displayName = trainer.businessName || trainer.fullName;
   const cover = profileImageUrl(trainer.coverPath);
   const avatar = profileImageUrl(trainer.avatarPath);
@@ -122,6 +123,28 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
           </ul>
         )}
       </section>
+
+      {groups.length > 0 && (
+        <section aria-labelledby="groups-heading" className="mt-10 px-4">
+          <h2 id="groups-heading" className="mb-4 text-xl font-semibold">
+            Grup ders programı
+          </h2>
+          <ul className="divide-y rounded-2xl border bg-card">
+            {groups.map((g) => (
+              <li key={g.id} className="flex items-center gap-4 px-5 py-4">
+                <UsersRound className="size-5 shrink-0 text-primary" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{g.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {weekdayList(g.weekdays)} · {g.startTime} · {g.durationMinutes} dk
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm text-muted-foreground tabular-nums">{g.capacity} kişi</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <footer className="mt-12 px-4 text-center text-xs text-muted-foreground">
         <Link href="/" className="hover:text-foreground">

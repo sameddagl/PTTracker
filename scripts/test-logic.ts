@@ -19,6 +19,17 @@ import {
 import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
 import { bookSlot, cancelBooking, getBookingView, replaceAvailabilityRules, upcomingForClient } from "../src/db/booking";
 import { computeSlots, toHHMM } from "../src/lib/slots";
+import {
+  addAttendee,
+  addGroupMember,
+  createGroupClass,
+  endGroupClass,
+  ensureGroupOccurrences,
+  getGroupView,
+  joinGroupLesson,
+  removeGroupMember,
+  updateGroupClass,
+} from "../src/db/groups";
 import { archiveClient, countUpcomingLessons, deleteClient, listArchivedClients, restoreClient } from "../src/db/clients";
 import { approveApplication, countPendingApplications, rejectApplication } from "../src/db/applications";
 import { createIntakeField, ensureDefaultIntakeFields, listIntakeFields, toDef, updateIntakeField } from "../src/db/intake";
@@ -776,6 +787,125 @@ async function main() {
   assert.deepEqual([c2.ok, c2.late, c2.makeupUsed], [true, true, true], "1 makeup allowance forgives it");
   await asTrainer((tx) => tx.update(schema.trainers).set({ lateCancelHours: 24 }).where(eq(schema.trainers.id, T)));
   console.log("booking: slots from weekly hours, double booking and non-private packages refused, cancel in time / late");
+
+  // ---- Group classes ----
+  const groupPkg = (clientId: string, total: number) =>
+    asTrainer((tx) =>
+      sellPackage(tx, T, {
+        clientId,
+        templateId: null,
+        name: `${total} Ders Grup`,
+        sessionType: "group",
+        totalSessions: total,
+        startsOn: todayTR,
+        expiresOn: null,
+        price: 0,
+        makeupAllowance: 0,
+        installments: 1,
+        payment: null,
+      }),
+    );
+  const [ayse, mehmet, deniz, ozel] = await asTrainer((tx) =>
+    tx
+      .insert(schema.clients)
+      .values(["Ayşe G", "Mehmet G", "Deniz G", "Özel G"].map((fullName) => ({ trainerId: T, fullName })))
+      .returning({ id: schema.clients.id }),
+  );
+  await groupPkg(ayse.id, 4);
+  await groupPkg(deniz.id, 8);
+  await asTrainer((tx) =>
+    sellPackage(tx, T, {
+      clientId: ozel.id, templateId: null, name: "Özel", sessionType: "private", totalSessions: 8, startsOn: todayTR,
+      expiresOn: null, price: 0, makeupAllowance: 0, installments: 1, payment: null,
+    }),
+  );
+  const classId = await asTrainer((tx) =>
+    createGroupClass(tx, trainer, {
+      title: "Grup Reformer",
+      weekdays: [1, 2, 3, 4, 5, 6, 7],
+      startTime: "10:00",
+      durationMinutes: 60,
+      capacity: 2,
+      joinMode: "both",
+      startsOn: addDays(todayTR, 1),
+    }),
+  );
+  const occurrences = () =>
+    asTrainer((tx) =>
+      tx.select().from(schema.lessons).where(eq(schema.lessons.groupClassId, classId)).orderBy(schema.lessons.startsAt),
+    );
+  let occ = await occurrences();
+  assert.equal(occ.length, 27, "tomorrow up to 4 weeks ahead");
+  await asTrainer((tx) => ensureGroupOccurrences(tx, trainer));
+  assert.equal((await occurrences()).length, 27, "generating again adds nothing");
+
+  assert.deepEqual(await asTrainer((tx) => addGroupMember(tx, trainer, { classId, clientId: ayse.id, startsOn: todayTR })), { ok: true, skipped: 0 });
+  assert.deepEqual(await asTrainer((tx) => addGroupMember(tx, trainer, { classId, clientId: mehmet.id, startsOn: todayTR })), { ok: true, skipped: 0 });
+  assert.deepEqual(await asTrainer((tx) => addGroupMember(tx, trainer, { classId, clientId: deniz.id, startsOn: todayTR })), { ok: false, reason: "full" });
+  const seatsOf = async (clientId: string) =>
+    asTrainer((tx) =>
+      tx
+        .select({ lessonId: schema.lessonAttendees.lessonId, status: schema.lessonAttendees.status, pkg: schema.lessonAttendees.clientPackageId, id: schema.lessonAttendees.id })
+        .from(schema.lessonAttendees)
+        .innerJoin(schema.lessons, eq(schema.lessons.id, schema.lessonAttendees.lessonId))
+        .where(sql`${schema.lessonAttendees.clientId} = ${clientId} and ${schema.lessons.groupClassId} = ${classId}`)
+        .orderBy(schema.lessons.startsAt),
+    );
+  let ayseSeats = await seatsOf(ayse.id);
+  assert.equal(ayseSeats.length, 27, "fixed member placed in every occurrence");
+  assert.equal(ayseSeats.filter((a) => a.pkg).length, 4, "credits reserved for the first 4, the rest wait for a package");
+  assert.ok((await seatsOf(mehmet.id)).every((a) => a.pkg === null), "no group package → booked without one");
+
+  // Drop-ins: full at 2 members; one more place opens a spot.
+  const denizWho = { trainerId: T, clientId: deniz.id };
+  type GV = NonNullable<Awaited<ReturnType<typeof getGroupView>>>;
+  let gv = (await own((tx) => getGroupView(tx, denizWho))) as GV;
+  assert.ok(gv.slots.length > 0 && gv.slots.every((sl) => !sl.canJoin), "full classes can't be joined");
+  assert.deepEqual(await asTrainer((tx) => updateGroupClass(tx, trainer, classId, { title: "Grup Reformer", capacity: 1, joinMode: "both" })), {
+    ok: false,
+    reason: "below_members",
+    members: 2,
+  });
+  assert.deepEqual(await asTrainer((tx) => updateGroupClass(tx, trainer, classId, { title: "Grup Reformer", capacity: 3, joinMode: "both" })), { ok: true });
+  gv = (await own((tx) => getGroupView(tx, denizWho))) as GV;
+  const target = gv.slots[3];
+  assert.ok(target.canJoin && target.taken === 2 && target.capacity === 3);
+  assert.equal(((await own((tx) => joinGroupLesson(tx, denizWho, target.lessonId))) as { ok: boolean }).ok, true);
+  assert.deepEqual(await own((tx) => joinGroupLesson(tx, denizWho, target.lessonId)), { ok: false, reason: "already" });
+  assert.deepEqual(await own((tx) => joinGroupLesson(tx, { trainerId: T, clientId: ozel.id }, gv.slots[4].lessonId)), { ok: false, reason: "no_credit" }, "private credits don't pay for group classes");
+  const [extra] = await asTrainer((tx) => tx.insert(schema.clients).values({ trainerId: T, fullName: "Dolu G" }).returning({ id: schema.clients.id }));
+  await groupPkg(extra.id, 2);
+  assert.deepEqual(await own((tx) => joinGroupLesson(tx, { trainerId: T, clientId: extra.id }, target.lessonId)), { ok: false, reason: "full" });
+  assert.deepEqual(await asTrainer((tx) => addAttendee(tx, trainer, target.lessonId, extra.id)), { ok: false, reason: "full" }, "trainer is held to the places too");
+
+  // A member skips a week (in time): the class runs on, the place opens, and they aren't put back.
+  ayseSeats = await seatsOf(ayse.id);
+  const skip = ayseSeats.find((a) => a.lessonId === target.lessonId)!;
+  const cancelled = (await own((tx) => cancelBooking(tx, { trainerId: T, clientId: ayse.id }, skip.id, { confirmLate: false }))) as { ok: boolean; late: boolean };
+  assert.deepEqual([cancelled.ok, cancelled.late], [true, false]);
+  const [still] = await asTrainer((tx) => tx.select().from(schema.lessons).where(eq(schema.lessons.id, target.lessonId)));
+  assert.equal(still.status, "scheduled", "group lesson not cancelled with the booking");
+  await asTrainer((tx) => ensureGroupOccurrences(tx, trainer));
+  assert.equal((await seatsOf(ayse.id)).find((a) => a.lessonId === target.lessonId)!.status, "cancelled", "not re-added");
+  assert.equal(((await own((tx) => joinGroupLesson(tx, { trainerId: T, clientId: extra.id }, target.lessonId))) as { ok: boolean }).ok, true, "freed place taken");
+  assert.deepEqual(await own((tx) => joinGroupLesson(tx, { trainerId: T, clientId: ayse.id }, target.lessonId)), { ok: false, reason: "full" }, "no way back once it's taken");
+
+  // Buying a group package later pays for the member's upcoming bookings.
+  await groupPkg(mehmet.id, 3);
+  await asTrainer((tx) => ensureGroupOccurrences(tx, trainer));
+  assert.equal((await seatsOf(mehmet.id)).filter((a) => a.pkg).length, 3);
+
+  assert.ok(await asTrainer(async (tx) => {
+    const [m] = await tx.select().from(schema.groupClassMembers).where(eq(schema.groupClassMembers.clientId, mehmet.id));
+    return removeGroupMember(tx, trainer, m.id);
+  }));
+  assert.equal((await seatsOf(mehmet.id)).length, 0, "ending a fixed place drops upcoming bookings");
+
+  assert.ok(await asTrainer((tx) => endGroupClass(tx, trainer, classId)));
+  occ = await occurrences();
+  assert.ok(occ.every((l) => l.status === "cancelled"), "ending the class cancels what's ahead");
+  assert.ok((await seatsOf(deniz.id)).every((a) => a.status === "cancelled"), "…and frees the credits");
+  console.log("group classes: occurrences ahead, fixed places, capacity, drop-ins, skip a week, late package, end");
 
   // ---- Package pricing and ordering ----
   assert.equal(discountPercent("5000", "4000"), 20);

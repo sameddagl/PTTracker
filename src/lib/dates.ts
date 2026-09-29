@@ -54,3 +54,10 @@ export const dayOfMonth = fmt({ day: "numeric" });
 export const weekRangeLabel = (monday: string) => `${dayShort(monday)} – ${dayShort(addDays(monday, 6))}`;
 
 export const WEEKDAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
+
+/** [2, 4] → "Sal, Per" (ISO weekdays, Monday first). */
+export const weekdayList = (weekdays: number[]) =>
+  [...weekdays]
+    .sort((a, b) => a - b)
+    .map((d) => WEEKDAY_LABELS[d - 1])
+    .join(", ");

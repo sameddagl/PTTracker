@@ -24,7 +24,15 @@ export const TONE_LABELS: Record<LessonTone, string> = {
   cancelled: "İptal edildi",
 };
 
-export const lessonTitle = (l: CalendarLesson) => l.attendees.map((a) => a.name).join(", ") || l.title || "Ders";
+/** Places taken in a group class: booked, came or didn't show (cancels free the place). */
+export const takenPlaces = (l: CalendarLesson) =>
+  l.attendees.filter((a) => a.status === "scheduled" || a.status === "attended" || a.status === "no_show").length;
+
+/** Group classes by name with their fill ("Grup Reformer · 5/8"), others by who's in them. */
+export const lessonTitle = (l: CalendarLesson) =>
+  l.groupClassId
+    ? `${l.title ?? "Grup dersi"} · ${takenPlaces(l)}/${l.capacity ?? "?"}`
+    : l.attendees.map((a) => a.name).join(", ") || l.title || "Ders";
 
 export const minutesToTime = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 

@@ -7,12 +7,13 @@ import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { getLesson } from "@/db/lessons";
+import { getLesson, listClientOptions } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { dayLong } from "@/lib/dates";
 import { SESSION_TYPE_LABELS } from "@/lib/format";
-import { lessonTitle, minutesToTime } from "../../takvim/lesson-summary";
+import { lessonTitle, minutesToTime, takenPlaces } from "../../takvim/lesson-summary";
 import { cancelLessonAction, restoreLessonAction } from "./actions";
+import { AddAttendee } from "./add-attendee";
 import { RescheduleForm } from "./reschedule-form";
 
 export const metadata: Metadata = { title: "Ders" };
@@ -21,11 +22,16 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const lesson = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
-    return getLesson(tx, trainer, id);
+    const lesson = await getLesson(tx, trainer, id);
+    return lesson && { lesson, clients: await listClientOptions(tx, trainerId) };
   });
-  if (!lesson) notFound();
+  if (!data) notFound();
+  const { lesson } = data;
+  const inLesson = new Set(lesson.attendees.filter((a) => a.status !== "cancelled").map((a) => a.clientId));
+  const addable = data.clients.filter((c) => !inLesson.has(c.id));
+  const full = lesson.capacity !== null && takenPlaces(lesson) >= lesson.capacity;
 
   const cancelled = lesson.lessonStatus === "cancelled";
   const start = minutesToTime(lesson.startMinute);
@@ -38,7 +44,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
         Takvim
       </Link>
       <PageHeader
-        title={lessonTitle(lesson)}
+        title={lesson.groupClassId ? (lesson.title ?? "Grup dersi") : lessonTitle(lesson)}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-1.5">
             <span className="capitalize">{dayLong(lesson.localDate)}</span>·
@@ -51,6 +57,11 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
               <span className="inline-flex items-center gap-1">
                 · <Repeat className="size-3.5" aria-hidden /> Tekrarlayan
               </span>
+            )}
+            {lesson.groupClassId && (
+              <Link href={`/takvim/grup/${lesson.groupClassId}`} className="inline-flex items-center gap-1 underline-offset-2 hover:underline">
+                · <Repeat className="size-3.5" aria-hidden /> Grup dersi
+              </Link>
             )}
           </span>
         }
@@ -74,9 +85,15 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
         <section aria-labelledby="attendance-heading" className="mb-8">
           <h2 id="attendance-heading" className="mb-3 text-sm font-medium text-muted-foreground">
             Yoklama
+            {lesson.capacity !== null && (
+              <span className="tabular-nums">
+                {" "}
+                · {takenPlaces(lesson)}/{lesson.capacity} dolu
+              </span>
+            )}
           </h2>
           {lesson.attendees.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Bu derse danışan eklenmemiş.</p>
+            <p className="mb-3 text-sm text-muted-foreground">Bu derse danışan eklenmemiş.</p>
           ) : (
             <Card>
               <CardContent className="flex flex-col gap-5">
@@ -85,6 +102,11 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
                 ))}
               </CardContent>
             </Card>
+          )}
+          {!full && (
+            <div className="mt-3">
+              <AddAttendee lessonId={lesson.lessonId} clients={addable} />
+            </div>
           )}
         </section>
       )}

@@ -29,6 +29,8 @@ export const disciplineEnum = pgEnum("discipline", ["pt", "pilates", "both"]);
 export const sessionTypeEnum = pgEnum("session_type", ["private", "duet", "trio", "group"]);
 export const packageStatusEnum = pgEnum("package_status", ["active", "cancelled"]);
 export const lessonStatusEnum = pgEnum("lesson_status", ["scheduled", "cancelled"]);
+// How clients get a place in a group class: book each class, keep a fixed weekly spot, or both.
+export const groupJoinModeEnum = pgEnum("group_join_mode", ["drop_in", "fixed", "both"]);
 export const attendanceStatusEnum = pgEnum("attendance_status", [
   "scheduled",
   "attended",
@@ -284,6 +286,63 @@ export const lessonSeries = pgTable(
   ],
 );
 
+// A weekly group class ("Grup Reformer, Tue/Thu 18:00, 8 places"). Its
+// occurrences are materialised as lessons a few weeks ahead (see
+// src/db/groups.ts), so each one can be moved, cancelled or filled on its own.
+export const groupClasses = pgTable(
+  "group_classes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    // ISO weekdays, 1 = Monday ... 7 = Sunday
+    weekdays: smallint("weekdays").array().notNull(),
+    startTime: text("start_time").notNull(), // "HH:MM" in the trainer's timezone
+    durationMinutes: smallint("duration_minutes").notNull().default(60),
+    capacity: smallint("capacity").notNull(),
+    joinMode: groupJoinModeEnum("join_mode").notNull().default("both"),
+    startsOn: date("starts_on").notNull(),
+    // Set when the trainer ends the class; no occurrences after it.
+    endsOn: date("ends_on"),
+    ...timestamps,
+  },
+  (t) => [
+    check("group_classes_capacity_range", sql`${t.capacity} between 1 and 100`),
+    unique("group_classes_id_trainer_key").on(t.id, t.trainerId),
+    ownRows("group_classes_own", t.trainerId),
+  ],
+);
+
+// Clients holding a fixed weekly place in a group class.
+export const groupClassMembers = pgTable(
+  "group_class_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    groupClassId: uuid("group_class_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    startsOn: date("starts_on").notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "group_class_members_class_fk",
+      columns: [t.groupClassId, t.trainerId],
+      foreignColumns: [groupClasses.id, groupClasses.trainerId],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "group_class_members_client_fk",
+      columns: [t.clientId, t.trainerId],
+      foreignColumns: [clients.id, clients.trainerId],
+    }).onDelete("cascade"),
+    index("group_class_members_class_idx").on(t.groupClassId),
+    ownRows("group_class_members_own", t.trainerId),
+  ],
+);
+
 export const lessons = pgTable(
   "lessons",
   {
@@ -301,10 +360,21 @@ export const lessons = pgTable(
     status: lessonStatusEnum("status").notNull().default("scheduled"),
     // Booked by the client from their portal rather than planned by the trainer.
     bookedByClient: boolean("booked_by_client").notNull().default(false),
+    // Group class occurrences: the class, the date it was generated for (kept
+    // when the lesson is moved, so it isn't generated again) and its places.
+    groupClassId: uuid("group_class_id"),
+    occurrenceDate: date("occurrence_date"),
+    capacity: smallint("capacity"),
     ...timestamps,
   },
   (t) => [
     unique("lessons_id_trainer_key").on(t.id, t.trainerId),
+    unique("lessons_group_occurrence_key").on(t.groupClassId, t.occurrenceDate),
+    foreignKey({
+      name: "lessons_group_class_fk",
+      columns: [t.groupClassId, t.trainerId],
+      foreignColumns: [groupClasses.id, groupClasses.trainerId],
+    }),
     foreignKey({ name: "lessons_series_fk", columns: [t.seriesId, t.trainerId], foreignColumns: [lessonSeries.id, lessonSeries.trainerId] }).onDelete(
       "set null",
     ),

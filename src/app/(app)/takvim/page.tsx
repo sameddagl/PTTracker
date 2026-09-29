@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarPlus, ChevronLeft, ChevronRight, Repeat } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, Repeat, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { ensureGroupOccurrences } from "@/db/groups";
 import { getLessons, type CalendarLesson } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@/lib/dates";
 import { SESSION_TYPE_LABELS, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { TONE_CLASSES, TONE_LABELS, layoutDay, lessonTitle, lessonTone, minutesToTime } from "./lesson-summary";
+import { TONE_CLASSES, TONE_LABELS, layoutDay, lessonTitle, lessonTone, minutesToTime, takenPlaces } from "./lesson-summary";
 
 export const metadata: Metadata = { title: "Takvim" };
 
@@ -31,6 +32,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
     const trainer = await getTrainer(tx, trainerId);
     const today = todayISO(trainer.timezone);
     const monday = startOfWeek(isISODate(gun) ? gun : isISODate(hafta) ? hafta : today);
+    await ensureGroupOccurrences(tx, trainer);
     const lessons = await getLessons(tx, trainer, { from: monday, to: addDays(monday, 6), includeCancelled: true });
     return { trainer, lessons, today, monday };
   });
@@ -48,12 +50,20 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
       <PageHeader
         title="Takvim"
         action={
-          <Button asChild>
-            <Link href={`/ders/yeni?tarih=${selected}&next=${back}`}>
-              <CalendarPlus />
-              <span className="max-sm:sr-only">Ders ekle</span>
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/takvim/grup">
+                <UsersRound />
+                <span className="max-sm:sr-only">Grup dersleri</span>
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href={`/ders/yeni?tarih=${selected}&next=${back}`}>
+                <CalendarPlus />
+                <span className="max-sm:sr-only">Ders ekle</span>
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -133,11 +143,17 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
         <div className="text-xs text-muted-foreground tabular-nums">{minutesToTime(l.startMinute + l.durationMinutes)}</div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{lessonTitle(l)}</p>
+        <p className="truncate font-medium">{l.groupClassId ? (l.title ?? "Grup dersi") : lessonTitle(l)}</p>
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          {SESSION_TYPE_LABELS[l.sessionType]} · {TONE_LABELS[tone]}
+          {SESSION_TYPE_LABELS[l.sessionType]}
+          {l.groupClassId && (
+            <span className="tabular-nums">
+              · {takenPlaces(l)}/{l.capacity} dolu
+            </span>
+          )}{" "}
+          · {TONE_LABELS[tone]}
           {l.bookedByClient && " · Randevu"}
-          {l.seriesId && <Repeat className="size-3" aria-label="Tekrarlayan" />}
+          {(l.seriesId || l.groupClassId) && <Repeat className="size-3" aria-label="Tekrarlayan" />}
         </p>
       </div>
     </Link>
