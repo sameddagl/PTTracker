@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarClock, CheckCircle2, Hourglass, MessageCircle } from "lucide-react";
+import { CheckCircle2, Hourglass, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ATTENDANCE_LABELS,
-  SESSION_TYPE_LABELS,
   formatDayMonth,
-  formatLongDate,
   formatShortDate,
   formatTRY,
   formatTime,
@@ -16,6 +14,7 @@ import {
 import { formatIban, paymentCode } from "@/lib/iban";
 import { installmentPlan, installmentStates } from "@/lib/installments";
 import { getPortalData, portalUrl } from "@/lib/portal";
+import { BookingPanel, UpcomingLessons } from "./booking-panel";
 import { PaymentPanel } from "./payment-panel";
 import { whatsappLink } from "@/lib/whatsapp";
 
@@ -28,7 +27,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, reported } = data;
+  const { client, packages, upcoming, recent, application, reported, booking, bookable } = data;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
   const url = portalUrl(token);
@@ -166,26 +165,22 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           )
         ))}
 
+      {booking?.enabled && booking.packages.length > 0 && (
+        <BookingPanel
+          token={token}
+          days={booking.days}
+          lessonMinutes={booking.lessonMinutes}
+          credits={booking.packages.reduce((sum, p) => sum + p.free, 0)}
+        />
+      )}
+
       {(packages.length > 0 || upcoming.length > 0) && (
-      <section aria-labelledby="upcoming-heading">
-        <h2 id="upcoming-heading" className="mb-3 text-sm font-medium text-muted-foreground">
-          Sıradaki derslerin
-        </h2>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Planlanmış ders yok.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {upcoming.map((l) => (
-              <li key={l.id} className="flex items-center gap-3 rounded-lg border px-4 py-3">
-                <CalendarClock className="size-4 text-primary" aria-hidden />
-                <span className="flex-1 capitalize">{formatLongDate(l.startsAt, tz)}</span>
-                <span className="text-sm tabular-nums">{formatTime(l.startsAt, tz)}</span>
-                <span className="text-xs text-muted-foreground">{SESSION_TYPE_LABELS[l.sessionType]}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <UpcomingLessons
+          token={token}
+          lessons={bookable}
+          timezone={tz}
+          lateCancelHours={booking?.lateCancelHours ?? 24}
+        />
       )}
 
       {recent.length > 0 && (

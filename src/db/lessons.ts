@@ -153,6 +153,7 @@ export async function getLessons(
       notes: lessons.notes,
       sessionType: lessons.sessionType,
       lessonStatus: lessons.status,
+      bookedByClient: lessons.bookedByClient,
       startsAt: lessons.startsAt,
       endsAt: lessons.endsAt,
       localDate: sql<string>`to_char(${local}, 'YYYY-MM-DD')`,

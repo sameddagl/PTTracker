@@ -46,6 +46,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
               {start}–{minutesToTime(lesson.startMinute + lesson.durationMinutes)}
             </span>
             · {SESSION_TYPE_LABELS[lesson.sessionType]}
+            {lesson.bookedByClient && <span>· Danışan randevusu</span>}
             {lesson.seriesId && (
               <span className="inline-flex items-center gap-1">
                 · <Repeat className="size-3.5" aria-hidden /> Tekrarlayan

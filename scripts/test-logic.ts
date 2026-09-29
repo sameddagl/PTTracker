@@ -17,6 +17,8 @@ import {
   setAttendance,
 } from "../src/db/lessons";
 import { layoutDay } from "../src/app/(app)/takvim/lesson-summary";
+import { bookSlot, cancelBooking, getBookingView, replaceAvailabilityRules, upcomingForClient } from "../src/db/booking";
+import { computeSlots, toHHMM } from "../src/lib/slots";
 import { approveApplication, countPendingApplications, rejectApplication } from "../src/db/applications";
 import { createIntakeField, ensureDefaultIntakeFields, listIntakeFields, toDef, updateIntakeField } from "../src/db/intake";
 import { DEFAULT_INTAKE_FIELDS, answerName, formatAnswer, parseAnswer } from "../src/lib/intake";
@@ -659,6 +661,94 @@ async function main() {
   assert.equal((await asTrainer((tx) => confirmPayment(tx, T, pendingNow[0].id))).ok, true, "the 500 report still fits");
   assert.equal(String((await balance(payerPkg)).dueAmount), "0.00");
   console.log("installments: plan split, overdue in the view, reports sized by the plan, overpay guarded");
+
+  // ---- Availability and client booking ----
+  const tue = { weekday: 2, startMinute: 540, endMinute: 780 }; // 09:00–13:00
+  let slots = computeSlots({
+    rules: [tue, { weekday: 2, startMinute: 1020, endMinute: 1230 }], // + 17:00–20:30
+    busy: [{ date: "2026-10-06", startMinute: 600, endMinute: 660 }, { date: "2026-10-06", startMinute: 1050, endMinute: 1110 }],
+    daysOff: [{ startsOn: "2026-10-13", endsOn: "2026-10-13" }],
+    today: "2026-09-29",
+    nowMinute: 1300,
+    horizonDays: 21,
+    lessonMinutes: 60,
+    minNoticeMinutes: 720,
+  });
+  assert.deepEqual(
+    slots.map((d) => `${d.date} ${d.minutes.map(toHHMM).join(",")}`),
+    ["2026-10-06 09:00,11:00,12:00,19:00", "2026-10-20 09:00,10:00,11:00,12:00,17:00,18:00,19:00"],
+    "busy lessons (incl. partial overlap) removed, 20:00 doesn't fit before 20:30, day off skipped, notice rolls past today",
+  );
+  slots = computeSlots({ rules: [tue], busy: [], daysOff: [], today: "2026-10-06", nowMinute: 600, horizonDays: 0, lessonMinutes: 60, minNoticeMinutes: 30 });
+  assert.deepEqual(slots[0].minutes.map(toHHMM), ["11:00", "12:00"], "min notice from now on the same day");
+  assert.equal(
+    computeSlots({ rules: [tue], busy: [], daysOff: [], today: "2026-09-29", nowMinute: 0, horizonDays: 21, lessonMinutes: 60, minNoticeMinutes: 0, lastDate: "2026-10-10" }).length,
+    2,
+    "stops at the package's expiry (6 Oct only; 29 Sep is Tuesday too)",
+  );
+
+  // Booking against the real clock: open every day 00:00–24:00, no notice.
+  await asTrainer((tx) =>
+    tx
+      .update(schema.trainers)
+      .set({ bookingEnabled: true, bookingLessonMinutes: 60, bookingMinNoticeHours: 0, bookingHorizonDays: 14, lateCancelHours: 24 })
+      .where(eq(schema.trainers.id, T)),
+  );
+  await asTrainer((tx) =>
+    replaceAvailabilityRules(tx, T, [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, startMinute: 0, endMinute: 1440 }))),
+  );
+  const [booker] = await asTrainer((tx) =>
+    tx.insert(schema.clients).values({ trainerId: T, fullName: "Can Er" }).returning({ id: schema.clients.id }),
+  );
+  const bookerWho = { trainerId: T, clientId: booker.id };
+  const own = (fn: (tx: Tx) => Promise<unknown>) => db.transaction((tx) => fn(tx as unknown as Tx));
+
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 })), { ok: false, reason: "no_credit" });
+  // A duet package isn't bookable; a 2-lesson private one is.
+  await asTrainer((tx) =>
+    sellPackage(tx, T, { clientId: booker.id, templateId: null, name: "Düet", sessionType: "duet", totalSessions: 4, startsOn: todayTR, expiresOn: null, price: 0, makeupAllowance: 0, installments: 1, payment: null }),
+  );
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 })), { ok: false, reason: "no_credit" });
+  const bookerPkg = await asTrainer((tx) =>
+    sellPackage(tx, T, { clientId: booker.id, templateId: null, name: "2 Ders", sessionType: "private", totalSessions: 2, startsOn: todayTR, expiresOn: null, price: 0, makeupAllowance: 1, installments: 1, payment: null }),
+  );
+
+  const view = (await own((tx) => getBookingView(tx, bookerWho))) as Awaited<ReturnType<typeof getBookingView>>;
+  assert.equal(view?.packages.length, 1);
+  assert.ok(view!.days.length >= 14, "two weeks of open days");
+
+  const b1 = (await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 }))) as { ok: boolean };
+  assert.equal(b1.ok, true);
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 })), { ok: false, reason: "slot_taken" });
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 630 })), { ok: false, reason: "slot_taken" }, "not a slot boundary");
+  assert.equal(((await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 4), minute: 600 }))) as { ok: boolean }).ok, true);
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 5), minute: 600 })), { ok: false, reason: "no_credit" }, "both credits reserved");
+  assert.equal((await balance(bookerPkg)).scheduledSessions, 2);
+
+  // Cancel in time → credit back and slot free again.
+  let upcomingBookings = (await own((tx) => upcomingForClient(tx, bookerWho))) as Awaited<ReturnType<typeof upcomingForClient>>;
+  assert.equal(upcomingBookings.length, 2);
+  assert.equal(upcomingBookings[0].lateIfCancelledNow, false);
+  const c1 = (await own((tx) => cancelBooking(tx, bookerWho, upcomingBookings[0].attendeeId, { confirmLate: false }))) as { ok: boolean; late: boolean };
+  assert.deepEqual([c1.ok, c1.late], [true, false]);
+  assert.equal((await balance(bookerPkg)).scheduledSessions, 1);
+  assert.equal(((await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 }))) as { ok: boolean }).ok, true, "freed slot is bookable");
+
+  // Another client can't cancel it.
+  assert.deepEqual(await own((tx) => cancelBooking(tx, { trainerId: T, clientId: payer.id }, upcomingBookings[1].attendeeId, { confirmLate: true })), {
+    ok: false,
+    reason: "not_found",
+  });
+
+  // Inside the notice window: needs confirmation, then burns (or uses the makeup).
+  await asTrainer((tx) => tx.update(schema.trainers).set({ lateCancelHours: 24 * 10 }).where(eq(schema.trainers.id, T)));
+  upcomingBookings = (await own((tx) => upcomingForClient(tx, bookerWho))) as typeof upcomingBookings;
+  assert.equal(upcomingBookings[0].lateIfCancelledNow, true);
+  assert.deepEqual(await own((tx) => cancelBooking(tx, bookerWho, upcomingBookings[0].attendeeId, { confirmLate: false })), { ok: false, reason: "confirm_late" });
+  const c2 = (await own((tx) => cancelBooking(tx, bookerWho, upcomingBookings[0].attendeeId, { confirmLate: true }))) as { ok: boolean; late: boolean; makeupUsed: boolean };
+  assert.deepEqual([c2.ok, c2.late, c2.makeupUsed], [true, true, true], "1 makeup allowance forgives it");
+  await asTrainer((tx) => tx.update(schema.trainers).set({ lateCancelHours: 24 }).where(eq(schema.trainers.id, T)));
+  console.log("booking: slots from weekly hours, double booking and non-private packages refused, cancel in time / late");
 
   // ---- Public page slugs ----
   assert.equal(toSlug("Çağla Işık Öztürk"), "cagla-isik-ozturk");

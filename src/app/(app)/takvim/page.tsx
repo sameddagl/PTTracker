@@ -136,6 +136,7 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
         <p className="truncate font-medium">{lessonTitle(l)}</p>
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           {SESSION_TYPE_LABELS[l.sessionType]} · {TONE_LABELS[tone]}
+          {l.bookedByClient && " · Randevu"}
           {l.seriesId && <Repeat className="size-3" aria-label="Tekrarlayan" />}
         </p>
       </div>

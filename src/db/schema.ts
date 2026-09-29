@@ -104,6 +104,14 @@ export const trainers = pgTable(
     // Shown to approved clients so they can pay by bank transfer.
     iban: text("iban"),
     ibanHolder: text("iban_holder"),
+
+    // Client self-booking from the portal (see availability_rules / time_off).
+    bookingEnabled: boolean("booking_enabled").notNull().default(false),
+    bookingLessonMinutes: smallint("booking_lesson_minutes").notNull().default(60),
+    // Earliest a client can book, in hours from now.
+    bookingMinNoticeHours: smallint("booking_min_notice_hours").notNull().default(12),
+    // How far ahead the calendar is open, in days.
+    bookingHorizonDays: smallint("booking_horizon_days").notNull().default(21),
     ...timestamps,
   },
   (t) => [
@@ -284,6 +292,8 @@ export const lessons = pgTable(
     location: text("location"),
     notes: text("notes"),
     status: lessonStatusEnum("status").notNull().default("scheduled"),
+    // Booked by the client from their portal rather than planned by the trainer.
+    bookedByClient: boolean("booked_by_client").notNull().default(false),
     ...timestamps,
   },
   (t) => [
@@ -445,6 +455,48 @@ export const applications = pgTable(
     }),
     index("applications_trainer_status_idx").on(t.trainerId, t.status, t.createdAt),
     ownRows("applications_own", t.trainerId),
+  ],
+);
+
+// Weekly working hours clients can book into, e.g. Monday 09:00–13:00.
+// Minutes from midnight in the trainer's timezone.
+export const availabilityRules = pgTable(
+  "availability_rules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    weekday: smallint("weekday").notNull(), // ISO: 1 = Monday … 7 = Sunday
+    startMinute: smallint("start_minute").notNull(),
+    endMinute: smallint("end_minute").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("availability_rules_weekday", sql`${t.weekday} between 1 and 7`),
+    check("availability_rules_range", sql`${t.startMinute} >= 0 and ${t.endMinute} <= 1440 and ${t.endMinute} > ${t.startMinute}`),
+    index("availability_rules_trainer_idx").on(t.trainerId, t.weekday),
+    ownRows("availability_rules_own", t.trainerId),
+  ],
+);
+
+// Whole days the trainer isn't available (holiday, sick day), inclusive.
+export const timeOff = pgTable(
+  "time_off",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    startsOn: date("starts_on").notNull(),
+    endsOn: date("ends_on").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("time_off_range", sql`${t.endsOn} >= ${t.startsOn}`),
+    index("time_off_trainer_idx").on(t.trainerId, t.endsOn),
+    ownRows("time_off_own", t.trainerId),
   ],
 );
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
-import { adminDb } from "@/db";
+import { adminDb, type Tx } from "@/db";
+import { getBookingView, upcomingForClient } from "@/db/booking";
 import { PORTAL_TOKEN_PATTERN, hashToken } from "@/db/portal";
 import {
   applications,
@@ -137,7 +138,13 @@ export async function getPortalData(token: string) {
     )
     .orderBy(desc(payments.createdAt));
 
+  const who = { trainerId: link.trainerId, clientId: link.clientId };
+  const { booking, bookable } = await adminDb.transaction(async (tx) => ({
+    booking: await getBookingView(tx as unknown as Tx, who),
+    bookable: await upcomingForClient(tx as unknown as Tx, who),
+  }));
+
   await adminDb.update(portalTokens).set({ lastUsedAt: now }).where(eq(portalTokens.id, link.id));
 
-  return { client, packages, upcoming, recent, application: application ?? null, reported };
+  return { client, packages, upcoming, recent, application: application ?? null, reported, booking, bookable };
 }
