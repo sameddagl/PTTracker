@@ -7,9 +7,9 @@
 
 | # | İş | Kim | Süre | Maliyet |
 |---|---|---|---|---|
-| 1 | Alan adı al (studyom.app veya .com) | Sen | 1 saat | ~15 $/yıl |
+| 1 | Alan adı seç (Hostinger planında 1 yıl ücretsiz) | Sen | 1 saat | 0 TL ilk yıl |
 | 2 | Canlı için ayrı Supabase projesi (Frankfurt) | Sen + ben | 1 saat | 0 $ (beta), sonra 25 $/ay |
-| 3 | Hosting (Vercel) ve alan adı bağlantısı | Sen + ben | 1–2 saat | 0 $ (beta), para almaya başlayınca 20 $/ay |
+| 3 | Hosting (Hostinger Node.js planı) ve alan adı | Sen + ben | 1–2 saat | 2.160 TL ilk yıl, sonra 500 TL/ay |
 | 4 | Ortam değişkenleri ve yeni `PORTAL_SECRET` | Ben | 15 dk | — |
 | 5 | Supabase Auth: site adresi, SMTP, şablonlar | Sen | 30 dk | — |
 | 6 | KVKK: veri sorumlusu bilgileri, yurt dışı aktarım sözleşmeleri | Sen (+ avukat) | 1–2 hafta | avukat ücreti |
@@ -34,17 +34,24 @@
   - **Öneri:** İlk 5–10 eğitmen gelince Pro plana geç (25 $/ay, günlük yedek ve daha yüksek limitler).
 - Bağlantı adresi: uygulama havuz (pooler, 6543 portu) adresini kullanıyor; `DATABASE_URL_DIRECT` (5432) sadece migration için.
 
-## 3. Hosting (Vercel)
+## 3. Hosting
 
-- **Öneri:** Vercel. Next.js'in kendi platformu, kurulum en kolay.
-- **Dikkat:**
-  - Vercel'in ücretsiz **Hobby planı ticari kullanıma kapalı.**
-  - Ücretsiz beta bu dönemde tolere edilebilir; **para almaya başlamadan önce Pro'ya geç** (20 $/ay).
-  - Alternatif: Cloudflare Workers ücretsiz planı ticari kullanıma açık, ama kurulumu daha zahmetli.
-- **Bölge:** Fonksiyonları Frankfurt'a (`fra1`) ayarla. Veritabanıyla aynı bölgede olunca sayfalar hızlı açılır.
-- **Alan adı:** Vercel'e ekle, DNS kayıtlarını alan adı sağlayıcında gir.
+**Karar: Hostinger (Node.js destekli plan), yedek seçenek Vercel.**
 
-## 4. Ortam değişkenleri (Vercel → Settings → Environment Variables)
+- **Plan:** İlk 12 ay 2.159,88 TL peşin (ayda 179,99 TL), yenileme 499,99 TL/ay. 1 yıl ücretsiz domain ve kurumsal e-posta dahil. Ticari kullanım serbest.
+- **Next.js 16 ile uyum:** [Hostinger dokümanına](https://docs.hostinger.com/node.js/overview-1/next.md) göre sunucu modu, Server Actions, middleware (bizde `proxy.ts`), ISR ve görsel optimizasyonu destekleniyor. Node 18/20/22/24 seçilebiliyor; pnpm destekleniyor; ortam değişkenleri hem build'de hem çalışırken geçerli.
+- **Standalone çıktı:** Hostinger build'den önce otomatik olarak `output: "standalone"` ekliyor. Bu mod yerelde denendi: build başarılı (~50 MB), ana sayfa, giriş, KVKK, robots, sitemap, paylaşım görseli ve danışan portalı gerçek veritabanıyla çalıştı.
+- **Kurulum ayarları (hPanel → Node.js uygulaması):**
+  - Kaynak: GitHub deposu (her push'ta otomatik yayın).
+  - Framework: Next.js; paket yöneticisi pnpm.
+  - Node: 22. `package.json` → `engines.node >= 22`; Supabase kütüphanesi Node 20'yi artık önermiyor.
+  - Build komutu `build`, çıktı dizini `.next`.
+  - Veri merkezi: **Avrupa** (Almanya ya da Hollanda). Veritabanı Frankfurt'ta.
+- **Sınırlar:** Kurulum ve build için ayrı ayrı 15 dakika süre sınırı var (bizim build 1–2 dakika). RAM ve CPU plana bağlı; build bellek yetmezse bir üst plana geçilir.
+- **Dikkat:** `next.config.ts` bir nesne olarak dışa aktarılmalı (öyle); fonksiyon biçimli config Hostinger'da sessizce yok sayılıyor.
+- **Yedek plan:** Sorun çıkarsa 30 günlük iade süresi içinde Vercel'e geç. Kodda platforma özel bir şey yok.
+
+## 4. Ortam değişkenleri (Hostinger hPanel → Environment variables)
 
 | Değişken | Canlıda değer | Not |
 |---|---|---|
@@ -68,9 +75,9 @@
 
 1. **Veri sorumlusu bilgilerini doldur:** `src/lib/legal.ts` → ad soyad (şirket yoksa gerçek kişi), tebligat adresi, iletişim e-postası. Sonra `READY: true` yap; sayfalardaki "Taslak" uyarısı kalkar.
 2. **Yurt dışına aktarım (en önemli madde):**
-   - Supabase (AB'de sunucu, ABD şirketi), Google (Gmail) ve **Vercel** (ABD) kişisel veri işliyor.
+   - Supabase (AB'de sunucu, ABD şirketi), Google (Gmail) ve **Hostinger** (Litvanya merkezli, sunucu Avrupa'da) kişisel veri işliyor.
    - 1 Eylül 2024'ten beri sürekli aktarım açık rızayla yapılamıyor. Her biriyle Kurul'un yayımladığı **standart sözleşme** imzalanmalı ve imzadan sonra **5 iş günü içinde Kurum'a bildirilmeli**.
-   - Vercel'i de `SUBPROCESSORS` listesine eklemek gerekiyor; canlıya çıkarken ben eklerim.
+   - Hostinger'ı da `SUBPROCESSORS` listesine eklemek gerekiyor; canlıya çıkarken ben eklerim. Kurumsal e-postaya geçilince Gmail listeden çıkar.
    - Alternatif: verileri Türkiye'de barındırmak.
 3. **VERBİS:** Küçük işletmeler genelde muaf, ama sağlık verisi işlendiği için muafiyet bir avukata sorulmalı.
 4. **Avukat incelemesi:** Aydınlatma, açık rıza ve kullanım koşulları metinlerine kısa bir inceleme.
@@ -100,8 +107,8 @@
 
 ## Tahmini aylık maliyet
 
-| Dönem | Supabase | Vercel | E-posta | Alan adı | Toplam |
+| Dönem | Supabase | Hosting | E-posta | Alan adı | Toplam (aylık) |
 |---|---|---|---|---|---|
-| Kapalı beta (0–10 eğitmen) | 0 $ | 0 $ | 0 $ (Gmail) | ~1 $ | **~1 $** |
-| Açık beta (10–100 eğitmen) | 25 $ | 0–20 $ | 0 $ (Resend free) | ~1 $ | **~26–46 $** |
-| Ücretli dönem | 25 $+ | 20 $ | 0–20 $ | ~1 $ | **~46–66 $** |
+| Kapalı beta (0–10 eğitmen) | 0 $ | 180 TL (Hostinger, domain ve e-posta dahil) | dahil | dahil | **~180 TL** |
+| Açık beta (10–100 eğitmen) | 25 $ | 180 TL | dahil | dahil | **~1.250 TL** |
+| 2. yıl ve ücretli dönem | 25 $+ | 500 TL | dahil ya da Resend | ~500 TL/yıl | **~1.600 TL+** |
