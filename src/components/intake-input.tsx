@@ -14,12 +14,15 @@ export function IntakeInput({
   error,
   defaultValues = [],
   disabled,
+  plainLabel,
 }: {
   field: IntakeFieldDef & { id: string };
   error?: string;
   /** Current answer as form values (see answerToRaw), when editing. */
   defaultValues?: string[];
   disabled?: boolean;
+  /** No "required"/"optional" marker (the trainer editing answers). */
+  plainLabel?: boolean;
 }) {
   const name = answerName(field.id);
   const first = defaultValues[0] ?? "";
@@ -28,7 +31,11 @@ export function IntakeInput({
   const label = (
     <>
       {field.label}
-      {field.required ? <span className="text-destructive-strong"> *</span> : <span className="font-normal text-muted-foreground"> · isteğe bağlı</span>}
+      {plainLabel ? null : field.required ? (
+        <span className="text-destructive-strong"> *</span>
+      ) : (
+        <span className="font-normal text-muted-foreground"> · isteğe bağlı</span>
+      )}
     </>
   );
 

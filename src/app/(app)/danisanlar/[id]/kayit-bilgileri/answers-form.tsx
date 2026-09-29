@@ -26,7 +26,7 @@ export function AnswersForm({ clientId, fields, hasConsent }: { clientId: string
       {general.length > 0 && (
         <section className="flex flex-col gap-5 surface p-5">
           {general.map((f) => (
-            <IntakeInput key={f.id} field={{ ...f, required: false }} defaultValues={f.current} error={e[answerName(f.id)]} />
+            <IntakeInput key={f.id} field={f} plainLabel defaultValues={f.current} error={e[answerName(f.id)]} />
           ))}
         </section>
       )}
@@ -57,7 +57,8 @@ export function AnswersForm({ clientId, fields, hasConsent }: { clientId: string
           {health.map((f) => (
             <IntakeInput
               key={f.id}
-              field={{ ...f, required: false }}
+              field={f}
+              plainLabel
               defaultValues={f.current}
               disabled={!healthOpen}
               error={e[answerName(f.id)]}
