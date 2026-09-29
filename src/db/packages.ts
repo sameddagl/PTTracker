@@ -36,6 +36,7 @@ export type TemplateInput = {
   description: string | null;
   features: string[];
   sortOrder: number;
+  installments: number;
 };
 
 const templateRow = (input: TemplateInput) => ({
@@ -82,6 +83,7 @@ export type SellInput = {
   expiresOn: string | null;
   price: number;
   makeupAllowance: number;
+  installments: number;
   payment: { amount: number; method: PaymentMethod } | null;
 };
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { and, desc, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import type { Tx } from "./index";
+import { installmentPlan, installmentStates, nextPayable } from "@/lib/installments";
 import type { PaymentMethod } from "./packages";
 import { clientPackageBalances, clientPackages, clients, paymentReceipts, payments } from "./schema";
 
@@ -32,7 +33,10 @@ export async function getPaymentSummary(tx: Tx, trainer: TrainerRef) {
     );
 
   const [outstanding] = await tx
-    .select({ total: sql<string>`coalesce(sum(${clientPackageBalances.dueAmount}), 0)` })
+    .select({
+      total: sql<string>`coalesce(sum(${clientPackageBalances.dueAmount}), 0)`,
+      overdue: sql<string>`coalesce(sum(${clientPackageBalances.overdueAmount}), 0)`,
+    })
     .from(clientPackageBalances)
     .innerJoin(clients, eq(clients.id, clientPackageBalances.clientId))
     .where(
@@ -47,6 +51,7 @@ export async function getPaymentSummary(tx: Tx, trainer: TrainerRef) {
     thisMonth: byMethod.reduce((sum, r) => sum + Number(r.total), 0),
     lastMonth: Number(lastMonth.total),
     outstanding: Number(outstanding.total),
+    overdue: Number(outstanding.overdue),
     byMethod: Object.fromEntries(byMethod.map((r) => [r.method, Number(r.total)])) as Partial<Record<PaymentMethod, number>>,
   };
 }
@@ -63,6 +68,7 @@ export async function listDebtors(tx: Tx, trainerId: string) {
       clientPackageId: clientPackages.id,
       packageName: clientPackages.name,
       due: clientPackageBalances.dueAmount,
+      overdue: clientPackageBalances.overdueAmount,
     })
     .from(clientPackageBalances)
     .innerJoin(clientPackages, eq(clientPackages.id, clientPackageBalances.clientPackageId))
@@ -79,15 +85,24 @@ export async function listDebtors(tx: Tx, trainerId: string) {
 
   const byClient = new Map<
     string,
-    { clientId: string; fullName: string; phone: string | null; total: number; packages: { id: string; name: string; due: number }[] }
+    {
+      clientId: string;
+      fullName: string;
+      phone: string | null;
+      total: number;
+      overdue: number;
+      packages: { id: string; name: string; due: number }[];
+    }
   >();
   for (const r of rows) {
-    const d = byClient.get(r.clientId) ?? { clientId: r.clientId, fullName: r.fullName, phone: r.phone, total: 0, packages: [] };
+    const d = byClient.get(r.clientId) ?? { clientId: r.clientId, fullName: r.fullName, phone: r.phone, total: 0, overdue: 0, packages: [] };
     d.total += Number(r.due);
+    d.overdue += Number(r.overdue);
     d.packages.push({ id: r.clientPackageId, name: r.packageName, due: Number(r.due) });
     byClient.set(r.clientId, d);
   }
-  return [...byClient.values()].sort((a, b) => b.total - a.total);
+  // Late money first, then the rest by size.
+  return [...byClient.values()].sort((a, b) => b.overdue - a.overdue || b.total - a.total);
 }
 
 export async function listRecentPayments(tx: Tx, trainerId: string, { clientId, limit = 20 }: { clientId?: string; limit?: number } = {}) {
@@ -182,18 +197,21 @@ export const RECEIPT_TYPES = ["image/webp", "image/jpeg", "image/png", "applicat
 
 export type ClientPaymentInput = {
   clientPackageId: string;
-  amount: number;
   paidOn: string;
   note: string | null;
   receipt: { mimeType: string; data: Buffer } | null;
 };
 
-export type ClientPaymentResult = { ok: true } | { ok: false; reason: "package" | "overpay" | "too_many" | "receipt"; due?: number };
+export type ClientPaymentResult =
+  | { ok: true; amount: number; seq: number; of: number }
+  | { ok: false; reason: "package" | "nothing_due" | "too_many" | "receipt" };
 
 /**
- * A transfer reported by the client from their portal. Stored as pending
- * until the trainer confirms it. Runs on the owner connection (the client is
- * signed out), so every check is scoped to the client resolved from the link.
+ * A transfer reported by the client from their portal, for the next unpaid
+ * installment of their package. The amount comes from the payment plan, never
+ * from the client. Stored as pending until the trainer confirms it. Runs on
+ * the owner connection (the client is signed out), so every check is scoped
+ * to the client resolved from the link.
  */
 export async function recordClientPayment(
   tx: Tx,
@@ -205,18 +223,33 @@ export async function recordClientPayment(
   }
 
   const [pkg] = await tx
-    .select({ id: clientPackages.id, due: clientPackageBalances.dueAmount, state: clientPackageBalances.state })
+    .select({
+      id: clientPackages.id,
+      price: clientPackages.price,
+      installments: clientPackages.installments,
+      startsOn: clientPackages.startsOn,
+      paid: clientPackageBalances.paidAmount,
+      state: clientPackageBalances.state,
+    })
     .from(clientPackages)
     .innerJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, clientPackages.id))
-    .where(and(eq(clientPackages.id, input.clientPackageId), eq(clientPackages.clientId, clientId), eq(clientPackages.trainerId, trainerId)));
+    .where(and(eq(clientPackages.id, input.clientPackageId), eq(clientPackages.clientId, clientId), eq(clientPackages.trainerId, trainerId)))
+    // Serialize reports on one package so two taps can't claim the same installment.
+    .for("update", { of: clientPackages });
   if (!pkg || pkg.state === "cancelled") return { ok: false, reason: "package" };
-  if (input.amount > Number(pkg.due) + 0.001) return { ok: false, reason: "overpay", due: Number(pkg.due) };
 
-  const [{ pending }] = await tx
-    .select({ pending: sql<number>`count(*)::int` })
+  const [{ pending, pendingCount }] = await tx
+    .select({
+      pending: sql<string>`coalesce(sum(${payments.amount}) filter (where ${payments.clientPackageId} = ${pkg.id}), 0)`,
+      pendingCount: sql<number>`count(*)::int`,
+    })
     .from(payments)
     .where(and(eq(payments.clientId, clientId), eq(payments.status, "pending")));
-  if (pending >= 5) return { ok: false, reason: "too_many" };
+  if (pendingCount >= 5) return { ok: false, reason: "too_many" };
+
+  const plan = installmentPlan(Number(pkg.price), pkg.installments, pkg.startsOn);
+  const next = nextPayable(installmentStates(plan, Number(pkg.paid), Number(pending), input.paidOn));
+  if (!next) return { ok: false, reason: "nothing_due" };
 
   const [row] = await tx
     .insert(payments)
@@ -224,7 +257,7 @@ export async function recordClientPayment(
       trainerId,
       clientId,
       clientPackageId: pkg.id,
-      amount: input.amount.toFixed(2),
+      amount: next.remaining.toFixed(2),
       method: "bank_transfer",
       paidOn: input.paidOn,
       note: input.note,
@@ -241,7 +274,7 @@ export async function recordClientPayment(
       data: input.receipt.data,
     });
   }
-  return { ok: true };
+  return { ok: true, amount: next.remaining, seq: next.seq, of: plan.length };
 }
 
 export type PendingPayment = Awaited<ReturnType<typeof listPendingPayments>>[number];

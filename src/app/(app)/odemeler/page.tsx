@@ -83,7 +83,10 @@ export default async function PaymentsPage() {
             >
               {formatTRY(summary.outstanding)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">{debtors.length} danışan</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {summary.overdue > 0 ? `${formatTRY(summary.overdue)} vadesi gelmiş · ` : ""}
+              {debtors.length} danışan
+            </p>
           </CardContent>
         </Card>
         {methods.length > 0 && (
@@ -144,7 +147,7 @@ export default async function PaymentsPage() {
 function DebtorRow({ debtor: d, portalToken }: { debtor: Debtor; portalToken?: string }) {
   const wa = whatsappLink(
     d.phone,
-    withPortal(messages.paymentDue(d.fullName, formatTRY(d.total)), portalToken && portalUrl(portalToken)),
+    withPortal(messages.paymentDue(d.fullName, formatTRY(d.overdue > 0 ? d.overdue : d.total)), portalToken && portalUrl(portalToken)),
   );
   // One package: pay straight into it. Several: let the form pick the oldest.
   const pkg = d.packages.length === 1 ? `&paket=${d.packages[0].id}` : "";
@@ -155,9 +158,12 @@ function DebtorRow({ debtor: d, portalToken }: { debtor: Debtor; portalToken?: s
         <Link href={`/danisanlar/${d.clientId}`} className="block truncate font-medium hover:underline">
           {d.fullName}
         </Link>
-        <p className="truncate text-xs text-muted-foreground">{d.packages.map((p) => p.name).join(", ")}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {d.overdue > 0 && <span className="font-medium text-destructive">{formatTRY(d.overdue)} vadesi gelmiş · </span>}
+          {d.packages.map((p) => p.name).join(", ")}
+        </p>
       </div>
-      <span className="font-medium text-destructive tabular-nums">{formatTRY(d.total)}</span>
+      <span className={d.overdue > 0 ? "font-medium text-destructive tabular-nums" : "font-medium tabular-nums"}>{formatTRY(d.total)}</span>
       {wa && (
         <Button asChild variant="ghost" size="icon" aria-label={`${d.fullName} için WhatsApp'ta ödeme hatırlat`}>
           <a href={wa} target="_blank" rel="noopener noreferrer">

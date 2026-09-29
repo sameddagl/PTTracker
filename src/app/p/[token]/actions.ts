@@ -9,7 +9,6 @@ import { MAX_RECEIPT_BYTES, RECEIPT_TYPES, recordClientPayment } from "@/db/paym
 import { clients } from "@/db/schema";
 import { siteUrl } from "@/lib/config";
 import { formatTRY, todayISO } from "@/lib/format";
-import { parseTRY } from "@/lib/forms";
 import { layout, sendMail } from "@/lib/mail";
 import { resolvePortalToken } from "@/lib/portal";
 
@@ -17,11 +16,6 @@ export type ReportState = { errors?: Record<string, string>; savedAt?: number };
 
 const reportSchema = z.object({
   clientPackageId: z.uuid(),
-  amount: z
-    .string()
-    .transform(parseTRY)
-    .refine((v): v is number => v !== null && Number.isFinite(v) && v > 0, "Gönderdiğin tutarı yaz."),
-  paidOn: z.iso.date({ error: "Tarih seç." }),
   note: z
     .string()
     .trim()
@@ -29,22 +23,19 @@ const reportSchema = z.object({
     .transform((v) => v || null),
 });
 
+/**
+ * "Ödemeyi yaptım": the client reports a transfer for their next installment.
+ * The amount comes from the trainer's payment plan, not from the form.
+ */
 export async function reportPaymentAction(token: string, _prev: ReportState, formData: FormData): Promise<ReportState> {
   const link = await resolvePortalToken(token);
   if (!link) return { errors: { form: "Bu link artık geçerli değil." } };
 
   const parsed = reportSchema.safeParse({
     clientPackageId: formData.get("clientPackageId")?.toString() ?? "",
-    amount: formData.get("amount")?.toString() ?? "",
-    paidOn: formData.get("paidOn")?.toString() ?? "",
     note: formData.get("note")?.toString() ?? "",
   });
-  if (!parsed.success) {
-    const errors: Record<string, string> = {};
-    for (const i of parsed.error.issues) errors[String(i.path[0])] ??= i.message;
-    return { errors };
-  }
-  if (parsed.data.paidOn > todayISO()) return { errors: { paidOn: "Gelecek bir tarih seçilemez." } };
+  if (!parsed.success) return { errors: { form: "Geçersiz istek." } };
 
   const file = formData.get("receipt");
   let receipt: { mimeType: string; data: Buffer } | null = null;
@@ -54,16 +45,19 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
     receipt = { mimeType: file.type, data: Buffer.from(await file.arrayBuffer()) };
   }
 
-  const result = await adminDb.transaction((tx) => recordClientPayment(tx, link, { ...parsed.data, receipt }));
+  const result = await adminDb.transaction((tx) =>
+    recordClientPayment(tx, link, { ...parsed.data, paidOn: todayISO(), receipt }),
+  );
   if (!result.ok) {
     const message = {
       package: "Paket bulunamadı.",
-      overpay: `Kalan tutar ${formatTRY(result.due ?? 0)}. Daha fazlası bildirilemez.`,
+      nothing_due: "Bu paket için ödenecek taksit kalmadı.",
       too_many: "Onay bekleyen bildirimlerin var. Eğitmenin onayladıktan sonra tekrar dene.",
       receipt: "Dekont yüklenemedi.",
     }[result.reason];
-    return { errors: { [result.reason === "overpay" ? "amount" : "form"]: message } };
+    return { errors: { [result.reason === "receipt" ? "receipt" : "form"]: message } };
   }
+  const label = result.of > 1 ? `${result.seq}. taksit (${formatTRY(result.amount)})` : formatTRY(result.amount);
 
   // Tell the trainer (best effort).
   const [who] = await adminDb
@@ -75,7 +69,7 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
     const { html, text } = layout({
       heading: "Ödeme bildirimi",
       lines: [
-        `${who.name}, ${formatTRY(parsed.data.amount)} havale yaptığını bildirdi${receipt ? " ve dekont ekledi" : ""}.`,
+        `${who.name}, ${label} için havale yaptığını bildirdi${receipt ? " ve dekont ekledi" : ""}.`,
         "Hesabını kontrol edip onaylayabilirsin.",
       ],
       cta: { label: "Ödemeleri aç", url: `${siteUrl()}/odemeler` },

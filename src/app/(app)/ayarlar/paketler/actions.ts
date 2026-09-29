@@ -17,6 +17,7 @@ const FIELDS = [
   "description",
   "features",
   "sortOrder",
+  "installments",
 ] as const;
 export type TemplateField = (typeof FIELDS)[number];
 
@@ -53,6 +54,7 @@ const templateSchema = z.object({
     .string()
     .transform((v) => (v.trim() === "" ? 0 : Number(v)))
     .refine((v) => Number.isInteger(v) && v >= 0 && v <= 99, "Sıra 0–99 arası olmalı."),
+  installments: intIn(1, 12, "Taksit sayısı 1–12 olmalı."),
 });
 
 export async function saveTemplateAction(

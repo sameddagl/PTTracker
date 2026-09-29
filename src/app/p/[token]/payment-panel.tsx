@@ -1,17 +1,27 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useState, type FormEvent } from "react";
-import { Copy, Hourglass, Landmark, Paperclip, XCircle } from "lucide-react";
+import { CheckCircle2, Copy, Hourglass, Landmark, Paperclip, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Field, FormError } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatShortDate, formatTRY } from "@/lib/format";
+import type { InstallmentState } from "@/lib/installments";
+import { cn } from "@/lib/utils";
 import { reportPaymentAction, type ReportState } from "./actions";
 
-type Due = { id: string; name: string; due: number; code: string; pendingTotal: number };
-type Reported = { id: string; clientPackageId: string | null; amount: string; paidOn: string; status: "pending" | "confirmed" | "rejected"; rejectReason: string | null };
+export type PackagePlan = { id: string; name: string; code: string; states: InstallmentState[] };
+type Rejected = { id: string; amount: string; paidOn: string; rejectReason: string | null };
+
+const STATUS: Record<InstallmentState["status"], { label: string; className: string }> = {
+  paid: { label: "Ödendi", className: "text-emerald-600 dark:text-emerald-400" },
+  pending: { label: "Onay bekliyor", className: "text-amber-600 dark:text-amber-400" },
+  due: { label: "Bugün", className: "text-foreground font-medium" },
+  overdue: { label: "Gecikti", className: "text-destructive font-medium" },
+  upcoming: { label: "Ödenecek", className: "text-muted-foreground" },
+};
 
 /** Photos are shrunk in the browser (phone photos are often 5+ MB); PDFs go as they are. */
 async function prepareReceipt(file: File): Promise<Blob> {
@@ -33,7 +43,7 @@ function CopyRow({ label, value, display }: { label: string; value: string; disp
     <div className="flex items-center gap-2">
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted-foreground">{label}</p>
-        {/* Wrap rather than truncate: the client must see the whole IBAN. */}
+        {/* Wrap between groups rather than truncate: the client must see the whole IBAN. */}
         <p className="font-mono text-xs break-words select-all sm:text-sm">{display ?? value}</p>
       </div>
       <Button
@@ -58,20 +68,18 @@ function CopyRow({ label, value, display }: { label: string; value: string; disp
 
 export function PaymentPanel({
   token,
-  dues,
+  plans,
   iban,
   ibanDisplay,
   holder,
-  reported,
-  today,
+  rejected,
 }: {
   token: string;
-  dues: Due[];
+  plans: PackagePlan[];
   iban: string;
   ibanDisplay: string;
   holder: string;
-  reported: Reported[];
-  today: string;
+  rejected: Rejected[];
 }) {
   const [state, action, pending] = useActionState<ReportState, FormData>(reportPaymentAction.bind(null, token), {});
   // The form for one package stays open from when it was opened until the next successful report.
@@ -109,82 +117,101 @@ export function PaymentPanel({
         Ödeme
       </h2>
 
-      {dues.map((d) => {
-        const remaining = Math.max(d.due - d.pendingTotal, 0);
+      {plans.map((p) => {
+        const next = p.states.find((s) => s.remaining > 0.001);
+        const multi = p.states.length > 1;
+        const total = p.states.reduce((sum, s) => sum + s.amount, 0);
         return (
-          <Card key={d.id}>
+          <Card key={p.id}>
             <CardContent className="flex flex-col gap-4">
               <div className="flex items-baseline justify-between gap-3">
-                <p className="font-medium">{d.name}</p>
-                <p className="text-lg font-semibold tabular-nums">{formatTRY(d.due)}</p>
-              </div>
-              {d.pendingTotal > 0 && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Hourglass className="size-4 text-amber-500" aria-hidden />
-                  {formatTRY(d.pendingTotal)} için bildirimin onay bekliyor.
+                <p className="font-medium">{p.name}</p>
+                <p className="text-sm text-muted-foreground tabular-nums">
+                  {multi ? `${p.states.length} taksit · ` : ""}
+                  {formatTRY(total)}
                 </p>
-              )}
-
-              <div className="flex flex-col gap-2 rounded-xl bg-muted/50 p-3">
-                <p className="flex items-center gap-2 text-sm font-medium">
-                  <Landmark className="size-4 text-primary" aria-hidden />
-                  Havale / EFT bilgileri
-                </p>
-                <CopyRow label="IBAN" value={iban} display={ibanDisplay} />
-                <CopyRow label="Alıcı" value={holder} />
-                <CopyRow label="Açıklamaya yaz" value={d.code} />
               </div>
 
-              {remaining > 0 &&
-                (openFor === d.id ? (
-                  <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-                    <input type="hidden" name="clientPackageId" value={d.id} />
-                    <FormError message={e.form} />
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field id="amount" label="Gönderilen tutar (₺)" error={e.amount}>
-                        <Input id="amount" name="amount" inputMode="decimal" defaultValue={String(remaining).replace(".", ",")} />
-                      </Field>
-                      <Field id="paidOn" label="Tarih" error={e.paidOn}>
-                        <Input id="paidOn" name="paidOn" type="date" max={today} defaultValue={today} />
-                      </Field>
-                    </div>
-                    <Field id="receipt" label="Dekont" hint="isteğe bağlı · fotoğraf ya da PDF" error={e.receipt}>
-                      <Input id="receipt" name="receipt" type="file" accept="image/*,application/pdf" className="py-1.5" />
-                    </Field>
-                    <Field id="note" label="Not" hint="isteğe bağlı">
-                      <Input id="note" name="note" maxLength={300} />
-                    </Field>
-                    <div className="flex gap-2">
-                      <Button type="submit" disabled={pending || preparing}>
-                        <Paperclip />
-                        {preparing ? "Hazırlanıyor…" : pending ? "Gönderiliyor…" : "Bildir"}
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={() => setOpened(null)}>
-                        Vazgeç
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <Button type="button" onClick={() => setOpened({ id: d.id, at: Date.now() })}>
-                    Ödemeyi yaptım
-                  </Button>
+              <ol className="flex flex-col divide-y rounded-xl border text-sm">
+                {p.states.map((s) => (
+                  <li key={s.seq} className={cn("flex items-center gap-3 px-3 py-2.5", next?.seq === s.seq && "bg-primary/5")}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block">{multi ? `${s.seq}. taksit` : "Paket ücreti"}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {formatShortDate(s.dueOn)}
+                        {s.status !== "paid" && s.status !== "pending" && s.remaining < s.amount - 0.001 && (
+                          <> · {formatTRY(s.amount - s.remaining)} ödendi</>
+                        )}
+                      </span>
+                    </span>
+                    <span className="font-medium tabular-nums">{formatTRY(s.amount)}</span>
+                    <span className={cn("inline-flex w-24 items-center justify-end gap-1 text-xs", STATUS[s.status].className)}>
+                      {s.status === "paid" && <CheckCircle2 className="size-3.5" aria-hidden />}
+                      {s.status === "pending" && <Hourglass className="size-3.5" aria-hidden />}
+                      {STATUS[s.status].label}
+                    </span>
+                  </li>
                 ))}
+              </ol>
+
+              {next && (
+                <>
+                  <div className="flex flex-col gap-2 rounded-xl bg-muted/50 p-3">
+                    <p className="flex items-center gap-2 text-sm font-medium">
+                      <Landmark className="size-4 text-primary" aria-hidden />
+                      Havale / EFT bilgileri
+                    </p>
+                    <CopyRow label="IBAN" value={iban} display={ibanDisplay} />
+                    <CopyRow label="Alıcı" value={holder} />
+                    <CopyRow label="Açıklamaya yaz" value={p.code} />
+                    <CopyRow label="Tutar" value={String(next.remaining).replace(".", ",")} display={formatTRY(next.remaining)} />
+                  </div>
+
+                  {openFor === p.id ? (
+                    <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+                      <input type="hidden" name="clientPackageId" value={p.id} />
+                      <FormError message={e.form} />
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">{multi ? `${next.seq}. taksit` : "Ödeme"}: </span>
+                        <span className="font-semibold tabular-nums">{formatTRY(next.remaining)}</span>
+                      </p>
+                      <Field id="receipt" label="Dekont" hint="isteğe bağlı · fotoğraf ya da PDF" error={e.receipt}>
+                        <Input id="receipt" name="receipt" type="file" accept="image/*,application/pdf" className="py-1.5" />
+                      </Field>
+                      <Field id="note" label="Not" hint="isteğe bağlı">
+                        <Input id="note" name="note" maxLength={300} />
+                      </Field>
+                      <div className="flex gap-2">
+                        <Button type="submit" disabled={pending || preparing}>
+                          <Paperclip />
+                          {preparing ? "Hazırlanıyor…" : pending ? "Gönderiliyor…" : "Bildir"}
+                        </Button>
+                        <Button type="button" variant="ghost" onClick={() => setOpened(null)}>
+                          Vazgeç
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <Button type="button" onClick={() => setOpened({ id: p.id, at: Date.now() })}>
+                      {multi ? `${next.seq}. taksidi ödedim` : "Ödemeyi yaptım"} · {formatTRY(next.remaining)}
+                    </Button>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         );
       })}
 
-      {reported
-        .filter((r) => r.status === "rejected")
-        .map((r) => (
-          <p key={r.id} className="flex items-start gap-2 rounded-xl border border-destructive/40 px-4 py-3 text-sm">
-            <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
-            <span>
-              {formatShortDate(r.paidOn)} tarihli {formatTRY(r.amount)} bildirimin onaylanmadı
-              {r.rejectReason ? `: ${r.rejectReason}` : "."}
-            </span>
-          </p>
-        ))}
+      {rejected.map((r) => (
+        <p key={r.id} className="flex items-start gap-2 rounded-xl border border-destructive/40 px-4 py-3 text-sm">
+          <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+          <span>
+            {formatShortDate(r.paidOn)} tarihli {formatTRY(r.amount)} bildirimin onaylanmadı
+            {r.rejectReason ? `: ${r.rejectReason}` : "."}
+          </span>
+        </p>
+      ))}
     </section>
   );
 }

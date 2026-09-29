@@ -42,6 +42,7 @@ export const getPublicPage = cache(async (slug: string) => {
       price: packageTemplates.price,
       description: packageTemplates.description,
       features: packageTemplates.features,
+      installments: packageTemplates.installments,
     })
     .from(packageTemplates)
     .where(

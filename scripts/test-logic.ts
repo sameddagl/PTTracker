@@ -21,7 +21,9 @@ import { approveApplication, countPendingApplications, rejectApplication } from 
 import { createIntakeField, ensureDefaultIntakeFields, listIntakeFields, toDef, updateIntakeField } from "../src/db/intake";
 import { DEFAULT_INTAKE_FIELDS, answerName, formatAnswer, parseAnswer } from "../src/lib/intake";
 import { recordSignup, validateSignup } from "../src/lib/signup-core";
-import { recurringDates, startOfWeek } from "../src/lib/dates";
+import { addDays, recurringDates, startOfWeek } from "../src/lib/dates";
+import { todayISO } from "../src/lib/format";
+import { installmentPlan, installmentStates, nextPayable } from "../src/lib/installments";
 import { isUniqueViolation } from "../src/lib/pg-errors";
 import { slugError, toSlug } from "../src/lib/slug";
 import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
@@ -103,6 +105,7 @@ async function main() {
       expiresOn: expiryFor("2026-09-01", 120),
       price: 2000,
       makeupAllowance: 1,
+      installments: 1,
       payment: { amount: 500, method: "cash" },
     }),
   );
@@ -117,6 +120,7 @@ async function main() {
       expiresOn: null,
       price: 4000,
       makeupAllowance: 0,
+      installments: 1,
       payment: null,
     }),
   );
@@ -281,6 +285,7 @@ async function main() {
       expiresOn: null,
       price: 0,
       makeupAllowance: 0,
+      installments: 1,
       payment: null,
     }),
   );
@@ -325,6 +330,7 @@ async function main() {
       expiresOn: null,
       price: 0,
       makeupAllowance: 0,
+      installments: 1,
       payment: null,
     }),
   );
@@ -551,10 +557,28 @@ async function main() {
   assert.equal((await tryWith(moreTemplates[2].id)).limited, true, "4th application from one phone in 24h is refused");
   console.log("approve/reject: package created from template, applicants archived on rejection, rate limit applies");
 
-  // ---- Client-reported transfers ----
+  // ---- Installment plans ----
+  assert.deepEqual(installmentPlan(4000, 3, "2026-09-29"), [
+    { seq: 1, amount: 1334, dueOn: "2026-09-29" },
+    { seq: 2, amount: 1333, dueOn: "2026-10-29" },
+    { seq: 3, amount: 1333, dueOn: "2026-11-28" },
+  ]);
+  assert.deepEqual(installmentPlan(4000, 1, "2026-09-29"), [{ seq: 1, amount: 4000, dueOn: "2026-09-29" }]);
+  assert.deepEqual(installmentPlan(0, 3, "2026-09-29"), []);
+  const st = installmentStates(installmentPlan(4000, 3, "2026-09-29"), 1500, 1000, "2026-11-01");
+  assert.deepEqual(
+    st.map((x) => [x.status, x.remaining]),
+    [["paid", 0], ["overdue", 167], ["upcoming", 1333]],
+    "1500 confirmed covers #1 and part of #2; the 1000 pending fills #2 up to 167",
+  );
+  assert.equal(nextPayable(st)?.seq, 2);
+
+  // ---- Client-reported transfers (amount from the plan, not the client) ----
+  const todayTR = todayISO("Europe/Istanbul");
   const [payer] = await asTrainer((tx) =>
     tx.insert(schema.clients).values({ trainerId: T, fullName: "Selin Ak", phone: "905551234567" }).returning({ id: schema.clients.id }),
   );
+  // 3 installments starting 35 days ago: #1 and #2 are due, #3 is later.
   const payerPkg = await asTrainer((tx) =>
     sellPackage(tx, T, {
       clientId: payer.id,
@@ -562,44 +586,40 @@ async function main() {
       name: "12 Ders",
       sessionType: "private",
       totalSessions: 12,
-      startsOn: "2026-10-01",
+      startsOn: addDays(todayTR, -35),
       expiresOn: null,
       price: 6000,
       makeupAllowance: 0,
+      installments: 3,
       payment: null,
     }),
   );
+  let payerBal = await balance(payerPkg);
+  assert.equal(String(payerBal.overdueAmount), "4000.00", "two of three 2000 installments are due");
+  assert.equal(payerBal.installments, 3);
+
   const who = { trainerId: T, clientId: payer.id };
-  const report = (amount: number, extra: Partial<Parameters<typeof recordClientPayment>[2]> = {}) =>
+  const report = (extra: Partial<Parameters<typeof recordClientPayment>[2]> = {}) =>
     db.transaction((tx) =>
-      recordClientPayment(tx as unknown as Tx, who, {
-        clientPackageId: payerPkg,
-        amount,
-        paidOn: "2026-10-02",
-        note: null,
-        receipt: null,
-        ...extra,
-      }),
+      recordClientPayment(tx as unknown as Tx, who, { clientPackageId: payerPkg, paidOn: todayTR, note: null, receipt: null, ...extra }),
     );
 
-  assert.deepEqual(await report(7000), { ok: false, reason: "overpay", due: 6000 });
   assert.deepEqual(
     await db.transaction((tx) =>
-      recordClientPayment(tx as unknown as Tx, { trainerId: T, clientId: zeynep.id }, { clientPackageId: payerPkg, amount: 10, paidOn: "2026-10-02", note: null, receipt: null }),
+      recordClientPayment(tx as unknown as Tx, { trainerId: T, clientId: zeynep.id }, { clientPackageId: payerPkg, paidOn: todayTR, note: null, receipt: null }),
     ),
     { ok: false, reason: "package" },
     "can't report against someone else's package",
   );
-  assert.deepEqual(await report(100, { receipt: { mimeType: "image/webp", data: Buffer.alloc(MAX_RECEIPT_BYTES + 1) } }), {
-    ok: false,
-    reason: "receipt",
-  });
+  assert.deepEqual(await report({ receipt: { mimeType: "image/webp", data: Buffer.alloc(MAX_RECEIPT_BYTES + 1) } }), { ok: false, reason: "receipt" });
+
   const receiptBytes = Buffer.from("fake-receipt-bytes");
-  assert.deepEqual(await report(3000, { receipt: { mimeType: "image/webp", data: receiptBytes } }), { ok: true });
-  assert.deepEqual(await report(3000), { ok: true }, "a second report for the same transfer is allowed to be filed");
+  assert.deepEqual(await report({ receipt: { mimeType: "image/webp", data: receiptBytes } }), { ok: true, amount: 2000, seq: 1, of: 3 });
+  // The pending report holds installment #1, so the next report is for #2.
+  assert.deepEqual(await report(), { ok: true, amount: 2000, seq: 2, of: 3 });
 
   // Pending reports don't reduce the debt and don't count as income.
-  let payerBal = await balance(payerPkg);
+  payerBal = await balance(payerPkg);
   assert.equal(String(payerBal.dueAmount), "6000.00");
   const waiting = await asTrainer((tx) => listPendingPayments(tx, T));
   assert.equal(waiting.length, 2);
@@ -610,25 +630,35 @@ async function main() {
   assert.ok(Buffer.from((await asTrainer((tx) => getReceipt(tx, T, withReceipt.id)))!.data).equals(receiptBytes));
   assert.ok(!(await asTrainer((tx) => listRecentPayments(tx, T, { clientId: payer.id }))).length, "pending not in history");
 
-  // Confirm one → debt drops; confirming both would overpay only once the first is in.
+  // Confirm #1 → debt and overdue drop; reject #2 → it's payable again.
   const [firstReport, secondReport] = waiting.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   assert.equal((await asTrainer((tx) => confirmPayment(tx, T, firstReport.id))).ok, true);
-  payerBal = await balance(payerPkg);
-  assert.equal(String(payerBal.dueAmount), "3000.00");
   assert.equal((await asTrainer((tx) => confirmPayment(tx, T, firstReport.id))).ok, false, "only once");
-  // Reject the duplicate with a reason; it stays out of the balance.
-  assert.ok(await asTrainer((tx) => rejectPayment(tx, T, secondReport.id, "Aynı havale iki kez bildirilmiş")));
   payerBal = await balance(payerPkg);
-  assert.equal(String(payerBal.dueAmount), "3000.00");
+  assert.deepEqual([String(payerBal.dueAmount), String(payerBal.overdueAmount)], ["4000.00", "2000.00"]);
+  assert.ok(await asTrainer((tx) => rejectPayment(tx, T, secondReport.id, "Hesaba geçmedi")));
   assert.equal(await asTrainer((tx) => countPendingPayments(tx, T)), 0);
+  assert.deepEqual(await report(), { ok: true, amount: 2000, seq: 2, of: 3 }, "rejected installment can be reported again");
 
-  // An over-large confirm is refused (e.g. two reports for one transfer).
-  await report(3000);
-  await report(3000);
-  const [a1, a2] = (await asTrainer((tx) => listPendingPayments(tx, T))).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  assert.equal((await asTrainer((tx) => confirmPayment(tx, T, a1.id))).ok, true);
-  assert.deepEqual(await asTrainer((tx) => confirmPayment(tx, T, a2.id)), { ok: false, reason: "overpay", due: 0 });
-  console.log("client transfers: pending until confirmed, overpay guarded at report and confirm, receipts stored");
+  // A trainer-recorded cash payment counts towards the plan too.
+  await asTrainer((tx) =>
+    recordPayment(tx, T, { clientId: payer.id, clientPackageId: payerPkg, amount: 1500, method: "cash", paidOn: todayTR, note: null }),
+  );
+  // 2000 + 1500 confirmed, 2000 pending → only 500 of #3 is left to report.
+  assert.deepEqual(await report(), { ok: true, amount: 500, seq: 3, of: 3 });
+  assert.deepEqual(await report(), { ok: false, reason: "nothing_due" });
+
+  // Confirming a report that no longer fits (the trainer took cash meanwhile) is refused.
+  // Pending now: #2 (2000) and #3 (500). The trainer then takes 2000 in cash, leaving 500 due.
+  const pendingNow = (await asTrainer((tx) => listPendingPayments(tx, T))).sort((a, b) => Number(a.amount) - Number(b.amount));
+  assert.deepEqual(pendingNow.map((p) => String(p.amount)), ["500.00", "2000.00"]);
+  await asTrainer((tx) =>
+    recordPayment(tx, T, { clientId: payer.id, clientPackageId: payerPkg, amount: 2000, method: "cash", paidOn: todayTR, note: null }),
+  );
+  assert.deepEqual(await asTrainer((tx) => confirmPayment(tx, T, pendingNow[1].id)), { ok: false, reason: "overpay", due: 500 });
+  assert.equal((await asTrainer((tx) => confirmPayment(tx, T, pendingNow[0].id))).ok, true, "the 500 report still fits");
+  assert.equal(String((await balance(payerPkg)).dueAmount), "0.00");
+  console.log("installments: plan split, overdue in the view, reports sized by the plan, overpay guarded");
 
   // ---- Public page slugs ----
   assert.equal(toSlug("Çağla Işık Öztürk"), "cagla-isik-ozturk");

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PAYMENT_METHOD_LABELS, SESSION_TYPE_LABELS, formatShortDate, formatTRY } from "@/lib/format";
 import { parseTRY, type FormState } from "@/lib/forms";
+import { INSTALLMENT_OPTIONS, installmentLabel, installmentPlan } from "@/lib/installments";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { cn } from "@/lib/utils";
 import { sellPackageAction, type SellField } from "./actions";
@@ -19,9 +20,13 @@ export type TemplateOption = {
   validityDays: number | null;
   price: string | null;
   makeupAllowance: number;
+  installments: number;
 };
 
-type Values = Record<"templateId" | "name" | "sessionType" | "totalSessions" | "validityDays" | "price" | "makeupAllowance", string>;
+type Values = Record<
+  "templateId" | "name" | "sessionType" | "totalSessions" | "validityDays" | "price" | "makeupAllowance" | "installments",
+  string
+>;
 
 const fromTemplate = (t: TemplateOption): Values => ({
   templateId: t.id,
@@ -31,6 +36,7 @@ const fromTemplate = (t: TemplateOption): Values => ({
   validityDays: t.validityDays ? String(t.validityDays) : "",
   price: t.price ? String(Number(t.price)) : "",
   makeupAllowance: String(t.makeupAllowance),
+  installments: String(t.installments),
 });
 
 const EMPTY: Values = {
@@ -41,6 +47,7 @@ const EMPTY: Values = {
   validityDays: "35",
   price: "",
   makeupAllowance: "1",
+  installments: "1",
 };
 
 function expiryPreview(startsOn: string, validityDays: string) {
@@ -63,6 +70,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
 
   const expiry = expiryPreview(startsOn, values.validityDays);
   const price = parseTRY(values.price);
+  const plan = price && Number.isFinite(price) && startsOn ? installmentPlan(price, Number(values.installments), startsOn) : [];
 
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-6" noValidate>
@@ -158,6 +166,27 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
             />
           </Field>
         </div>
+        <Field id="installments" label="Ödeme" hint="30 gün arayla">
+          <NativeSelect id="installments" name="installments" value={values.installments} onChange={set("installments")} className="max-w-48">
+            {INSTALLMENT_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {installmentLabel(n)}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        {plan.length > 1 && (
+          <ul className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3 py-2 text-sm" aria-label="Taksit planı">
+            {plan.map((i) => (
+              <li key={i.seq} className="flex justify-between tabular-nums">
+                <span className="text-muted-foreground">
+                  {i.seq}. taksit · {formatShortDate(i.dueOn)}
+                </span>
+                <span>{formatTRY(i.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="text-sm text-muted-foreground">
           {expiry ? (
             <>
@@ -192,6 +221,17 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
             </NativeSelect>
           </Field>
         </div>
+        {plan.length > 1 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="self-start"
+            onClick={() => setPaymentAmount(String(plan[0].amount).replace(".", ","))}
+          >
+            1. taksit ödendi ({formatTRY(plan[0].amount)})
+          </Button>
+        )}
         {price !== null && Number.isFinite(price) && price > 0 && (
           <Button
             type="button"

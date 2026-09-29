@@ -21,8 +21,10 @@ import {
   formatShortDate,
   formatTRY,
   formatTime,
+  todayISO,
 } from "@/lib/format";
 import { formatAnswer } from "@/lib/intake";
+import { installmentPlan, installmentStates, nextPayable } from "@/lib/installments";
 import { portalUrl } from "@/lib/portal";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
 import { PortalCard } from "./portal-card";
@@ -58,6 +60,9 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         remaining: clientPackageBalances.remainingSessions,
         expiresOn: clientPackageBalances.effectiveExpiresOn,
         due: clientPackageBalances.dueAmount,
+        overdue: clientPackageBalances.overdueAmount,
+        paid: clientPackageBalances.paidAmount,
+        installments: clientPackages.installments,
         state: clientPackageBalances.state,
       })
       .from(clientPackages)
@@ -97,6 +102,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
   if (!data) notFound();
 
   const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone } = data;
+  const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
   const latestAnswers = [...new Map(intake.map((a) => [a.label, a])).values()].sort((a, b) => a.sortOrder - b.sortOrder);
   const totalDue = packages.filter((p) => p.state !== "cancelled").reduce((sum, p) => sum + Number(p.due), 0);
@@ -168,11 +174,14 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
                         {SESSION_TYPE_LABELS[p.sessionType]} · {formatShortDate(p.startsOn)}
                         {p.expiresOn && ` → ${formatShortDate(p.expiresOn)}`}
                       </p>
+                      {p.installments > 1 && <InstallmentSummary pkg={p} today={today} />}
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <Badge variant={p.state === "active" ? "default" : "secondary"}>{STATE_LABELS[p.state]}</Badge>
-                      {Number(p.due) > 0 && (
-                        <span className="text-xs text-destructive">{formatTRY(p.due)} borç</span>
+                      {Number(p.overdue) > 0 ? (
+                        <span className="text-xs text-destructive">{formatTRY(p.overdue)} vadesi geldi</span>
+                      ) : (
+                        Number(p.due) > 0 && <span className="text-xs text-muted-foreground">{formatTRY(p.due)} kalan</span>
                       )}
                     </div>
                   </CardContent>
@@ -295,5 +304,28 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         </Card>
       )}
     </>
+  );
+}
+
+function InstallmentSummary({
+  pkg,
+  today,
+}: {
+  pkg: { price: string; installments: number; startsOn: string; paid: string };
+  today: string;
+}) {
+  const states = installmentStates(installmentPlan(Number(pkg.price), pkg.installments, pkg.startsOn), Number(pkg.paid), 0, today);
+  const paid = states.filter((s) => s.status === "paid").length;
+  const next = nextPayable(states);
+  return (
+    <p className="text-xs text-muted-foreground">
+      {paid}/{states.length} taksit ödendi
+      {next && (
+        <span className={next.status === "overdue" ? "text-destructive" : undefined}>
+          {" "}
+          · sıradaki {formatTRY(next.remaining)} · {formatShortDate(next.dueOn)}
+        </span>
+      )}
+    </p>
   );
 }

@@ -170,9 +170,12 @@ export const packageTemplates = pgTable(
     // Bullet points on the public package card, e.g. "Haftada 2 ders".
     features: text("features").array().notNull().default(sql`'{}'::text[]`),
     sortOrder: smallint("sort_order").notNull().default(0),
+    // Monthly installments the price is split into (1 = paid at once).
+    installments: smallint("installments").notNull().default(1),
     ...timestamps,
   },
   (t) => [
+    check("package_templates_installments_range", sql`${t.installments} between 1 and 12`),
     unique("package_templates_id_trainer_key").on(t.id, t.trainerId),
     index("package_templates_trainer_idx").on(t.trainerId),
     ownRows("package_templates_own", t.trainerId),
@@ -195,11 +198,14 @@ export const clientPackages = pgTable(
     expiresOn: date("expires_on"),
     price: money("price").notNull().default("0"),
     makeupAllowance: smallint("makeup_allowance").notNull().default(0),
+    // Payment plan, see src/lib/installments.ts.
+    installments: smallint("installments").notNull().default(1),
     status: packageStatusEnum("status").notNull().default("active"),
     notes: text("notes"),
     ...timestamps,
   },
   (t) => [
+    check("client_packages_installments_range", sql`${t.installments} between 1 and 12`),
     unique("client_packages_id_trainer_key").on(t.id, t.trainerId),
     unique("client_packages_id_client_key").on(t.id, t.clientId),
     foreignKey({ name: "client_packages_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
@@ -545,6 +551,9 @@ export const clientPackageBalances = pgView("client_package_balances", {
   effectiveExpiresOn: date("effective_expires_on"),
   paidAmount: money("paid_amount").notNull(),
   dueAmount: money("due_amount").notNull(),
+  // Installments due on or before today that aren't paid yet (what should be collected now).
+  overdueAmount: money("overdue_amount").notNull(),
+  installments: integer("installments").notNull(),
   isFrozen: boolean("is_frozen").notNull(),
   // 'active' | 'frozen' | 'finished' | 'expired' | 'cancelled'
   state: text("state").notNull(),

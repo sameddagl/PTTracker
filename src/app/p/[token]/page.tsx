@@ -14,6 +14,7 @@ import {
   todayISO,
 } from "@/lib/format";
 import { formatIban, paymentCode } from "@/lib/iban";
+import { installmentPlan, installmentStates } from "@/lib/installments";
 import { getPortalData, portalUrl } from "@/lib/portal";
 import { PaymentPanel } from "./payment-panel";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -36,17 +37,22 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
     `Merhaba, ${application?.packageName ?? "paket"} için başvurdum. Sayfam: ${url}`,
   );
   const pending = application?.status === "pending";
-  const dues = packages
-    .filter((p) => Number(p.due) > 0)
+  const today = todayISO(tz);
+  const plans = packages
     .map((p) => ({
       id: p.id,
       name: p.name,
-      due: Number(p.due),
       code: paymentCode(client.fullName, p.id),
-      pendingTotal: reported
-        .filter((r) => r.status === "pending" && r.clientPackageId === p.id)
-        .reduce((sum, r) => sum + Number(r.amount), 0),
-    }));
+      states: installmentStates(
+        installmentPlan(Number(p.price), p.installments, p.startsOn),
+        Number(p.paid),
+        reported.filter((r) => r.status === "pending" && r.clientPackageId === p.id).reduce((sum, r) => sum + Number(r.amount), 0),
+        today,
+      ),
+    }))
+    // Nothing to show for free packages or ones paid in full.
+    .filter((p) => p.states.some((s) => s.status !== "paid"));
+  const rejected = reported.filter((r) => r.status === "rejected");
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 py-8">
@@ -142,19 +148,18 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
         ))
       )}
 
-      {(dues.length > 0 || reported.some((r) => r.status === "rejected")) &&
+      {(plans.length > 0 || rejected.length > 0) &&
         (client.iban && client.ibanHolder ? (
           <PaymentPanel
             token={token}
-            dues={dues}
+            plans={plans}
             iban={client.iban}
             ibanDisplay={formatIban(client.iban)}
             holder={client.ibanHolder}
-            reported={reported}
-            today={todayISO(tz)}
+            rejected={rejected}
           />
         ) : (
-          dues.length > 0 && (
+          plans.length > 0 && (
             <p className="rounded-xl border border-dashed px-4 py-4 text-sm text-muted-foreground">
               Ödeme bilgileri için {trainerName} ile iletişime geçebilirsin.
             </p>

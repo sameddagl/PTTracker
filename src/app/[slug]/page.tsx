@@ -145,8 +145,11 @@ function PackageCard({ slug, pkg: p }: { slug: string; pkg: PublicPage["packages
         {p.price && (
           <div className="shrink-0 text-right">
             <p className="text-xl font-semibold tabular-nums">{formatTRY(p.price)}</p>
-            {perLesson && p.sessionCount > 1 && (
-              <p className="text-xs text-muted-foreground tabular-nums">ders başı {formatTRY(perLesson)}</p>
+            {p.installments > 1 ? (
+              <p className="text-xs text-muted-foreground">{p.installments} taksitle ödenebilir</p>
+            ) : (
+              perLesson &&
+              p.sessionCount > 1 && <p className="text-xs text-muted-foreground tabular-nums">ders başı {formatTRY(perLesson)}</p>
             )}
           </div>
         )}

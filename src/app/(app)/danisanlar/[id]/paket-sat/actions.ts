@@ -19,6 +19,7 @@ const FIELDS = [
   "makeupAllowance",
   "paymentAmount",
   "paymentMethod",
+  "installments",
 ] as const;
 export type SellField = (typeof FIELDS)[number];
 
@@ -48,6 +49,7 @@ const sellSchema = z
     makeupAllowance: z.coerce.number().int().min(0).max(50, "Telafi hakkı çok yüksek."),
     paymentAmount: money("Ödeme tutarı geçersiz."),
     paymentMethod: z.enum(["cash", "bank_transfer", "card", "other"]),
+    installments: z.coerce.number().int().min(1).max(12, "Taksit sayısı en fazla 12."),
   })
   .refine((v) => (v.paymentAmount ?? 0) <= (v.price ?? 0) || (v.price ?? 0) === 0, {
     path: ["paymentAmount"],
@@ -71,6 +73,7 @@ export async function sellPackageAction(_prev: FormState<SellField>, formData: F
       expiresOn: expiryFor(d.startsOn, d.validityDays),
       price: d.price ?? 0,
       makeupAllowance: d.makeupAllowance,
+      installments: d.installments,
       payment: d.paymentAmount ? { amount: d.paymentAmount, method: d.paymentMethod } : null,
     }),
   );

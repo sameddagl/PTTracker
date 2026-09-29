@@ -42,6 +42,7 @@ export default async function TemplatesPage() {
                   {SESSION_TYPE_LABELS[t.sessionType]} · {t.sessionCount} ders
                   {t.validityDays ? ` · ${t.validityDays} gün` : " · süresiz"}
                   {t.makeupAllowance > 0 && ` · ${t.makeupAllowance} telafi`}
+                  {t.installments > 1 && ` · ${t.installments} taksit`}
                 </p>
               </div>
               {t.price && <span className="text-sm font-medium tabular-nums">{formatTRY(t.price)}</span>}

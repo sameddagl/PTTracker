@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SESSION_TYPE_LABELS } from "@/lib/format";
+import { INSTALLMENT_OPTIONS, installmentLabel } from "@/lib/installments";
 import type { FormState } from "@/lib/forms";
 import { saveTemplateAction, type TemplateField } from "./actions";
 
@@ -32,6 +33,7 @@ const EMPTY: TemplateValues = {
   description: "",
   features: "",
   sortOrder: "",
+  installments: "1",
 };
 
 export function TemplateForm({ id, initial = EMPTY }: { id?: string; initial?: TemplateValues }) {
@@ -103,6 +105,16 @@ export function TemplateForm({ id, initial = EMPTY }: { id?: string; initial?: T
           />
         </Field>
       </div>
+
+      <Field id="installments" label="Ödeme" hint="taksitler 30 gün arayla, ilki paket başlangıcında" error={e.installments}>
+        <NativeSelect id="installments" name="installments" defaultValue={val("installments")} className="max-w-48">
+          {INSTALLMENT_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              {installmentLabel(n)}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
 
       <Field id="makeupAllowance" label="Telafi hakkı" hint="geç iptalde yanmayan ders sayısı" error={e.makeupAllowance}>
         <Input

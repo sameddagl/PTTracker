@@ -126,14 +126,14 @@ function AlertRow({ alert: a, portalToken }: { alert: PackageAlert; portalToken?
   const reasons: string[] = [];
   if (a.lowBalance) reasons.push(a.remaining === 0 ? "Paket bitti" : `${a.remaining} ders kaldı`);
   if (a.expiringSoon && a.expiresOn) reasons.push(`Son tarih ${formatShortDate(a.expiresOn)}`);
-  if (a.hasDebt) reasons.push(`${formatTRY(a.due)} borç`);
+  if (a.hasDebt) reasons.push(`${formatTRY(a.overdue)} ödeme bekleniyor`);
 
   // One message per row: the most pressing reason wins.
   const text = a.lowBalance
     ? messages.lowBalance(a.clientName, a.remaining)
     : a.expiringSoon && a.expiresOn
       ? messages.expiring(a.clientName, formatShortDate(a.expiresOn))
-      : messages.paymentDue(a.clientName, formatTRY(a.due));
+      : messages.paymentDue(a.clientName, formatTRY(a.overdue));
   const href = whatsappLink(a.clientPhone, withPortal(text, portalToken && portalUrl(portalToken)));
 
   return (

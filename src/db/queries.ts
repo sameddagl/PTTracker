@@ -31,10 +31,12 @@ export async function getPackageAlerts(tx: Tx, trainer: TrainerRef) {
       remaining: clientPackageBalances.remainingSessions,
       expiresOn: clientPackageBalances.effectiveExpiresOn,
       due: clientPackageBalances.dueAmount,
+      overdue: clientPackageBalances.overdueAmount,
       state: clientPackageBalances.state,
       lowBalance: sql<boolean>`${clientPackageBalances.remainingSessions} <= 2`,
       expiringSoon: sql<boolean>`coalesce(${clientPackageBalances.effectiveExpiresOn} <= ${today} + 7, false)`,
-      hasDebt: sql<boolean>`${clientPackageBalances.dueAmount} > 0`,
+      // Only installments already due count as debt; later ones aren't late yet.
+      hasDebt: sql<boolean>`${clientPackageBalances.overdueAmount} > 0`,
     })
     .from(clientPackageBalances)
     .innerJoin(clientPackages, eq(clientPackages.id, clientPackageBalances.clientPackageId))
@@ -47,7 +49,7 @@ export async function getPackageAlerts(tx: Tx, trainer: TrainerRef) {
         or(
           sql`${clientPackageBalances.remainingSessions} <= 2`,
           sql`${clientPackageBalances.effectiveExpiresOn} <= ${today} + 7`,
-          sql`${clientPackageBalances.dueAmount} > 0`,
+          sql`${clientPackageBalances.overdueAmount} > 0`,
         ),
       ),
     )

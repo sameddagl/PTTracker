@@ -83,6 +83,7 @@ export async function approveApplication(tx: Tx, trainer: TrainerRef, id: string
     expiresOn: expiryFor(startsOn, t.validityDays),
     price: Number(t.price ?? 0),
     makeupAllowance: t.makeupAllowance,
+    installments: t.installments,
     payment: null,
   });
 

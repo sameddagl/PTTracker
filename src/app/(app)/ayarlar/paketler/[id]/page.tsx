@@ -35,6 +35,7 @@ export default async function EditTemplatePage({ params }: PageProps<"/ayarlar/p
           description: t.description ?? "",
           features: t.features.join("\n"),
           sortOrder: t.sortOrder ? String(t.sortOrder) : "",
+          installments: String(t.installments),
         }}
       />
     </>
