@@ -25,7 +25,19 @@ import { recurringDates, startOfWeek } from "../src/lib/dates";
 import { isUniqueViolation } from "../src/lib/pg-errors";
 import { slugError, toSlug } from "../src/lib/slug";
 import { expiryFor, pickPackage, sellPackage } from "../src/db/packages";
-import { deletePayment, listDebtors, listRecentPayments, recordPayment } from "../src/db/payments";
+import {
+  MAX_RECEIPT_BYTES,
+  confirmPayment,
+  countPendingPayments,
+  deletePayment,
+  getReceipt,
+  listDebtors,
+  listPendingPayments,
+  listRecentPayments,
+  recordClientPayment,
+  recordPayment,
+  rejectPayment,
+} from "../src/db/payments";
 import {
   PORTAL_TOKEN_PATTERN,
   createPortalLink,
@@ -41,6 +53,7 @@ import { addUsers, createTestDb } from "./pglite";
 const T = "00000000-0000-0000-0000-0000000000a1";
 process.env.PORTAL_SECRET ??= "test-secret-test-secret-test-secret";
 const trainer = { id: T, timezone: "Europe/Istanbul" };
+let withReceiptId = "";
 
 async function main() {
   const pg = await createTestDb();
@@ -538,6 +551,85 @@ async function main() {
   assert.equal((await tryWith(moreTemplates[2].id)).limited, true, "4th application from one phone in 24h is refused");
   console.log("approve/reject: package created from template, applicants archived on rejection, rate limit applies");
 
+  // ---- Client-reported transfers ----
+  const [payer] = await asTrainer((tx) =>
+    tx.insert(schema.clients).values({ trainerId: T, fullName: "Selin Ak", phone: "905551234567" }).returning({ id: schema.clients.id }),
+  );
+  const payerPkg = await asTrainer((tx) =>
+    sellPackage(tx, T, {
+      clientId: payer.id,
+      templateId: null,
+      name: "12 Ders",
+      sessionType: "private",
+      totalSessions: 12,
+      startsOn: "2026-10-01",
+      expiresOn: null,
+      price: 6000,
+      makeupAllowance: 0,
+      payment: null,
+    }),
+  );
+  const who = { trainerId: T, clientId: payer.id };
+  const report = (amount: number, extra: Partial<Parameters<typeof recordClientPayment>[2]> = {}) =>
+    db.transaction((tx) =>
+      recordClientPayment(tx as unknown as Tx, who, {
+        clientPackageId: payerPkg,
+        amount,
+        paidOn: "2026-10-02",
+        note: null,
+        receipt: null,
+        ...extra,
+      }),
+    );
+
+  assert.deepEqual(await report(7000), { ok: false, reason: "overpay", due: 6000 });
+  assert.deepEqual(
+    await db.transaction((tx) =>
+      recordClientPayment(tx as unknown as Tx, { trainerId: T, clientId: zeynep.id }, { clientPackageId: payerPkg, amount: 10, paidOn: "2026-10-02", note: null, receipt: null }),
+    ),
+    { ok: false, reason: "package" },
+    "can't report against someone else's package",
+  );
+  assert.deepEqual(await report(100, { receipt: { mimeType: "image/webp", data: Buffer.alloc(MAX_RECEIPT_BYTES + 1) } }), {
+    ok: false,
+    reason: "receipt",
+  });
+  const receiptBytes = Buffer.from("fake-receipt-bytes");
+  assert.deepEqual(await report(3000, { receipt: { mimeType: "image/webp", data: receiptBytes } }), { ok: true });
+  assert.deepEqual(await report(3000), { ok: true }, "a second report for the same transfer is allowed to be filed");
+
+  // Pending reports don't reduce the debt and don't count as income.
+  let payerBal = await balance(payerPkg);
+  assert.equal(String(payerBal.dueAmount), "6000.00");
+  const waiting = await asTrainer((tx) => listPendingPayments(tx, T));
+  assert.equal(waiting.length, 2);
+  assert.equal(await asTrainer((tx) => countPendingPayments(tx, T)), 2);
+  const withReceipt = waiting.find((w) => w.receiptType)!;
+  withReceiptId = withReceipt.id;
+  // PGlite returns Uint8Array, postgres-js a Buffer; compare the bytes.
+  assert.ok(Buffer.from((await asTrainer((tx) => getReceipt(tx, T, withReceipt.id)))!.data).equals(receiptBytes));
+  assert.ok(!(await asTrainer((tx) => listRecentPayments(tx, T, { clientId: payer.id }))).length, "pending not in history");
+
+  // Confirm one → debt drops; confirming both would overpay only once the first is in.
+  const [firstReport, secondReport] = waiting.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  assert.equal((await asTrainer((tx) => confirmPayment(tx, T, firstReport.id))).ok, true);
+  payerBal = await balance(payerPkg);
+  assert.equal(String(payerBal.dueAmount), "3000.00");
+  assert.equal((await asTrainer((tx) => confirmPayment(tx, T, firstReport.id))).ok, false, "only once");
+  // Reject the duplicate with a reason; it stays out of the balance.
+  assert.ok(await asTrainer((tx) => rejectPayment(tx, T, secondReport.id, "Aynı havale iki kez bildirilmiş")));
+  payerBal = await balance(payerPkg);
+  assert.equal(String(payerBal.dueAmount), "3000.00");
+  assert.equal(await asTrainer((tx) => countPendingPayments(tx, T)), 0);
+
+  // An over-large confirm is refused (e.g. two reports for one transfer).
+  await report(3000);
+  await report(3000);
+  const [a1, a2] = (await asTrainer((tx) => listPendingPayments(tx, T))).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  assert.equal((await asTrainer((tx) => confirmPayment(tx, T, a1.id))).ok, true);
+  assert.deepEqual(await asTrainer((tx) => confirmPayment(tx, T, a2.id)), { ok: false, reason: "overpay", due: 0 });
+  console.log("client transfers: pending until confirmed, overpay guarded at report and confirm, receipts stored");
+
   // ---- Public page slugs ----
   assert.equal(toSlug("Çağla Işık Öztürk"), "cagla-isik-ozturk");
   assert.equal(toSlug("İREM ŞEN Pilates"), "irem-sen-pilates");
@@ -584,6 +676,12 @@ async function main() {
     "another trainer cannot open a portal link for my client",
   );
   assert.ok(await asTrainer((tx) => deletePayment(tx, T, someone.id)), "owner can delete");
+  const otherTrainerReceipt = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b2', true)`);
+    await tx.execute(sql`set local role authenticated`);
+    return getReceipt(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", withReceiptId);
+  });
+  assert.equal(otherTrainerReceipt, null, "receipts are private to their trainer");
   console.log("cross-tenant attendance and payment delete blocked\n\nall logic checks passed");
 }
 

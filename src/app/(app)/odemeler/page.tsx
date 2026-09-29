@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { getPaymentSummary, listDebtors, listRecentPayments, type Debtor } from "@/db/payments";
+import { getPaymentSummary, listDebtors, listPendingPayments, listRecentPayments, type Debtor } from "@/db/payments";
 import { getActivePortalTokens } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
 import { PAYMENT_METHOD_LABELS, formatShortDate, formatTRY } from "@/lib/format";
 import { portalUrl } from "@/lib/portal";
 import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
 import { DeletePaymentButton } from "./delete-payment-button";
+import { PendingPaymentCard } from "./pending-payment";
 
 export const metadata: Metadata = { title: "Ödemeler" };
 
@@ -20,13 +21,14 @@ const monthName = (timeZone: string) => new Intl.DateTimeFormat("tr-TR", { month
 const upperFirst = (s: string) => s.charAt(0).toLocaleUpperCase("tr") + s.slice(1);
 
 export default async function PaymentsPage() {
-  const { trainer, summary, debtors, recent, portals } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, summary, debtors, recent, portals, waiting } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     const summary = await getPaymentSummary(tx, trainer);
     const debtors = await listDebtors(tx, trainerId);
     const recent = await listRecentPayments(tx, trainerId);
+    const waiting = await listPendingPayments(tx, trainerId);
     const portals = await getActivePortalTokens(tx, debtors.map((d) => d.clientId));
-    return { trainer, summary, debtors, recent, portals };
+    return { trainer, summary, debtors, recent, portals, waiting };
   });
 
   const methods = Object.entries(summary.byMethod).filter(([, total]) => total > 0) as [
@@ -47,6 +49,19 @@ export default async function PaymentsPage() {
           </Button>
         }
       />
+
+      {waiting.length > 0 && (
+        <section aria-labelledby="waiting-heading" className="mb-8">
+          <h2 id="waiting-heading" className="mb-3 text-sm font-medium text-muted-foreground">
+            Onay bekleyen ödemeler
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {waiting.map((p) => (
+              <PendingPaymentCard key={p.id} payment={p} />
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-label="Özet" className="mb-8 grid grid-cols-2 gap-3">
         <Card className="gap-1 py-4">

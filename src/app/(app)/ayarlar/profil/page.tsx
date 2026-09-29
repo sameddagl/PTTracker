@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { getTrainer } from "@/db/queries";
 import { siteUrl } from "@/lib/config";
+import { formatIban } from "@/lib/iban";
 import { profileImageUrl } from "@/lib/storage";
 import { formatPhone } from "@/lib/whatsapp";
 import { ImageUpload } from "./image-upload";
@@ -50,6 +51,8 @@ export default async function ProfilePage() {
           phone: formatPhone(trainer.phone) ?? "",
           specialties: trainer.specialties.join(", "),
           publicPageEnabled: trainer.publicPageEnabled,
+          iban: trainer.iban ? formatIban(trainer.iban) : "",
+          ibanHolder: trainer.ibanHolder ?? "",
         }}
       />
     </>

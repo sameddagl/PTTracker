@@ -60,7 +60,7 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
             <Link
               href={href}
               aria-current={isActive(href) ? "page" : undefined}
-              aria-label={badges[href] ? `${label}, ${badges[href]} yeni başvuru` : undefined}
+              aria-label={badges[href] ? `${label}, ${badges[href]} bekleyen` : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-muted-foreground",
                 isActive(href) && "text-primary",

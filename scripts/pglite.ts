@@ -1,6 +1,6 @@
 // In-memory Postgres (PGlite) with a minimal stand-in for Supabase's auth
 // schema and roles, and every migration applied. Shared by the test scripts.
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 
@@ -22,7 +22,9 @@ export async function createTestDb({ log = false } = {}) {
   await db.exec(SUPABASE_STUB);
 
   const dir = join(process.cwd(), "supabase/migrations");
-  for (const file of readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) {
+  // Same order drizzle-kit applies them in (file names can share a timestamp).
+  const journal = JSON.parse(readFileSync(join(dir, "meta/_journal.json"), "utf8")) as { entries: { tag: string }[] };
+  for (const file of journal.entries.map((e) => `${e.tag}.sql`)) {
     for (const stmt of readFileSync(join(dir, file), "utf8").split("--> statement-breakpoint")) {
       if (stmt.trim()) await db.exec(stmt);
     }

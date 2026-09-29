@@ -3,16 +3,18 @@ import { redirect } from "next/navigation";
 import { BottomNav, SideNav } from "@/components/app-nav";
 import { withTrainer } from "@/db";
 import { countPendingApplications } from "@/db/applications";
+import { countPendingPayments } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
 import { APP_NAME } from "@/lib/config";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
-  const { trainer, pending } = await withTrainer(async (tx, id) => ({
+  const { trainer, pending, payments } = await withTrainer(async (tx, id) => ({
     trainer: await getTrainer(tx, id),
     pending: await countPendingApplications(tx, id),
+    payments: await countPendingPayments(tx, id),
   }));
   if (!trainer.onboardedAt) redirect("/baslangic");
-  const badges = { "/danisanlar": pending };
+  const badges = { "/danisanlar": pending, "/odemeler": payments };
 
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[220px_1fr]">

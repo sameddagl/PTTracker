@@ -10,12 +10,23 @@ import {
   lessonAttendees,
   lessons,
   packageTemplates,
+  payments,
   portalTokens,
   trainers,
 } from "@/db/schema";
 import { siteUrl } from "./config";
 
 export const portalUrl = (token: string) => `${siteUrl()}/p/${token}`;
+
+/** The client and trainer a portal token belongs to, or null. */
+export async function resolvePortalToken(token: string) {
+  if (!PORTAL_TOKEN_PATTERN.test(token)) return null;
+  const [link] = await adminDb
+    .select({ clientId: portalTokens.clientId, trainerId: portalTokens.trainerId })
+    .from(portalTokens)
+    .where(and(eq(portalTokens.tokenHash, hashToken(token)), isNull(portalTokens.revokedAt)));
+  return link ?? null;
+}
 
 /**
  * Resolves a portal token without a signed-in user. Uses adminDb (no RLS), so
@@ -25,7 +36,7 @@ export async function getPortalData(token: string) {
   if (!PORTAL_TOKEN_PATTERN.test(token)) return null;
 
   const [link] = await adminDb
-    .select({ id: portalTokens.id, clientId: portalTokens.clientId })
+    .select({ id: portalTokens.id, clientId: portalTokens.clientId, trainerId: portalTokens.trainerId })
     .from(portalTokens)
     .where(and(eq(portalTokens.tokenHash, hashToken(token)), isNull(portalTokens.revokedAt)));
   if (!link) return null;
@@ -37,6 +48,8 @@ export async function getPortalData(token: string) {
       businessName: trainers.businessName,
       trainerPhone: trainers.phone,
       timezone: trainers.timezone,
+      iban: trainers.iban,
+      ibanHolder: trainers.ibanHolder,
     })
     .from(clients)
     .innerJoin(trainers, eq(trainers.id, clients.trainerId))
@@ -100,7 +113,27 @@ export async function getPortalData(token: string) {
     .orderBy(desc(applications.createdAt))
     .limit(1);
 
+  // Transfers this client reported that are waiting, or were turned down recently.
+  const reported = await adminDb
+    .select({
+      id: payments.id,
+      clientPackageId: payments.clientPackageId,
+      amount: payments.amount,
+      paidOn: payments.paidOn,
+      status: payments.status,
+      rejectReason: payments.rejectReason,
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.clientId, link.clientId),
+        eq(payments.reportedBy, "client"),
+        or(eq(payments.status, "pending"), and(eq(payments.status, "rejected"), gte(payments.reviewedAt, new Date(Date.now() - 14 * 86_400_000)))),
+      ),
+    )
+    .orderBy(desc(payments.createdAt));
+
   await adminDb.update(portalTokens).set({ lastUsedAt: now }).where(eq(portalTokens.id, link.id));
 
-  return { client, packages, upcoming, recent, application: application ?? null };
+  return { client, packages, upcoming, recent, application: application ?? null, reported };
 }

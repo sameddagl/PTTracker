@@ -7,6 +7,7 @@ import { withTrainer } from "@/db";
 import { ensureDefaultIntakeFields } from "@/db/intake";
 import { trainers } from "@/db/schema";
 import { fieldErrors, readForm, type FormState } from "@/lib/forms";
+import { isValidIban, normalizeIban } from "@/lib/iban";
 import { isUniqueViolation } from "@/lib/pg-errors";
 import { slugError } from "@/lib/slug";
 import { PROFILE_BUCKET } from "@/lib/storage";
@@ -24,6 +25,8 @@ const FIELDS = [
   "phone",
   "specialties",
   "publicPageEnabled",
+  "iban",
+  "ibanHolder",
 ] as const;
 export type ProfileField = (typeof FIELDS)[number];
 
@@ -73,7 +76,13 @@ const profileSchema = z
       .transform((v) => [...new Set(v.split(",").map((s) => s.trim()).filter(Boolean))].slice(0, 8))
       .refine((v) => v.every((s) => s.length <= 40), "Her alan en fazla 40 karakter olabilir."),
     publicPageEnabled: z.string().transform((v) => v === "on"),
+    iban: z
+      .string()
+      .transform((v) => normalizeIban(v) || null)
+      .refine((v) => v === null || isValidIban(v), "IBAN geçersiz. TR ile başlayan 26 karakteri kontrol et."),
+    ibanHolder: optional(120),
   })
+  .refine((v) => !v.iban || v.ibanHolder, { path: ["ibanHolder"], message: "Hesap sahibinin adını yaz." })
   .refine((v) => !v.publicPageEnabled || v.slug, { path: ["slug"], message: "Sayfayı yayınlamak için bir adres seç." });
 
 export async function saveProfileAction(_prev: FormState<ProfileField>, formData: FormData): Promise<FormState<ProfileField>> {

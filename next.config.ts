@@ -5,6 +5,10 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.
 const nextConfig: NextConfig = {
   // The dev badge covers the mobile nav or header actions wherever it sits.
   devIndicators: false,
+  experimental: {
+    // Clients attach transfer receipts (capped at 1.5 MB in the action).
+    serverActions: { bodySizeLimit: "2mb" },
+  },
   images: {
     // Trainer profile photos in Supabase Storage.
     remotePatterns: supabaseHost

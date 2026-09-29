@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { ApplicationsBanner } from "@/components/applications-banner";
+import { ApplicationsBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
 import { getLessons } from "@/db/lessons";
+import { countPendingPayments } from "@/db/payments";
 import { getActivePortalTokens } from "@/db/portal";
 import { getPackageAlerts, getTrainer, type PackageAlert } from "@/db/queries";
 import {
@@ -26,7 +27,7 @@ import { AttendanceRow } from "@/components/attendance-row";
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals, pending } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals, pending, pendingPayments } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
@@ -34,7 +35,8 @@ export default async function TodayPage() {
     const alerts = await getPackageAlerts(tx, trainer);
     const portals = await getActivePortalTokens(tx, [...new Set(alerts.map((a) => a.clientId))]);
     const pending = await countPendingApplications(tx, trainerId);
-    return { trainer, lessons, alerts, portals, pending };
+    const pendingPayments = await countPendingPayments(tx, trainerId);
+    return { trainer, lessons, alerts, portals, pending, pendingPayments };
   });
 
   const now = new Date();
@@ -55,7 +57,12 @@ export default async function TodayPage() {
         }
       />
 
-      <ApplicationsBanner count={pending} />
+      {(pending > 0 || pendingPayments > 0) && (
+        <div className="mb-6">
+          <ApplicationsBanner count={pending} />
+          <PaymentsBanner count={pendingPayments} />
+        </div>
+      )}
 
       <section aria-labelledby="lessons-heading" className="mb-8">
         <h2 id="lessons-heading" className="mb-3 text-sm font-medium text-muted-foreground">

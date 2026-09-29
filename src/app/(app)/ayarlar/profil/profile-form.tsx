@@ -23,6 +23,8 @@ export type ProfileValues = {
   phone: string;
   specialties: string;
   publicPageEnabled: boolean;
+  iban: string;
+  ibanHolder: string;
 };
 
 export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; siteUrl: string }) {
@@ -134,6 +136,30 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
           <Input id="phone" name="phone" type="tel" inputMode="tel" defaultValue={initial.phone} placeholder="0532 123 45 67" />
         </Field>
       </div>
+
+      <fieldset className="flex flex-col gap-4 rounded-xl border p-4">
+        <legend className="px-1 text-sm font-medium">Ödeme bilgileri</legend>
+        <p className="-mt-1 text-xs text-muted-foreground">
+          Onayladığın danışanlar kendi sayfalarında bu hesabı ve açıklamaya yazacakları ödeme kodunu görür. Para doğrudan senin
+          hesabına gelir.
+        </p>
+        <Field id="iban" label="IBAN" error={e.iban}>
+          <Input
+            id="iban"
+            name="iban"
+            defaultValue={initial.iban}
+            placeholder="TR00 0000 0000 0000 0000 0000 00"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="text"
+            className="tabular-nums"
+          />
+        </Field>
+        <Field id="ibanHolder" label="Hesap sahibi" error={e.ibanHolder}>
+          <Input id="ibanHolder" name="ibanHolder" defaultValue={initial.ibanHolder} autoComplete="off" />
+        </Field>
+      </fieldset>
 
       <Button type="submit" size="lg" disabled={pending || !!liveSlugError} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Kaydet"}

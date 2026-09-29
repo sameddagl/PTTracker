@@ -11,8 +11,11 @@ import {
   formatShortDate,
   formatTRY,
   formatTime,
+  todayISO,
 } from "@/lib/format";
+import { formatIban, paymentCode } from "@/lib/iban";
 import { getPortalData, portalUrl } from "@/lib/portal";
+import { PaymentPanel } from "./payment-panel";
 import { whatsappLink } from "@/lib/whatsapp";
 
 // Personal links must never be indexed or leak through referrers.
@@ -24,7 +27,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application } = data;
+  const { client, packages, upcoming, recent, application, reported } = data;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
   const url = portalUrl(token);
@@ -33,6 +36,17 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
     `Merhaba, ${application?.packageName ?? "paket"} için başvurdum. Sayfam: ${url}`,
   );
   const pending = application?.status === "pending";
+  const dues = packages
+    .filter((p) => Number(p.due) > 0)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      due: Number(p.due),
+      code: paymentCode(client.fullName, p.id),
+      pendingTotal: reported
+        .filter((r) => r.status === "pending" && r.clientPackageId === p.id)
+        .reduce((sum, r) => sum + Number(r.amount), 0),
+    }));
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 py-8">
@@ -127,6 +141,25 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           </Card>
         ))
       )}
+
+      {(dues.length > 0 || reported.some((r) => r.status === "rejected")) &&
+        (client.iban && client.ibanHolder ? (
+          <PaymentPanel
+            token={token}
+            dues={dues}
+            iban={client.iban}
+            ibanDisplay={formatIban(client.iban)}
+            holder={client.ibanHolder}
+            reported={reported}
+            today={todayISO(tz)}
+          />
+        ) : (
+          dues.length > 0 && (
+            <p className="rounded-xl border border-dashed px-4 py-4 text-sm text-muted-foreground">
+              Ödeme bilgileri için {trainerName} ile iletişime geçebilirsin.
+            </p>
+          )
+        ))}
 
       {(packages.length > 0 || upcoming.length > 0) && (
       <section aria-labelledby="upcoming-heading">

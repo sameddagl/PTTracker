@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   date,
   foreignKey,
   index,
@@ -36,6 +37,10 @@ export const attendanceStatusEnum = pgEnum("attendance_status", [
   "cancelled", // cancelled in time: no credit used
 ]);
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank_transfer", "card", "other"]);
+// Payments the trainer records are confirmed; ones a client reports from their
+// portal wait for the trainer. Only confirmed payments reduce what is owed.
+export const paymentStatusEnum = pgEnum("payment_status", ["pending", "confirmed", "rejected"]);
+export const paymentReporterEnum = pgEnum("payment_reporter", ["trainer", "client"]);
 export const consentKindEnum = pgEnum("consent_kind", ["kvkk_notice", "health_data"]);
 // "applicant": signed up on the trainer's public page, not approved yet.
 export const clientStatusEnum = pgEnum("client_status", ["applicant", "active"]);
@@ -339,9 +344,14 @@ export const payments = pgTable(
     method: paymentMethodEnum("method").notNull().default("cash"),
     paidOn: date("paid_on").notNull().default(sql`current_date`),
     note: text("note"),
+    status: paymentStatusEnum("status").notNull().default("confirmed"),
+    reportedBy: paymentReporterEnum("reported_by").notNull().default("trainer"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    rejectReason: text("reject_reason"),
     ...timestamps,
   },
   (t) => [
+    index("payments_trainer_status_idx").on(t.trainerId, t.status),
     foreignKey({ name: "payments_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
       "cascade",
     ),
@@ -354,6 +364,25 @@ export const payments = pgTable(
     index("payments_package_idx").on(t.clientPackageId),
     ownRows("payments_own", t.trainerId),
   ],
+);
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+// Transfer receipts uploaded by clients. Kept in Postgres (RLS applies) rather
+// than storage, so signed-out clients can attach one without a public bucket.
+export const paymentReceipts = pgTable(
+  "payment_receipts",
+  {
+    paymentId: uuid("payment_id")
+      .primaryKey()
+      .references(() => payments.id, { onDelete: "cascade" }),
+    trainerId: uuid("trainer_id").notNull(),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [ownRows("payment_receipts_own", t.trainerId)],
 );
 
 // Read-only client portal links. Only the SHA-256 hash of the token is stored.
