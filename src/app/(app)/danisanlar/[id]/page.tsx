@@ -116,7 +116,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
   const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone } = data;
   const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
-  const latestAnswers = [...new Map(intake.map((a) => [a.label, a])).values()].sort((a, b) => a.sortOrder - b.sortOrder);
+  const latestAnswers = [...new Map(intake.map((a) => [a.fieldId ?? a.label, a])).values()].sort((a, b) => a.sortOrder - b.sortOrder);
   const totalDue = packages.filter((p) => p.state !== "cancelled").reduce((sum, p) => sum + Number(p.due), 0);
   const wa = whatsappLink(client.phone, `Merhaba ${client.fullName.split(" ")[0]},`);
 
@@ -294,26 +294,36 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         </section>
       )}
 
-      {latestAnswers.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-base">Kayıt bilgileri</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              {latestAnswers.map((a) => (
-                <div key={a.id}>
-                  <dt className="flex items-center gap-2 text-muted-foreground">
-                    {a.label}
-                    {a.isHealth && <ShieldCheck className="size-3.5 text-primary" aria-label="Sağlık bilgisi" />}
-                  </dt>
-                  <dd className="whitespace-pre-wrap">{formatAnswer(a)}</dd>
-                </div>
-              ))}
-            </dl>
-          </CardContent>
-        </Card>
-      )}
+      <section aria-labelledby="answers-heading" className="mb-8 surface p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 id="answers-heading" className="text-base font-semibold">
+            Kayıt bilgileri
+          </h2>
+          {!client.archivedAt && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/danisanlar/${client.id}/kayit-bilgileri`}>
+                <Pencil />
+                {latestAnswers.length > 0 ? "Düzenle" : "Bilgi ekle"}
+              </Link>
+            </Button>
+          )}
+        </div>
+        {latestAnswers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Boy, kilo, hedef gibi kayıt formu cevapları burada görünür.</p>
+        ) : (
+          <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+            {latestAnswers.map((a) => (
+              <div key={a.id}>
+                <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {a.label}
+                  {a.isHealth && <ShieldCheck className="size-3.5" aria-label="Sağlık bilgisi" />}
+                </dt>
+                <dd className="mt-0.5 font-medium whitespace-pre-wrap">{formatAnswer(a)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </section>
 
       {(client.notes || client.healthNotes) && (
         <Card>

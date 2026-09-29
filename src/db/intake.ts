@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { DEFAULT_INTAKE_FIELDS, type IntakeFieldDef, type IntakeValue } from "@/lib/intake";
 import type { Tx } from "./index";
 import { intakeAnswers, intakeFields, trainers } from "./schema";
@@ -109,6 +109,31 @@ export async function saveIntakeAnswers(
       ...valueColumns(value),
     })),
   );
+}
+
+/**
+ * The trainer edits a client's answers. For each question the old answers
+ * are replaced by the new one (or removed when cleared); the application the
+ * previous answer came with is kept, so the application screen stays complete.
+ */
+export async function replaceClientAnswers(
+  tx: Tx,
+  { trainerId, clientId, answers }: { trainerId: string; clientId: string; answers: { field: IntakeField; value: IntakeValue | null }[] },
+) {
+  for (const { field, value } of answers) {
+    const [previous] = await tx
+      .select({ applicationId: intakeAnswers.applicationId })
+      .from(intakeAnswers)
+      .where(and(eq(intakeAnswers.clientId, clientId), eq(intakeAnswers.trainerId, trainerId), eq(intakeAnswers.fieldId, field.id)))
+      .orderBy(desc(intakeAnswers.createdAt))
+      .limit(1);
+    await tx
+      .delete(intakeAnswers)
+      .where(and(eq(intakeAnswers.clientId, clientId), eq(intakeAnswers.trainerId, trainerId), eq(intakeAnswers.fieldId, field.id)));
+    if (value) {
+      await saveIntakeAnswers(tx, { trainerId, clientId, applicationId: previous?.applicationId ?? null, answers: [{ field, value }] });
+    }
+  }
 }
 
 export async function listIntakeAnswers(tx: Tx, where: { clientId: string } | { applicationId: string }) {

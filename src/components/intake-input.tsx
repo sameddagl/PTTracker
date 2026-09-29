@@ -6,11 +6,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { answerName, type IntakeFieldDef } from "@/lib/intake";
 
 const chip =
-  "flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-4 py-2 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
+  "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-sm transition-colors has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
 
 /** One trainer-defined question, rendered for its type. */
-export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: string }; error?: string }) {
+export function IntakeInput({
+  field,
+  error,
+  defaultValues = [],
+  disabled,
+}: {
+  field: IntakeFieldDef & { id: string };
+  error?: string;
+  /** Current answer as form values (see answerToRaw), when editing. */
+  defaultValues?: string[];
+  disabled?: boolean;
+}) {
   const name = answerName(field.id);
+  const first = defaultValues[0] ?? "";
   const id = `f-${field.id}`;
   const described = [field.helpText ? `${id}-help` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
   const label = (
@@ -23,9 +35,9 @@ export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: st
   const control = (() => {
     switch (field.type) {
       case "short_text":
-        return <Input id={id} name={name} maxLength={200} aria-invalid={!!error || undefined} aria-describedby={described} />;
+        return <Input id={id} name={name} maxLength={200} defaultValue={first} disabled={disabled} aria-invalid={!!error || undefined} aria-describedby={described} />;
       case "long_text":
-        return <Textarea id={id} name={name} rows={3} maxLength={2000} aria-invalid={!!error || undefined} aria-describedby={described} />;
+        return <Textarea id={id} name={name} rows={3} maxLength={2000} defaultValue={first} disabled={disabled} aria-invalid={!!error || undefined} aria-describedby={described} />;
       case "number":
         return (
           <div className="flex items-center gap-2">
@@ -34,6 +46,8 @@ export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: st
               name={name}
               inputMode="decimal"
               className="max-w-32"
+              defaultValue={first}
+              disabled={disabled}
               aria-invalid={!!error || undefined}
               aria-describedby={described}
             />
@@ -41,13 +55,13 @@ export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: st
           </div>
         );
       case "date":
-        return <Input id={id} name={name} type="date" className="max-w-48" aria-invalid={!!error || undefined} aria-describedby={described} />;
+        return <Input id={id} name={name} type="date" className="max-w-48" defaultValue={first} disabled={disabled} aria-invalid={!!error || undefined} aria-describedby={described} />;
       case "yes_no":
         return (
           <div role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={described} className="grid max-w-60 grid-cols-2 gap-2">
             {(["yes", "no"] as const).map((v) => (
               <label key={v} className={chip}>
-                <input type="radio" name={name} value={v} className="sr-only" />
+                <input type="radio" name={name} value={v} defaultChecked={first === v} disabled={disabled} className="sr-only" />
                 {v === "yes" ? "Evet" : "Hayır"}
               </label>
             ))}
@@ -64,7 +78,14 @@ export function IntakeInput({ field, error }: { field: IntakeFieldDef & { id: st
           >
             {field.options.map((o) => (
               <label key={o} className={chip}>
-                <input type={field.type === "single_choice" ? "radio" : "checkbox"} name={name} value={o} className="sr-only" />
+                <input
+                  type={field.type === "single_choice" ? "radio" : "checkbox"}
+                  name={name}
+                  value={o}
+                  defaultChecked={defaultValues.includes(o)}
+                  disabled={disabled}
+                  className="sr-only"
+                />
                 {o}
               </label>
             ))}

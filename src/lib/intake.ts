@@ -158,3 +158,27 @@ export function formatAnswer(a: {
       return a.valueText ?? "";
   }
 }
+
+/** A stored answer back as form values, the inverse of parseAnswer (numbers with a Turkish decimal comma). */
+export function answerToRaw(a: {
+  type: IntakeType;
+  valueText: string | null;
+  valueNumber: string | number | null;
+  valueDate: string | null;
+  valueOptions: string[] | null;
+  valueBool: boolean | null;
+}): string[] {
+  switch (a.type) {
+    case "number":
+      return a.valueNumber === null ? [] : [String(Number(a.valueNumber)).replace(".", ",")];
+    case "date":
+      return a.valueDate ? [a.valueDate] : [];
+    case "single_choice":
+    case "multi_choice":
+      return a.valueOptions ?? [];
+    case "yes_no":
+      return a.valueBool === null ? [] : [a.valueBool ? "yes" : "no"];
+    default:
+      return a.valueText ? [a.valueText] : [];
+  }
+}

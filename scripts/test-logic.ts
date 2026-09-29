@@ -32,8 +32,16 @@ import {
 } from "../src/db/groups";
 import { archiveClient, countUpcomingLessons, deleteClient, listArchivedClients, restoreClient } from "../src/db/clients";
 import { approveApplication, countPendingApplications, rejectApplication } from "../src/db/applications";
-import { createIntakeField, ensureDefaultIntakeFields, listIntakeFields, toDef, updateIntakeField } from "../src/db/intake";
-import { DEFAULT_INTAKE_FIELDS, answerName, formatAnswer, parseAnswer } from "../src/lib/intake";
+import {
+  createIntakeField,
+  ensureDefaultIntakeFields,
+  listIntakeAnswers,
+  listIntakeFields,
+  replaceClientAnswers,
+  toDef,
+  updateIntakeField,
+} from "../src/db/intake";
+import { DEFAULT_INTAKE_FIELDS, answerName, answerToRaw, formatAnswer, parseAnswer } from "../src/lib/intake";
 import { recordSignup, validateSignup } from "../src/lib/signup-core";
 import { addDays, recurringDates, startOfWeek } from "../src/lib/dates";
 import { todayISO } from "../src/lib/format";
@@ -554,6 +562,27 @@ async function main() {
   // Applicants don't appear in the client list yet.
   assert.ok(!(await asTrainer((tx) => listClientOptions(tx, T))).some((c) => c.id === applicant.id));
   assert.equal(await asTrainer((tx) => countPendingApplications(tx, T)), 1);
+
+  // The trainer edits answers: replaced per question, cleared ones removed, the application link kept.
+  await asTrainer((tx) =>
+    replaceClientAnswers(tx, {
+      trainerId: T,
+      clientId: applicant.id,
+      answers: [
+        { field: byLabel("Boy"), value: { kind: "number", number: 170.5 } },
+        { field: byLabel("Meslek"), value: null },
+      ],
+    }),
+  );
+  const edited = await asTrainer((tx) => listIntakeAnswers(tx, { clientId: applicant.id }));
+  assert.deepEqual(
+    edited.map((a) => [a.label, formatAnswer(a)]).sort(),
+    [["Boy", "170,5 cm"], ["Kilo", "61,5 kg"]],
+  );
+  const viaApplication = await asTrainer((tx) => listIntakeAnswers(tx, { applicationId: apps[0].id }));
+  assert.ok(viaApplication.some((a) => a.label === "Boy"), "edited answer still shows on the application");
+  assert.deepEqual(answerToRaw(edited.find((a) => a.label === "Boy")!), ["170,5"], "back into the form with a decimal comma");
+  assert.deepEqual(parseAnswer(toDef(byLabel("Boy")), ["170,5"]), { value: { kind: "number", number: 170.5 } });
   console.log("sign-up: answers validated per type, consent gates health data, applicant + application stored once");
 
   // Approve → active client with the template's package from the chosen start date.
