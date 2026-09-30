@@ -2,3 +2,7 @@ allowBuilds:
   esbuild: true
   sharp: false
   unrs-resolver: false
+
+# pnpm 10 (the version hosting installs) reads this instead of allowBuilds.
+onlyBuiltDependencies:
+  - esbuild
