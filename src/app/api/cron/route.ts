@@ -11,10 +11,11 @@ import {
   trainersWithGroups,
 } from "@/db/engagement";
 import { ensureGroupOccurrences } from "@/db/groups";
-import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
+import { formatTRY } from "@/lib/format";
 import { APP_NAME } from "@/lib/config";
 import { notifyClient, notifyTrainer } from "@/lib/notify";
-import { whenPhrase } from "@/lib/when";
+import { sendLessonReminder } from "@/lib/reminder";
+import { renderTemplate } from "@/lib/templates";
 
 // Scheduled work, called every 15 minutes by the host's cron:
 //   curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://<site>/api/cron
@@ -42,29 +43,9 @@ export async function GET(req: NextRequest) {
     report.groups++;
   }
 
-  // 2. "Geliyor musun?" before each booked lesson.
+  // 2. "Geliyor musun?" before each booked lesson, as long before as the trainer chose.
   const reminders = await dueReminders(tx);
-  for (const r of reminders) {
-    const when = whenPhrase(r.startsAt, r.timezone);
-    const what = r.title ?? `${SESSION_TYPE_LABELS[r.sessionType as keyof typeof SESSION_TYPE_LABELS]} ders`;
-    const When = `${when[0].toLocaleUpperCase("tr")}${when.slice(1)}`;
-    await notifyClient(
-      { trainerId: r.trainerId, clientId: r.clientId },
-      "reminder",
-      {
-        title: `${When} dersin var`,
-        body: `${what}, ${r.trainerName} ile. Geliyor musun? Dokunup haber ver.`,
-        hash: "#dersler",
-        tag: `reminder-${r.attendeeId}`,
-        email: {
-          subject: `${r.trainerName} · ${when} dersin var`,
-          heading: `${When} dersin var`,
-          lines: [`${what}, ${r.trainerName} ile.`, "Geliyor musun? Sayfandan tek dokunuşla haber ver ya da iptal et."],
-          cta: "Geliyorum / Gelemiyorum",
-        },
-      },
-    );
-  }
+  for (const r of reminders) await sendLessonReminder(r);
   await markReminded(tx, reminders.map((r) => r.attendeeId));
   report.reminders = reminders.length;
 
@@ -72,18 +53,19 @@ export async function GET(req: NextRequest) {
   const renewals = await renewalCandidates(tx);
   for (const p of renewals) {
     const why = p.remaining <= 0 ? "Paketindeki dersler bitti." : p.remaining <= 2 ? `Paketinde ${p.remaining} ders kaldı.` : "Paketinin süresi bitmek üzere.";
+    const body = renderTemplate(p.templates, "renewal", { ad: p.clientName, paket: p.packageName, durum: why });
     await notifyClient(
       { trainerId: p.trainerId, clientId: p.clientId },
       "package",
       {
         title: `${p.packageName}`,
-        body: `${why} Aynı paketi sayfandan tek dokunuşla yenileyebilirsin.`,
+        body,
         hash: "#paketler",
         tag: `renew-${p.clientPackageId}`,
         email: {
           subject: `${p.trainerName} · ${p.remaining <= 0 ? "Paketin bitti" : "Paketin bitmek üzere"}`,
           heading: p.remaining <= 0 ? "Paketin bitti" : "Paketin bitmek üzere",
-          lines: [`${why}`, `${p.trainerName} ile devam etmek istersen aynı paketi sayfandan yenileyebilirsin.`],
+          lines: [body],
           cta: "Paketimi yenile",
         },
       },

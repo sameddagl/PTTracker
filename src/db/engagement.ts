@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { addDays } from "@/lib/dates";
 import { todayISO } from "@/lib/format";
+import type { MessageTemplates } from "@/lib/templates";
 import type { Tx } from "./index";
 import {
   clientPackageBalances,
@@ -18,12 +19,14 @@ import {
 // renewal offers, the weekly summary and clients who stopped coming. The
 // cron-side functions run on the owner connection across all trainers.
 
-/** Hours before a lesson the "Geliyor musun?" reminder goes out. */
-export const REMINDER_HOURS = 36;
+// The "Geliyor musun?" reminder goes out `trainers.reminder_hours` before a
+// lesson (the trainer picks it), unless they turned reminders off.
 /** No reminder closer than this to the start: it would arrive too late to act on. */
-const REMINDER_MIN_HOURS = 2;
-/** Don't remind about a booking made moments ago. */
+const REMINDER_MIN_HOURS = 1;
+/** Don't remind about a booking made moments ago (capped by the trainer's lead time). */
 const FRESH_BOOKING_HOURS = 6;
+/** The "Hatırlat" button on Bugün won't send to the same booking again sooner than this. */
+export const MANUAL_REMINDER_GAP_HOURS = 1;
 /** A client with no lesson in this many days and nothing booked counts as "lost". */
 export const LOST_AFTER_DAYS = 21;
 
@@ -132,7 +135,9 @@ export type TomorrowAttendee = {
   phone: string | null;
   startsAt: Date;
   title: string | null;
+  sessionType: string;
   confirmed: boolean;
+  remindedAt: Date | null;
 };
 
 /** Tomorrow's bookings, for the "Yarın gelecekler" list on Bugün. */
@@ -147,7 +152,9 @@ export async function tomorrowAttendees(tx: Tx, trainer: { id: string; timezone:
       phone: clients.phone,
       startsAt: lessons.startsAt,
       title: lessons.title,
+      sessionType: lessons.sessionType,
       confirmedAt: lessonAttendees.confirmedAt,
+      remindedAt: lessonAttendees.reminderSentAt,
     })
     .from(lessonAttendees)
     .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
@@ -178,9 +185,10 @@ export type DueReminder = {
   startsAt: Date;
   title: string | null;
   sessionType: string;
+  templates: MessageTemplates;
 };
 
-/** Bookings starting within REMINDER_HOURS that haven't been reminded yet. */
+/** Bookings starting within their trainer's reminder window that haven't been reminded yet. */
 export async function dueReminders(tx: Tx, limit = 200): Promise<DueReminder[]> {
   return tx
     .select({
@@ -194,6 +202,7 @@ export async function dueReminders(tx: Tx, limit = 200): Promise<DueReminder[]> 
       startsAt: lessons.startsAt,
       title: lessons.title,
       sessionType: lessons.sessionType,
+      templates: trainers.messageTemplates,
     })
     .from(lessonAttendees)
     .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
@@ -201,14 +210,15 @@ export async function dueReminders(tx: Tx, limit = 200): Promise<DueReminder[]> 
     .innerJoin(trainers, eq(trainers.id, lessons.trainerId))
     .where(
       and(
+        eq(trainers.remindersEnabled, true),
         eq(lessonAttendees.status, "scheduled"),
         eq(lessons.status, "scheduled"),
         isNull(lessonAttendees.reminderSentAt),
         isNull(lessonAttendees.confirmedAt),
         isNull(clients.archivedAt),
         gt(lessons.startsAt, sql`now() + make_interval(hours => ${REMINDER_MIN_HOURS})`),
-        lte(lessons.startsAt, sql`now() + make_interval(hours => ${REMINDER_HOURS})`),
-        lt(lessonAttendees.createdAt, sql`now() - make_interval(hours => ${FRESH_BOOKING_HOURS})`),
+        lte(lessons.startsAt, sql`now() + make_interval(hours => ${trainers.reminderHours})`),
+        lt(lessonAttendees.createdAt, sql`now() - make_interval(hours => least(${FRESH_BOOKING_HOURS}, ${trainers.reminderHours} / 2))`),
       ),
     )
     .orderBy(asc(lessons.startsAt))
@@ -230,6 +240,7 @@ export type RenewalCandidate = {
   packageName: string;
   remaining: number;
   expiresOn: string | null;
+  templates: MessageTemplates;
 };
 
 /** Packages that just started running out and whose client hasn't been told yet. */
@@ -245,6 +256,7 @@ export async function renewalCandidates(tx: Tx, limit = 200): Promise<RenewalCan
       packageName: clientPackages.name,
       remaining: clientPackageBalances.remainingSessions,
       expiresOn: clientPackageBalances.effectiveExpiresOn,
+      templates: trainers.messageTemplates,
     })
     .from(clientPackages)
     .innerJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, clientPackages.id))
@@ -253,6 +265,7 @@ export async function renewalCandidates(tx: Tx, limit = 200): Promise<RenewalCan
     .innerJoin(packageTemplates, eq(packageTemplates.id, clientPackages.templateId))
     .where(
       and(
+        eq(trainers.renewalOffersEnabled, true),
         isNull(clientPackages.renewalOfferedAt),
         eq(clientPackageBalances.state, "active"),
         isNull(clients.archivedAt),

@@ -11,12 +11,14 @@ export function TrainerThread({
   initial,
   timeZone,
   archived,
+  draft,
 }: {
   clientId: string;
   firstName: string;
   initial: Message[];
   timeZone: string;
   archived: boolean;
+  draft?: string;
 }) {
   // data-chat drops the page's bottom padding that makes room for the (hidden here) tab bar.
   return (
@@ -30,6 +32,7 @@ export function TrainerThread({
         markRead={() => markThreadReadAction(clientId)}
         emptyText={`${firstName} ile henüz mesajlaşmadın. İlk mesajı sen yaz.`}
         placeholder={`${firstName} için mesaj yaz`}
+        draft={archived ? "" : draft}
         closed={archived ? "Danışan arşivde. Mesaj göndermek için önce arşivden çıkar." : undefined}
         className="h-[calc(100dvh-14rem-env(safe-area-inset-bottom))] min-h-80 md:h-[calc(100dvh-14rem)]"
       />

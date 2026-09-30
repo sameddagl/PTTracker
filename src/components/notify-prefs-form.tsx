@@ -3,34 +3,10 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { NotifyPrefs } from "@/lib/notify-prefs";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/switch";
 
 type Row = { kind: string; label: string; hint: string; push: boolean; email: boolean | null };
 type Result = { ok: true } | { ok: false; error: string };
-
-function Switch({ on, label, onChange, disabled }: { on: boolean; label: string; onChange: (v: boolean) => void; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      disabled={disabled}
-      onClick={() => onChange(!on)}
-      // 44px tall hit area around a 28px track.
-      className="flex h-11 w-12 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
-    >
-      <span className={cn("relative h-7 w-12 rounded-full transition-colors", on ? "bg-primary" : "bg-muted ring-1 ring-border ring-inset")}>
-        <span
-          className={cn(
-            "absolute top-1 left-1 size-5 rounded-full shadow-sm transition-transform",
-            on ? "translate-x-5 bg-primary-foreground" : "bg-card",
-          )}
-        />
-      </span>
-    </button>
-  );
-}
 
 /** Per-kind push / e-mail switches. Every change saves at once. */
 export function NotifyPrefsForm({ rows: initial, save }: { rows: Row[]; save: (prefs: NotifyPrefs) => Promise<Result> }) {

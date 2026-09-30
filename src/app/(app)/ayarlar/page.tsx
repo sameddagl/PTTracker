@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { Bell, BellRing, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
@@ -35,6 +35,12 @@ export default async function SettingsPage() {
       icon: TimerOff,
       title: "Geç iptal kuralı",
       hint: trainer.lateCancelHours === 0 ? "Kural yok, iptal her zaman ücretsiz" : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz`,
+    },
+    {
+      href: "/ayarlar/mesajlar",
+      icon: BellRing,
+      title: "Hatırlatma ve mesajlar",
+      hint: trainer.remindersEnabled ? `Hatırlatma dersten ${trainer.reminderHours} saat önce` : "Otomatik hatırlatma kapalı",
     },
     { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Kayıtta danışana sorulan sorular" },
   ];

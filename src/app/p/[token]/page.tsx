@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Check, CheckCircle2, Hourglass, Lock, MessageCircle, Minus } from "lucide-react";
+import { Check, CheckCircle2, Hourglass, Lock, Minus } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { Avatar } from "@/components/avatar";
 import { InstallCard } from "@/components/install-guide";
 import { NotifyPrefsForm } from "@/components/notify-prefs-form";
@@ -20,7 +21,7 @@ import { installmentPlan, installmentStates } from "@/lib/installments";
 import { prefsView } from "@/lib/notify-prefs";
 import { getPortalData, portalUrl } from "@/lib/portal";
 import { applicationOption, optionLabel } from "@/lib/pricing";
-import { UpcomingLessons } from "./booking-panel";
+import { NextLessonPrompt, UpcomingLessons } from "./booking-panel";
 import { LessonPicker } from "./lesson-picker";
 import { PackageShop } from "./package-shop";
 import { MessageThread } from "./message-thread";
@@ -28,6 +29,7 @@ import { PaymentPanel } from "./payment-panel";
 import { saveClientPrefsAction, subscribeClientAction, unsubscribeClientAction } from "./push-actions";
 import { RenewalOffer } from "./renewal-offer";
 import { cn } from "@/lib/utils";
+import { whenPhrase } from "@/lib/when";
 import { whatsappLink } from "@/lib/whatsapp";
 
 // Personal links must never be indexed or leak through referrers.
@@ -41,6 +43,11 @@ export async function generateMetadata({ params }: PageProps<"/p/[token]">): Pro
     manifest: `/p/${token}/manifest.webmanifest`,
     appleWebApp: { capable: true, title: "Derslerim", statusBarStyle: "default" },
   };
+}
+
+/** The next booking the client hasn't answered for, once it's within `hours` of starting. */
+function lessonToAnswer<L extends { startsAt: Date; confirmed: boolean }>(lessons: L[], hours: number, now = Date.now()) {
+  return lessons.find((l) => !l.confirmed && l.startsAt.getTime() - now <= hours * 3_600_000);
 }
 
 export default async function PortalPage({ params, searchParams }: PageProps<"/p/[token]">) {
@@ -99,6 +106,9 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
     // Nothing to show for free packages or ones paid in full.
     .filter((p) => p.states.some((s) => s.status !== "paid"));
   const rejected = reported.filter((r) => r.status === "rejected");
+  // The reminder's question waits at the top once the lesson is within the trainer's reminder window.
+  const answer = lessonToAnswer(bookable, client.reminderHours);
+  const answerWhen = answer ? whenPhrase(answer.startsAt, tz) : "";
 
   return (
     <div className="min-h-dvh bg-canvas">
@@ -113,6 +123,16 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           </div>
           <h1 className="text-3xl font-semibold">Merhaba {client.fullName.split(" ")[0]}</h1>
         </header>
+
+        {answer && (
+          <NextLessonPrompt
+            token={token}
+            lesson={answer}
+            when={answerWhen.charAt(0).toLocaleUpperCase("tr") + answerWhen.slice(1)}
+            timezone={tz}
+            lateCancelHours={client.lateCancelHours}
+          />
+        )}
 
         <InstallCard
           storageKey="install-card-client"
@@ -141,7 +161,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
             {toTrainer && (
               <Button asChild className="h-auto min-h-11 bg-[#1d1d1f] py-2.5 whitespace-normal text-white hover:bg-[#1d1d1f]/85">
                 <a href={toTrainer} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle />
+                  <WhatsAppIcon />
                   Linki WhatsApp&apos;tan eğitmenine gönder
                 </a>
               </Button>
@@ -279,7 +299,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
         />
 
         {(packages.length > 0 || upcoming.length > 0) && (
-          <UpcomingLessons token={token} lessons={bookable} timezone={tz} lateCancelHours={booking?.lateCancelHours ?? 24} />
+          <UpcomingLessons token={token} lessons={bookable} timezone={tz} lateCancelHours={client.lateCancelHours} />
         )}
 
         {recent.length > 0 && (

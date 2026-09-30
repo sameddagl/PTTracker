@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CircleCheck, MessageCircle, Plus, TrendingUp, Wallet } from "lucide-react";
+import { CircleCheck, MessagesSquare, Plus, TrendingUp, Wallet } from "lucide-react";
+import { messageHref } from "@/components/contact-buttons";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { Avatar } from "@/components/avatar";
 import { StatTile } from "@/components/stat-tile";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,8 @@ import { getActivePortalTokens } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
 import { PAYMENT_METHOD_LABELS, formatShortDate, formatTRY } from "@/lib/format";
 import { portalUrl } from "@/lib/portal";
-import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
+import { renderTemplate, type MessageTemplates } from "@/lib/templates";
+import { whatsappLink, withPortal } from "@/lib/whatsapp";
 import { DeletePaymentButton } from "./delete-payment-button";
 import { PendingPaymentCard } from "./pending-payment";
 
@@ -101,7 +104,7 @@ export default async function PaymentsPage() {
         ) : (
           <ul className="divide-y overflow-hidden surface">
             {debtors.map((d) => (
-              <DebtorRow key={d.clientId} debtor={d} portalToken={portals.get(d.clientId)} />
+              <DebtorRow key={d.clientId} debtor={d} portalToken={portals.get(d.clientId)} templates={trainer.messageTemplates} />
             ))}
           </ul>
         )}
@@ -152,11 +155,9 @@ export default async function PaymentsPage() {
   );
 }
 
-function DebtorRow({ debtor: d, portalToken }: { debtor: Debtor; portalToken?: string }) {
-  const wa = whatsappLink(
-    d.phone,
-    withPortal(messages.paymentDue(d.fullName, formatTRY(d.overdue > 0 ? d.overdue : d.total)), portalToken && portalUrl(portalToken)),
-  );
+function DebtorRow({ debtor: d, portalToken, templates }: { debtor: Debtor; portalToken?: string; templates: MessageTemplates }) {
+  const text = renderTemplate(templates, "paymentDue", { ad: d.fullName, tutar: formatTRY(d.overdue > 0 ? d.overdue : d.total) });
+  const wa = whatsappLink(d.phone, withPortal(text, portalToken && portalUrl(portalToken)));
   // One package: pay straight into it. Several: let the form pick the oldest.
   const pkg = d.packages.length === 1 ? `&paket=${d.packages[0].id}` : "";
 
@@ -179,13 +180,18 @@ function DebtorRow({ debtor: d, portalToken }: { debtor: Debtor; portalToken?: s
       </div>
       <div className="flex gap-2 pl-13 sm:pl-0">
         {wa && (
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="ghost" size="icon-sm" className="text-muted-foreground">
             <a href={wa} target="_blank" rel="noopener noreferrer" aria-label={`${d.fullName} için WhatsApp'ta ödeme hatırlat`}>
-              <MessageCircle />
-              Hatırlat
+              <WhatsAppIcon />
             </a>
           </Button>
         )}
+        <Button asChild variant="outline" size="sm">
+          <Link href={messageHref(d.clientId, text)} aria-label={`${d.fullName} için mesajla ödeme hatırlat`}>
+            <MessagesSquare />
+            Hatırlat
+          </Link>
+        </Button>
         <Button asChild size="sm">
           <Link href={`/odemeler/yeni?danisan=${d.clientId}${pkg}`}>Ödeme al</Link>
         </Button>

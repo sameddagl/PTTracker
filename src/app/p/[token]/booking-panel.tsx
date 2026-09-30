@@ -10,22 +10,15 @@ import { formatLongDate, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { cancelBookingAction, confirmAttendanceAction } from "./booking-actions";
 
-export function UpcomingLessons({
-  token,
-  lessons,
-  timezone,
-  lateCancelHours,
-}: {
-  token: string;
-  lessons: { attendeeId: string; startsAt: Date; title: string | null; lateIfCancelledNow: boolean; confirmed: boolean }[];
-  timezone: string;
-  lateCancelHours: number;
-}) {
+type Lesson = { attendeeId: string; startsAt: Date; title: string | null; lateIfCancelledNow: boolean; confirmed: boolean };
+
+/** "Geliyorum" and "Gelemiyorum / İptal et" for a booked lesson, shared by the list and the prompt at the top. */
+function useLessonAnswers(token: string, timezone: string, lateCancelHours: number) {
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const { confirm: confirmDialog, dialog } = useConfirm();
 
-  function confirm(l: (typeof lessons)[number]) {
+  function confirm(l: Lesson) {
     setBusy(`ok:${l.attendeeId}`);
     startTransition(async () => {
       const res = await confirmAttendanceAction(token, l.attendeeId);
@@ -34,7 +27,7 @@ export function UpcomingLessons({
     });
   }
 
-  async function cancel(l: (typeof lessons)[number]) {
+  async function cancel(l: Lesson) {
     const when = `${formatLongDate(l.startsAt, timezone)} ${formatTime(l.startsAt, timezone)}`;
     const ok = await confirmDialog({
       title: `${when} dersini iptal etmek istiyor musun?`,
@@ -57,6 +50,78 @@ export function UpcomingLessons({
       } else toast.error(res.error);
     });
   }
+
+  return { confirm, cancel, pending, busy, dialog };
+}
+
+/** The reminder's question, at the top of the page: the next lesson the client hasn't answered for yet. */
+export function NextLessonPrompt({
+  token,
+  lesson: l,
+  when,
+  timezone,
+  lateCancelHours,
+}: {
+  token: string;
+  lesson: Lesson;
+  when: string;
+  timezone: string;
+  lateCancelHours: number;
+}) {
+  const { confirm, cancel, pending, busy, dialog } = useLessonAnswers(token, timezone, lateCancelHours);
+  return (
+    <section id="yaklasan" aria-labelledby="next-lesson-heading" className="flex scroll-mt-6 flex-col gap-4 rounded-2xl bg-lime p-5 text-lime-foreground">
+      {dialog}
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime-foreground text-lime" aria-hidden>
+          <CalendarClock className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 id="next-lesson-heading" className="text-lg leading-snug font-semibold">
+            {when} dersin var
+          </h2>
+          <p className="text-sm opacity-80">{l.title ? `${l.title} · ` : ""}Geliyor musun?</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          disabled={pending}
+          loading={pending && busy === `ok:${l.attendeeId}`}
+          onClick={() => confirm(l)}
+          className="bg-lime-foreground text-lime hover:bg-lime-foreground/85"
+        >
+          <Check />
+          Geliyorum
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={pending}
+          loading={pending && busy === l.attendeeId}
+          onClick={() => cancel(l)}
+          className="border-lime-foreground/25 bg-transparent text-lime-foreground hover:bg-lime-foreground/10"
+        >
+          <X />
+          Gelemiyorum
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+export function UpcomingLessons({
+  token,
+  lessons,
+  timezone,
+  lateCancelHours,
+}: {
+  token: string;
+  lessons: Lesson[];
+  timezone: string;
+  lateCancelHours: number;
+}) {
+  const { confirm, cancel, pending, busy, dialog } = useLessonAnswers(token, timezone, lateCancelHours);
 
   return (
     <section id="dersler" aria-labelledby="upcoming-heading" className="scroll-mt-6">

@@ -13,8 +13,11 @@ import { TrainerThread } from "./thread";
 
 export const metadata: Metadata = { title: "Mesajlar" };
 
-export default async function ThreadPage({ params }: PageProps<"/mesajlar/[clientId]">) {
+export default async function ThreadPage({ params, searchParams }: PageProps<"/mesajlar/[clientId]">) {
   const { clientId } = await params;
+  // ?taslak=… prefills the box (the message buttons elsewhere in the app); the trainer still presses send.
+  const { taslak } = await searchParams;
+  const draft = typeof taslak === "string" ? taslak.slice(0, 2000) : undefined;
   if (!/^[0-9a-f-]{36}$/i.test(clientId)) notFound();
 
   const data = await withTrainer(async (tx, trainerId) => {
@@ -64,6 +67,7 @@ export default async function ThreadPage({ params }: PageProps<"/mesajlar/[clien
         initial={thread}
         timeZone={timezone}
         archived={Boolean(client.archivedAt)}
+        draft={draft}
       />
     </>
   );

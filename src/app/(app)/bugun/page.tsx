@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Check, ClipboardCheck, CalendarPlus, MessageCircle, Sunrise, Users, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, ClipboardCheck, CalendarPlus, Sunrise, Users, Wallet } from "lucide-react";
+import { ContactButtons } from "@/components/contact-buttons";
 import { StatTile } from "@/components/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,9 @@ import { buildGuide, guideMode } from "@/lib/guide";
 import { portalUrl } from "@/lib/portal";
 import { cn } from "@/lib/utils";
 import { whenPhrase } from "@/lib/when";
-import { messages, whatsappLink, withPortal } from "@/lib/whatsapp";
+import { renderTemplate, type MessageTemplates } from "@/lib/templates";
+import { lessonLabel } from "@/lib/reminder";
+import { RemindButton } from "./remind-button";
 import { AttendanceRow } from "@/components/attendance-row";
 import { Avatar } from "@/components/avatar";
 import { takenPlaces } from "../takvim/lesson-summary";
@@ -51,7 +54,7 @@ export default async function TodayPage() {
     const lost = await lostClients(tx, trainer, 5);
     const unmarked = await countPendingAttendance(tx, trainer);
     const portals = await getActivePortalTokens(tx, [
-      ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId)]),
+      ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId), ...lost.map((c) => c.clientId)]),
     ]);
     const pending = await countPendingApplications(tx, trainerId);
     const pendingPayments = await countPendingPayments(tx, trainerId);
@@ -198,20 +201,20 @@ export default async function TodayPage() {
 
       {tomorrow.length > 0 && (
         <section aria-labelledby="tomorrow-heading" className="mb-8">
-          <div className="mb-3 flex items-baseline justify-between gap-3">
-            <h2 id="tomorrow-heading" className="text-base font-semibold">
-              Yarın gelecekler
-            </h2>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {tomorrow.filter((t) => t.confirmed).length}/{tomorrow.length} onayladı
-            </span>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 id="tomorrow-heading" className="text-base font-semibold">
+                Yarın gelecekler
+              </h2>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {tomorrow.filter((t) => t.confirmed).length}/{tomorrow.length} onayladı
+              </p>
+            </div>
+            {tomorrow.some((t) => !t.confirmed) && <RemindButton count={tomorrow.filter((t) => !t.confirmed).length} />}
           </div>
           <ul className="divide-y overflow-hidden surface">
             {tomorrow.map((t) => {
               const token = portals.get(t.clientId);
-              const ask = t.confirmed
-                ? null
-                : whatsappLink(t.phone, withPortal(messages.confirmAsk(t.name, whenPhrase(t.startsAt, trainer.timezone)), token && portalUrl(token)));
               return (
                 <li key={t.attendeeId} className="flex items-center gap-3 px-4 py-3">
                   <Avatar name={t.name} />
@@ -232,13 +235,17 @@ export default async function TodayPage() {
                   ) : (
                     <>
                       <span className="text-xs text-muted-foreground max-sm:sr-only">Yanıt bekleniyor</span>
-                      {ask && (
-                        <Button asChild size="icon" variant="outline" aria-label={`${t.name} için WhatsApp'tan onay iste`}>
-                          <a href={ask} target="_blank" rel="noopener noreferrer">
-                            <MessageCircle />
-                          </a>
-                        </Button>
-                      )}
+                      <ContactButtons
+                        clientId={t.clientId}
+                        name={t.name}
+                        phone={t.phone}
+                        portal={token && portalUrl(token)}
+                        text={renderTemplate(trainer.messageTemplates, "confirmAsk", {
+                          ad: t.name,
+                          zaman: whenPhrase(t.startsAt, trainer.timezone),
+                          ders: lessonLabel(t.title, t.sessionType),
+                        })}
+                      />
                     </>
                   )}
                 </li>
@@ -259,7 +266,7 @@ export default async function TodayPage() {
         ) : (
           <ul className="divide-y overflow-hidden surface">
             {alerts.map((a) => (
-              <AlertRow key={a.clientPackageId} alert={a} portalToken={portals.get(a.clientId)} />
+              <AlertRow key={a.clientPackageId} alert={a} portalToken={portals.get(a.clientId)} templates={trainer.messageTemplates} />
             ))}
           </ul>
         )}
@@ -273,7 +280,7 @@ export default async function TodayPage() {
           <p className="mb-3 text-sm text-muted-foreground">{LOST_AFTER_DAYS} günden uzun süredir dersi ve randevusu olmayan danışanlar.</p>
           <ul className="divide-y overflow-hidden surface">
             {lost.map((c) => {
-              const href = whatsappLink(c.phone, messages.missYou(c.name));
+              const token = portals.get(c.clientId);
               return (
                 <li key={c.clientId} className="flex items-center gap-3 px-4 py-3">
                   <Avatar name={c.name} />
@@ -283,13 +290,13 @@ export default async function TodayPage() {
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">Son ders {formatShortDate(c.lastLessonOn)}</p>
                   </div>
-                  {href && (
-                    <Button asChild size="icon" variant="outline" aria-label={`${c.name} ile WhatsApp'ta yazış`}>
-                      <a href={href} target="_blank" rel="noopener noreferrer">
-                        <MessageCircle />
-                      </a>
-                    </Button>
-                  )}
+                  <ContactButtons
+                    clientId={c.clientId}
+                    name={c.name}
+                    phone={c.phone}
+                    portal={token && portalUrl(token)}
+                    text={renderTemplate(trainer.messageTemplates, "missYou", { ad: c.name })}
+                  />
                 </li>
               );
             })}
@@ -300,19 +307,19 @@ export default async function TodayPage() {
   );
 }
 
-function AlertRow({ alert: a, portalToken }: { alert: PackageAlert; portalToken?: string }) {
+function AlertRow({ alert: a, portalToken, templates }: { alert: PackageAlert; portalToken?: string; templates: MessageTemplates }) {
   const reasons: string[] = [];
   if (a.lowBalance) reasons.push(a.remaining === 0 ? "Paket bitti" : `${a.remaining} ders kaldı`);
   if (a.expiringSoon && a.expiresOn) reasons.push(`Son tarih ${formatShortDate(a.expiresOn)}`);
   if (a.hasDebt) reasons.push(`${formatTRY(a.overdue)} ödeme bekleniyor`);
 
   // One message per row: the most pressing reason wins.
+  const vars = { ad: a.clientName, paket: a.packageName, kalan: a.remaining };
   const text = a.lowBalance
-    ? messages.lowBalance(a.clientName, a.remaining)
+    ? renderTemplate(templates, a.remaining > 0 ? "lowBalance" : "packageEnded", vars)
     : a.expiringSoon && a.expiresOn
-      ? messages.expiring(a.clientName, formatShortDate(a.expiresOn))
-      : messages.paymentDue(a.clientName, formatTRY(a.overdue));
-  const href = whatsappLink(a.clientPhone, withPortal(text, portalToken && portalUrl(portalToken)));
+      ? renderTemplate(templates, "expiring", { ...vars, tarih: formatShortDate(a.expiresOn) })
+      : renderTemplate(templates, "paymentDue", { ...vars, tutar: formatTRY(a.overdue) });
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -330,13 +337,7 @@ function AlertRow({ alert: a, portalToken }: { alert: PackageAlert; portalToken?
           {a.packageName} · {reasons.join(" · ")}
         </p>
       </div>
-      {href && (
-        <Button asChild size="icon" variant="outline" aria-label={`${a.clientName} ile WhatsApp'ta yazış`}>
-          <a href={href} target="_blank" rel="noopener noreferrer">
-            <MessageCircle />
-          </a>
-        </Button>
-      )}
+      <ContactButtons clientId={a.clientId} name={a.clientName} phone={a.clientPhone} portal={portalToken && portalUrl(portalToken)} text={text} />
     </li>
   );
 }

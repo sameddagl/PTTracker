@@ -6,7 +6,6 @@ import {
   CalendarPlus,
   ChevronLeft,
   History,
-  MessageCircle,
   MessagesSquare,
   Package,
   PackagePlus,
@@ -35,10 +34,12 @@ import {
   formatTime,
   todayISO,
 } from "@/lib/format";
+import { paymentCode } from "@/lib/iban";
 import { formatAnswer } from "@/lib/intake";
 import { installmentPlan, installmentStates, nextPayable } from "@/lib/installments";
 import { portalUrl } from "@/lib/portal";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { ArchivedBanner } from "./archived-banner";
 import { PortalCard } from "./portal-card";
 
@@ -109,12 +110,12 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
     const paymentHistory = await listRecentPayments(tx, trainerId, { clientId: id, limit: 10 });
     const portal = await getActivePortalLink(tx, id);
     const intake = await listIntakeAnswers(tx, { clientId: id });
-    const { timezone } = await getTrainer(tx, trainerId);
-    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone };
+    const { timezone, messageTemplates } = await getTrainer(tx, trainerId);
+    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates };
   });
   if (!data) notFound();
 
-  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates } = data;
   const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
   const latestAnswers = [...new Map(intake.map((a) => [a.fieldId ?? a.label, a])).values()].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -159,7 +160,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
                 label={totalDue > 0 ? formatTRY(totalDue) : "Ödeme al"}
               />
               <QuickAction href={`/mesajlar/${client.id}`} icon={<MessagesSquare />} label="Mesaj" />
-              {wa && <QuickAction href={wa} external icon={<MessageCircle />} label="WhatsApp" />}
+              {wa && <QuickAction href={wa} external icon={<WhatsAppIcon />} label="WhatsApp" />}
             </div>
           </div>
         )}
@@ -209,6 +210,11 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
                     <InstallmentSummary pkg={p} today={today} />
                   </div>
                 )}
+                {Number(p.due) > 0 && p.state !== "cancelled" && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Havale açıklama kodu <span className="font-mono font-medium text-foreground">{paymentCode(client.fullName, p.id)}</span>
+                  </p>
+                )}
               </li>
             ))}
           </ul>
@@ -221,6 +227,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
             clientId={client.id}
             clientName={client.fullName}
             phone={client.phone}
+            templates={messageTemplates}
             url={portal ? portalUrl(portal.token) : null}
             lastOpened={
               portal?.lastUsedAt

@@ -3,6 +3,7 @@
 // one-trial-per-person rule.
 // Run with: npx tsx --conditions=react-server scripts/test-engagement.ts
 import assert from "node:assert/strict";
+import { TEMPLATES, cleanTemplates, renderTemplate } from "../src/lib/templates";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import type { Tx } from "../src/db";
@@ -90,7 +91,7 @@ async function main() {
   const past = await lesson(new Date(Date.now() - 2 * H), ali.id);
 
   let due = (await owner((tx) => dueReminders(tx))).map((r) => r.attendeeId);
-  assert.deepEqual(due, [soon], "only lessons 2–36 h ahead, booked more than 6 h ago");
+  assert.deepEqual(due, [soon], "only lessons 1–24 h ahead (the default), booked more than 6 h ago");
 
   assert.equal(await owner((tx) => confirmAttendance(tx, { trainerId: A, clientId: ali.id }, soon)), false, "someone else's booking");
   assert.equal(await owner((tx) => confirmAttendance(tx, { trainerId: B, clientId: zeynep.id }, soon)), false, "wrong trainer");
@@ -102,6 +103,14 @@ async function main() {
   await db.update(schema.lessonAttendees).set({ confirmedAt: null }).where(eq(schema.lessonAttendees.id, soon));
   await owner((tx) => markReminded(tx, [soon]));
   assert.deepEqual(await owner((tx) => dueReminders(tx)), [], "reminded once only");
+
+  // The trainer picks the lead time, or turns reminders off.
+  await db.update(schema.trainers).set({ reminderHours: 72 }).where(eq(schema.trainers.id, A));
+  assert.deepEqual((await owner((tx) => dueReminders(tx))).map((r) => r.attendeeId), [farAway], "72 h reaches the lesson 60 h ahead");
+  await db.update(schema.trainers).set({ remindersEnabled: false }).where(eq(schema.trainers.id, A));
+  assert.deepEqual(await owner((tx) => dueReminders(tx)), [], "reminders off");
+  await db.update(schema.trainers).set({ remindersEnabled: true, reminderHours: 24 }).where(eq(schema.trainers.id, A));
+  await assert.rejects(db.update(schema.trainers).set({ reminderHours: 0 }).where(eq(schema.trainers.id, A)), "lead time stays within 1–72 h");
   void tooClose;
   void farAway;
   void fresh;
@@ -155,6 +164,9 @@ async function main() {
   assert.deepEqual(renewable.map((r) => r.clientPackageId), [pkg.id], "2 lessons left → renewable");
   let cands = await owner((tx) => renewalCandidates(tx));
   assert.deepEqual(cands.map((c) => c.clientPackageId), [pkg.id]);
+  await db.update(schema.trainers).set({ renewalOffersEnabled: false }).where(eq(schema.trainers.id, A));
+  assert.equal((await owner((tx) => renewalCandidates(tx))).length, 0, "renewal offers off");
+  await db.update(schema.trainers).set({ renewalOffersEnabled: true }).where(eq(schema.trainers.id, A));
   await owner((tx) => markRenewalOffered(tx, [pkg.id]));
   cands = await owner((tx) => renewalCandidates(tx));
   assert.equal(cands.length, 0, "offered once per package");
@@ -225,14 +237,22 @@ async function main() {
   void other;
   console.log("weekly summary ok");
 
+  // ---- Ready-made texts ----
+  assert.equal(renderTemplate({}, "reminder", { zaman: "yarın 18:00" }), "Yarın 18:00 dersin var. Geliyor musun? Dokunup haber ver.");
+  assert.equal(renderTemplate({ missYou: "Selam {ad}, {bilinmeyen} nasılsın?" }, "missYou", { ad: "Zeynep Kaya" }), "Selam Zeynep, {bilinmeyen} nasılsın?");
+  assert.equal(renderTemplate({ missYou: "   " }, "missYou", { ad: "Ali" }), "Merhaba Ali, bir süredir görüşemedik. Bu hafta bir ders planlayalım mı? 🙂");
+  assert.equal(renderTemplate({ portalInvite: "Sayfan hazır {ad}" }, "portalInvite", { ad: "Ali", link: "https://x/p/1" }), "Sayfan hazır Ali\nhttps://x/p/1");
+  assert.deepEqual(cleanTemplates({ missYou: "  Selam {ad}  ", lowBalance: TEMPLATES.lowBalance.text, bogus: "x", paymentDue: "" }), { missYou: "Selam {ad}" });
+  console.log("templates ok");
+
   // ---- Notification choices ----
   assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");
   assert.equal(trainerWants({}, "booking", "email"), false, "bookings are push only by default");
   assert.equal(trainerWants({ message: { email: true } }, "message", "email"), false, "messages never go by e-mail");
-  assert.equal(clientWants({}, "reminder", "email"), false);
+  assert.equal(clientWants({ reminder: { email: true } }, "reminder", "email"), false, "reminders never go by e-mail");
   assert.equal(clientWants({ reminder: { push: false } }, "reminder", "push"), false);
   assert.deepEqual(cleanPrefs("client", { reminder: { push: false, email: true }, message: { push: true, email: true }, bogus: { push: true } }), {
-    reminder: { push: false, email: true },
+    reminder: { push: false },
     message: { push: true },
   });
   assert.equal(notifyPrefsSchema.safeParse({ a: { push: "yes" } }).success, false);

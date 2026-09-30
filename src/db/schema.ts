@@ -20,6 +20,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import type { NotifyPrefs } from "../lib/notify-prefs";
+import type { MessageTemplates } from "../lib/templates";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 // Multi-tenancy: every row belongs to a trainer (trainer_id = auth.uid()).
@@ -125,9 +126,18 @@ export const trainers = pgTable(
     weeklySummaryWeek: date("weekly_summary_week"),
     /** Per-kind push/e-mail choices; missing keys fall back to NOTIFY defaults (src/lib/notify-prefs.ts). */
     notifyPrefs: jsonb("notify_prefs").$type<NotifyPrefs>().notNull().default({}),
+
+    // What goes to clients on its own (see src/lib/templates.ts): the "Geliyor musun?"
+    // reminder and how many hours before a lesson, the renewal offer, and the
+    // trainer's own wording for every ready-made text (missing keys use the defaults).
+    remindersEnabled: boolean("reminders_enabled").notNull().default(true),
+    reminderHours: smallint("reminder_hours").notNull().default(24),
+    renewalOffersEnabled: boolean("renewal_offers_enabled").notNull().default(true),
+    messageTemplates: jsonb("message_templates").$type<MessageTemplates>().notNull().default({}),
     ...timestamps,
   },
   (t) => [
+    check("trainers_reminder_hours", sql`${t.reminderHours} between 1 and 72`),
     check("trainers_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$'`),
     // Rows are created by the on_auth_user_created trigger, never by the client.
     pgPolicy("trainers_select_own", { for: "select", to: authenticatedRole, using: sql`${t.id} = ${authUid}` }),

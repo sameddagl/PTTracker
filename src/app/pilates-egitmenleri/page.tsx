@@ -46,7 +46,7 @@ const FEATURES = [
   {
     icon: BellRing,
     title: "Dersten önce “Geliyor musun?”",
-    text: "Dersten 36 saat önce danışana hatırlatma gider. “Geliyorum” derse yoklama listenizde görürsünüz; gelemeyecekse yerini başkasına açarsınız.",
+    text: "Dersten önce, sizin seçtiğiniz saatte danışana hatırlatma gider. “Geliyorum” derse yoklama listenizde görürsünüz; gelemeyecekse yerini başkasına açarsınız.",
   },
   {
     icon: Gift,

@@ -64,7 +64,7 @@ const FEATURES = [
   },
   {
     title: "Dersten önce “Geliyor musun?”",
-    text: "Dersten 36 saat önce danışana hatırlatma gider; “Geliyorum” ya da “Gelemiyorum” diye cevap verir. Yarın kimin geleceğini bugünden bilirsiniz.",
+    text: "Dersten önce danışana hatırlatma gider, ne zaman gideceğini siz seçersiniz. Danışan “Geliyorum” ya da “Gelemiyorum” diye cevap verir; yarın kimin geleceğini bugünden bilirsiniz.",
     chips: ["Ders hatırlatması", "Katılım onayı", "Boş kalan saat"],
     Demo: ConfirmDemo,
   },
@@ -122,7 +122,7 @@ const MORE = [
 const STATS = [
   { value: "₺0", label: "Beta boyunca ücret" },
   { value: "%0", label: "Ödemelerden komisyon; para doğrudan IBAN'ınıza gelir" },
-  { value: "36 saat", label: "Kala danışana “Geliyor musun?” hatırlatması gider" },
+  { value: "1 gün", label: "Önceden danışana “Geliyor musun?” hatırlatması gider; süreyi siz seçersiniz" },
 ];
 
 const STEPS = [

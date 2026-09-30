@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { CheckCircle2, ChevronLeft, MessageCircle, ShieldCheck, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ShieldCheck, X } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
               {approvedWa && (
                 <Button asChild size="sm">
                   <a href={approvedWa} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle />
+                    <WhatsAppIcon />
                     WhatsApp&apos;tan haber ver
                   </a>
                 </Button>

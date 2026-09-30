@@ -48,6 +48,7 @@ export function ChatThread({
   placeholder = "Mesaj yaz",
   closed,
   className,
+  draft = "",
 }: {
   initial: Message[];
   me: Message["sender"];
@@ -62,9 +63,11 @@ export function ChatThread({
   closed?: string;
   /** Height of the whole box; the message list scrolls inside it. */
   className?: string;
+  /** Text already in the box, e.g. a ready-made message from a button on Bugün. */
+  draft?: string;
 }) {
   const [items, setItems] = useState<Item[]>(initial);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(draft);
   const [pending, startTransition] = useTransition();
   const [inView, setInView] = useState(false);
   const [tabVisible, setTabVisible] = useState(true);

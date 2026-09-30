@@ -35,23 +35,3 @@ export function whatsappLink(phone: string | null | undefined, text: string): st
   const n = normalizePhone(phone);
   return n ? `https://wa.me/${n}?text=${encodeURIComponent(text)}` : null;
 }
-
-const firstName = (fullName: string) => fullName.trim().split(/\s+/)[0] ?? fullName;
-
-export const messages = {
-  lowBalance: (name: string, remaining: number) =>
-    remaining > 0
-      ? `Merhaba ${firstName(name)}, paketinde ${remaining} ders kaldı. Yenilemek istersen haber ver 🙂`
-      : `Merhaba ${firstName(name)}, paketindeki dersler bitti. Yeni paket için haber ver 🙂`,
-  expiring: (name: string, date: string) =>
-    `Merhaba ${firstName(name)}, paketin ${date} tarihinde bitiyor. Kalan derslerini planlayalım mı?`,
-  paymentDue: (name: string, amount: string) =>
-    `Merhaba ${firstName(name)}, paket ödemenden ${amount} kaldı, hatırlatmak istedim. Teşekkürler!`,
-  portalInvite: (name: string, url: string) =>
-    `Merhaba ${firstName(name)}, kalan derslerini, randevularını ve ödeme durumunu buradan görebilirsin: ${url}`,
-  reminder: (name: string, when: string) => `Merhaba ${firstName(name)}, ${when} dersimiz var, hatırlatmak istedim. Görüşmek üzere!`,
-  confirmAsk: (name: string, when: string) =>
-    `Merhaba ${firstName(name)}, ${when} dersin var. Geliyor musun? Sayfandan tek dokunuşla haber verebilirsin.`,
-  missYou: (name: string) =>
-    `Merhaba ${firstName(name)}, bir süredir görüşemedik. Bu hafta bir ders planlayalım mı? 🙂`,
-};

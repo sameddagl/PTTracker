@@ -8,6 +8,7 @@ import { Avatar } from "@/components/avatar";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { formatShortDate, formatTRY } from "@/lib/format";
+import { paymentCode } from "@/lib/iban";
 import { confirmPaymentAction, rejectPaymentAction } from "./actions";
 
 export function PendingPaymentCard({
@@ -20,6 +21,7 @@ export function PendingPaymentCard({
     note: string | null;
     clientId: string;
     clientName: string;
+    clientPackageId?: string | null;
     packageName: string | null;
     due: string | null;
     receiptType: string | null;
@@ -42,6 +44,11 @@ export function PendingPaymentCard({
             {formatShortDate(p.paidOn)} · Havale/EFT{p.packageName && ` · ${p.packageName}`}
             {p.due !== null && ` · kalan ${formatTRY(p.due)}`}
           </p>
+          {p.clientPackageId && (
+            <p className="text-xs text-muted-foreground">
+              Açıklama kodu <span className="font-mono font-medium text-foreground">{paymentCode(p.clientName, p.clientPackageId)}</span>
+            </p>
+          )}
           {p.note && <p className="mt-1 text-sm">{p.note}</p>}
         </div>
         <p className="shrink-0 text-xl font-semibold tabular-nums">{formatTRY(p.amount)}</p>

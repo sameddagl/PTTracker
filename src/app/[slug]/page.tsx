@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, MessageCircle, Sparkles, UsersRound } from "lucide-react";
+import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, Sparkles, UsersRound } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { getPublicPage, type PublicPage } from "@/lib/public-page";
 import { APP_NAME, siteUrl } from "@/lib/config";
 import { profileImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { whatsappLink } from "@/lib/whatsapp";
 
 const DISCIPLINE_LABELS = { pilates: "Pilates", pt: "Personal Training", both: "Pilates ve Personal Training" } as const;
@@ -165,7 +166,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
               {wa && (
                 <Button asChild size="lg" variant="outline" className="sm:flex-1">
                   <a href={wa} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle />
+                    <WhatsAppIcon />
                     WhatsApp&apos;tan yaz
                   </a>
                 </Button>

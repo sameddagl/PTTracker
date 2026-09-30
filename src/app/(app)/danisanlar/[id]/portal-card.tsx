@@ -1,24 +1,28 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Copy, ExternalLink, Link2, Link2Off, MessageCircle, RefreshCw } from "lucide-react";
+import { Copy, ExternalLink, Link2, Link2Off, RefreshCw } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { messages, whatsappLink } from "@/lib/whatsapp";
+import { renderTemplate, type MessageTemplates } from "@/lib/templates";
+import { whatsappLink } from "@/lib/whatsapp";
 import { createPortalLinkAction, revokePortalLinkAction } from "./portal-actions";
 
 export function PortalCard({
   clientId,
   clientName,
   phone,
+  templates,
   url: initialUrl,
   lastOpened,
 }: {
   clientId: string;
   clientName: string;
   phone: string | null;
+  templates: MessageTemplates;
   url: string | null;
   /** Already formatted on the server ("29 Eyl 14:05"), or null if never opened. */
   lastOpened: string | null;
@@ -66,7 +70,7 @@ export function PortalCard({
     }
   }
 
-  const wa = url ? whatsappLink(phone, messages.portalInvite(clientName, url)) : null;
+  const wa = url ? whatsappLink(phone, renderTemplate(templates, "portalInvite", { ad: clientName, link: url })) : null;
 
   return (
     <>
@@ -95,7 +99,7 @@ export function PortalCard({
                 {wa && (
                   <Button asChild size="sm">
                     <a href={wa} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle />
+                      <WhatsAppIcon />
                       WhatsApp&apos;ta gönder
                     </a>
                   </Button>

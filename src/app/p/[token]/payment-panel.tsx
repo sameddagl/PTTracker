@@ -167,8 +167,12 @@ export function PaymentPanel({
                   </p>
                   <CopyRow label="IBAN" value={iban} display={ibanDisplay} />
                   <CopyRow label="Alıcı" value={holder} />
-                  <CopyRow label="Açıklamaya yaz" value={p.code} />
+                  <CopyRow label="Açıklama" value={p.code} />
                   <CopyRow label="Tutar" value={String(next.remaining).replace(".", ",")} display={formatTRY(next.remaining)} />
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Havalenin açıklamasına <span className="font-medium text-foreground">{p.code}</span> yaz. Eğitmenin hesabına gelen parayı bu kodla
+                    senin ödemen olarak tanır.
+                  </p>
                 </div>
 
                 {openFor === p.id ? (

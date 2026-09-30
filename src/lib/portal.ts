@@ -54,6 +54,8 @@ export async function getPortalData(token: string) {
       timezone: trainers.timezone,
       iban: trainers.iban,
       ibanHolder: trainers.ibanHolder,
+      lateCancelHours: trainers.lateCancelHours,
+      reminderHours: trainers.reminderHours,
       notifyPrefs: clients.notifyPrefs,
     })
     .from(clients)
