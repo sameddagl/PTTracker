@@ -22,6 +22,7 @@ import {
   PricingDemo,
   PublicPageDemo,
 } from "@/components/landing/feature-demos";
+import { Analytics } from "@/components/analytics";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
 import { Button } from "@/components/ui/button";
 import { APP_NAME, siteUrl } from "@/lib/config";
@@ -266,6 +267,7 @@ function Chips({ items }: { items: string[] }) {
 export default function Home() {
   return (
     <div className="min-h-dvh overflow-x-clip bg-canvas">
+      <Analytics />
       <script
         type="application/ld+json"
         // Escaping "<" keeps the JSON from closing the script tag.
@@ -283,10 +285,10 @@ export default function Home() {
           </nav>
           <div className="ml-auto flex items-center gap-1">
             <Button asChild variant="ghost" className="max-sm:hidden">
-              <Link href="/giris">Giriş yap</Link>
+              <Link href="/giris" data-umami-event="landing-giris">Giriş yap</Link>
             </Button>
             <Button asChild>
-              <Link href="/giris">Ücretsiz başlayın</Link>
+              <Link href="/giris" data-umami-event="landing-basla" data-umami-event-yer="ust-menu">Ücretsiz başlayın</Link>
             </Button>
           </div>
         </div>
@@ -313,7 +315,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
               <Button asChild size="lg">
-                <Link href="/giris">
+                <Link href="/giris" data-umami-event="landing-basla" data-umami-event-yer="hero">
                   Ücretsiz başlayın
                   <ArrowRight />
                 </Link>
@@ -504,6 +506,8 @@ export default function Home() {
             <p className="mt-4 max-w-md text-base">Beta döneminde ücretsiz. Kurulum birkaç dakika sürer.</p>
             <Link
               href="/giris"
+              data-umami-event="landing-basla"
+              data-umami-event-yer="alt"
               className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-lime-foreground px-7 text-base font-medium text-lime transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-lime-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-lime"
             >
               Ücretsiz başlayın

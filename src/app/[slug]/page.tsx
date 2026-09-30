@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, MessageCircle, Sparkles, UsersRound } from "lucide-react";
+import { Analytics } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/price-tag";
@@ -53,6 +54,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
 
   return (
     <div className="min-h-dvh bg-canvas">
+      <Analytics />
       <main className="mx-auto max-w-2xl px-4 pt-4 pb-12 sm:pt-8">
       <script
         type="application/ld+json"
@@ -306,7 +308,7 @@ function PackageCard({ slug, pkg: p, highlight }: { slug: string; pkg: PublicPag
         </ul>
       )}
       <Button asChild size="lg" className="w-full">
-        <Link href={`/${slug}/kayit?paket=${p.id}`}>
+        <Link href={`/${slug}/kayit?paket=${p.id}`} data-umami-event={p.isTrial ? "paket-sec-deneme" : "paket-sec"}>
           {p.isTrial ? "Deneme dersi al" : "Bu paketi seç"}
           <ArrowRight />
         </Link>

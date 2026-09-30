@@ -44,7 +44,7 @@ function EmailStep({ state, pending }: { state: Extract<LoginState, { step: "ema
           </p>
         )}
       </div>
-      <Button type="submit" size="lg" loading={pending}>
+      <Button type="submit" size="lg" loading={pending} data-umami-event="giris-kod-iste">
         {pending ? "Gönderiliyor…" : "Giriş kodu gönder"}
       </Button>
     </>

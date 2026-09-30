@@ -38,6 +38,11 @@ export const SUBPROCESSORS = [
     location: "Almanya (Frankfurt, AB) veri merkezi; şirket ABD merkezli",
   },
   {
+    name: "Umami Software (Umami Cloud)",
+    purpose: "Tanıtım ve eğitmen sayfalarında çerezsiz ziyaret sayımı; kişiyi tanıyan veri toplanmaz",
+    location: "AB veri merkezi",
+  },
+  {
     name: "Apple, Google ve Mozilla bildirim servisleri",
     purpose: "Bildirimi açan cihazlara anlık bildirim iletilmesi",
     location: "ABD ve küresel veri merkezleri",

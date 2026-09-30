@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@/components/analytics";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -28,6 +29,7 @@ export default async function SignupPage({ params, searchParams }: PageProps<"/[
 
   return (
     <div className="min-h-dvh bg-canvas">
+      <Analytics />
       <main className="mx-auto max-w-lg px-4 pt-4 pb-16 sm:pt-8">
         <Link
           href={`/${slug}`}

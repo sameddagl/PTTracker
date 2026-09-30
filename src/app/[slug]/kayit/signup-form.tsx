@@ -270,7 +270,7 @@ export function SignupForm({
             </span>
           </p>
         )}
-        <Button type="submit" size="lg" className="w-full" loading={pending} disabled={!pkgId}>
+        <Button type="submit" size="lg" className="w-full" loading={pending} disabled={!pkgId} data-umami-event="kayit-gonder">
           {pending ? "Gönderiliyor…" : "Başvuruyu gönder"}
         </Button>
       </div>

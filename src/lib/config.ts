@@ -9,3 +9,6 @@ export const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localho
 export function safeNext(next: string | null | undefined, fallback = "/bugun") {
   return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : fallback;
 }
+
+/** Umami Cloud site id (public). Stats run only on public pages, never in the app or client portal. */
+export const UMAMI_WEBSITE_ID = "52cd557c-c612-4baf-9d59-cc7dcb17986e";

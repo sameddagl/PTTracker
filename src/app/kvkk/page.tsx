@@ -126,7 +126,10 @@ export default function KvkkPage() {
       <Section id="cerezler" title="5. Çerezler">
         <p>
           Yalnızca giriş yapmanızı ve oturumunuzun güvenle sürmesini sağlayan <strong>zorunlu çerezler</strong> kullanılır.
-          Analiz, reklam ya da takip çerezi kullanılmaz; bu nedenle ayrıca çerez onayı istenmez.
+          Analiz, reklam ya da takip çerezi kullanılmaz; bu nedenle ayrıca çerez onayı istenmez. Tanıtım sayfalarında ve
+          eğitmen sayfalarında kaç kişinin ziyaret ettiğini görmek için çerez kullanmayan, sizi tanımayan bir sayaç (Umami)
+          çalışır. IP adresiniz saklanmaz, farklı günlerdeki ziyaretleriniz birbirine bağlanmaz. Bu sayaç uygulamanın içinde ve danışanların kişisel
+          sayfalarında çalışmaz.
         </p>
       </Section>
 

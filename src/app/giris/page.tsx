@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@/components/analytics";
 import Link from "next/link";
 import { Activity } from "lucide-react";
 import { APP_NAME } from "@/lib/config";
@@ -16,6 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10">
+      <Analytics />
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link href="/" className="mx-auto inline-flex min-h-11 items-center gap-2.5 rounded-full text-lg font-semibold tracking-tight">
           <span className="flex size-9 items-center justify-center rounded-xl bg-lime text-lime-foreground" aria-hidden>
