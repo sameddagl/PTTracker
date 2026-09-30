@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
   },
   // Packages moved out of settings.
   redirects: async () => [
+    // One host for search engines: www → apex, path and query kept.
+    { source: "/:path*", has: [{ type: "host", value: "www.studyomapp.com" }], destination: "https://studyomapp.com/:path*", permanent: true },
     { source: "/ayarlar/paketler", destination: "/paketler", permanent: true },
     { source: "/ayarlar/paketler/:id", destination: "/paketler/:id", permanent: true },
   ],
@@ -51,4 +53,11 @@ export default withSentryConfig(nextConfig, {
   silent: !process.env.CI,
   telemetry: false,
   tunnelRoute: "/monitoring",
+  // No session replay in this app, so its code can go; keep tracing (5% sample).
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+    excludeReplayIframe: true,
+    excludeReplayShadowDom: true,
+    excludeReplayWorker: true,
+  },
 });

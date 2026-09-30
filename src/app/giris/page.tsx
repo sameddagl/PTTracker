@@ -5,7 +5,8 @@ import { Activity } from "lucide-react";
 import { APP_NAME } from "@/lib/config";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Giriş" };
+// Disallowed in robots.txt too; noindex keeps it out even when linked from elsewhere.
+export const metadata: Metadata = { title: "Giriş", robots: { index: false, follow: true } };
 
 const ERRORS: Record<string, string> = {
   baglanti: "Linkin süresi dolmuş ya da daha önce kullanılmış. Yeni kod iste.",

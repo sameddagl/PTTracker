@@ -25,7 +25,8 @@ import {
 import { Analytics } from "@/components/analytics";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
 import { Button } from "@/components/ui/button";
-import { APP_NAME, siteUrl } from "@/lib/config";
+import { APP_DESCRIPTION, APP_DOMAIN, APP_NAME, siteUrl } from "@/lib/config";
+import { LEGAL } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 
 const TITLE = `${APP_NAME} · Pilates ve PT için Danışan ve Seans Takibi`;
@@ -195,24 +196,70 @@ const NAV = [
 ];
 
 // Structured data: what the product is (no ratings or reviews: there are none yet) and the FAQ.
-const JSON_LD = [
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: APP_NAME,
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web, iOS, Android",
-    inLanguage: "tr-TR",
-    description: DESCRIPTION,
-    url: siteUrl(),
-    offers: { "@type": "Offer", price: "0", priceCurrency: "TRY", description: "Beta süresince ücretsiz" },
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
-  },
-];
+const SITE = siteUrl();
+// One linked graph: who makes it (Organization), the site, this page and the product.
+// No ratings or reviews: there are none yet.
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE}/#organization`,
+      name: APP_NAME,
+      alternateName: [APP_DOMAIN, `${APP_NAME} App`],
+      url: SITE,
+      logo: { "@type": "ImageObject", url: `${SITE}/pwa-icon/512`, width: 512, height: 512 },
+      email: LEGAL.email,
+      founder: { "@type": "Person", name: LEGAL.controller },
+      areaServed: { "@type": "Country", name: "Türkiye" },
+      description: APP_DESCRIPTION,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE}/#website`,
+      url: SITE,
+      name: APP_NAME,
+      inLanguage: "tr-TR",
+      publisher: { "@id": `${SITE}/#organization` },
+    },
+    {
+      "@type": "WebPage",
+      "@id": `${SITE}/#webpage`,
+      url: SITE,
+      name: TITLE,
+      description: DESCRIPTION,
+      inLanguage: "tr-TR",
+      isPartOf: { "@id": `${SITE}/#website` },
+      about: { "@id": `${SITE}/#software` },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${SITE}/#software`,
+      name: APP_NAME,
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Danışan ve seans takip programı",
+      // A web app; it can be added to the home screen, but there is no store app.
+      operatingSystem: "Web",
+      inLanguage: "tr-TR",
+      description: DESCRIPTION,
+      url: SITE,
+      publisher: { "@id": `${SITE}/#organization` },
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "TRY",
+        availability: "https://schema.org/InStock",
+        url: `${SITE}/giris`,
+        description: "Beta süresince ücretsiz",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE}/#faq`,
+      mainEntity: FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+    },
+  ],
+};
 
 // Rounded white card on the canvas; one radius for every card on the page.
 const card = "rounded-[1.75rem] border bg-card shadow-card";

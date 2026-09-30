@@ -12,6 +12,8 @@ export const LEGAL = {
   healthConsentVersion: "saglik-rizasi-2026-09-29",
   termsVersion: "kosullar-2026-09-30",
   updatedOn: "30 Eylül 2026",
+  /** Same date for the sitemap; keep it in step with updatedOn. */
+  updatedIso: "2026-09-30",
 } as const;
 
 /** Processors we pass data to, listed in the notice. */

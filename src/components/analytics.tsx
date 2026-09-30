@@ -15,7 +15,7 @@ export function Analytics() {
       data-domains={APP_DOMAIN}
       data-exclude-search="true"
       data-exclude-hash="true"
-      strategy="afterInteractive"
+      strategy="lazyOnload"
     />
   );
 }

@@ -7,6 +7,9 @@ const RESERVED = new Set([
   "acik-riza", "admin", "api", "app", "auth", "ayarlar", "baslangic", "bugun", "danisan", "danisanlar", "ders", "destek",
   "fiyatlar", "giris", "gizlilik", "hakkimizda", "help", "icon", "kayit", "kosullar", "kvkk", "login", "manifest", "mesajlar", "odemeler",
   "p", "paketler", "pwa-icon", "sozlesme", "takvim", "www", "yardim", "yoklama", "yonetim",
+  // Marketing pages planned in docs/seo-audit/ACTION-PLAN.md.
+  "alternatif", "blog", "hakkinda", "iletisim", "karsilastirma", "monitoring", "online-randevu", "ozellikler", "personal-trainer",
+  "pilates", "pilates-egitmenleri", "rehber", "sablonlar",
 ]);
 
 const TR_MAP: Record<string, string> = { ç: "c", ğ: "g", ı: "i", i̇: "i", ö: "o", ş: "s", ü: "u" };

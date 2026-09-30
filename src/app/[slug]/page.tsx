@@ -68,13 +68,23 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
             image: profileImageUrl(trainer.coverPath ?? trainer.avatarPath) ?? undefined,
             address: trainer.city ? { "@type": "PostalAddress", addressLocality: trainer.city, addressCountry: "TR" } : undefined,
             sameAs: trainer.instagram ? [`https://instagram.com/${trainer.instagram.replace(/^@/, "")}`] : undefined,
-            hasOfferCatalog: {
-              "@type": "OfferCatalog",
-              name: "Ders paketleri",
-              itemListElement: packages
-                .filter((p) => p.price)
-                .map((p) => ({ "@type": "Offer", name: p.name, price: Number(p.price).toFixed(2), priceCurrency: "TRY" })),
-            },
+            // Only priced packages, and no empty catalog: each offer names the lesson package it sells.
+            hasOfferCatalog: packages.some((p) => p.price)
+              ? {
+                  "@type": "OfferCatalog",
+                  name: "Ders paketleri",
+                  itemListElement: packages
+                    .filter((p) => p.price)
+                    .map((p) => ({
+                      "@type": "Offer",
+                      price: Number(p.price).toFixed(2),
+                      priceCurrency: "TRY",
+                      url: `${siteUrl()}/${trainer.slug}/kayit?paket=${p.id}`,
+                      itemOffered: { "@type": "Service", name: p.name, description: `${p.sessionCount} ders` },
+                    })),
+                }
+              : undefined,
+            founder: { "@type": "Person", name: trainer.fullName },
           }).replace(/</g, "\\u003c"),
         }}
       />

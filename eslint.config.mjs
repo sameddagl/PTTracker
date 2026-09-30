@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local copy of the claude-seo plugin, not part of the app.
+    "claude-seo/**",
   ]),
 ]);
 

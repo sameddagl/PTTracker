@@ -104,6 +104,8 @@ export async function saveProfileAction(_prev: FormState<ProfileField>, formData
 
   revalidatePath("/ayarlar", "layout");
   if (parsed.data.slug) revalidatePath(`/${parsed.data.slug}`);
+  // Publishing or unpublishing a page changes the sitemap right away, not at the next hourly rebuild.
+  revalidatePath("/sitemap.xml");
   return { savedAt: Date.now() };
 }
 

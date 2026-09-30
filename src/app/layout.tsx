@@ -5,8 +5,10 @@ import { APP_DESCRIPTION, APP_NAME, siteUrl } from "@/lib/config";
 import "./globals.css";
 
 // Poppins for everything, Inconsolata for IBANs and codes. latin-ext covers Turkish (ğ, ş, ı, İ).
-const poppins = Poppins({ variable: "--font-poppins", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"] });
-const inconsolata = Inconsolata({ variable: "--font-inconsolata", subsets: ["latin", "latin-ext"] });
+// Only the weights the UI uses (normal, medium, semibold). Inconsolata appears
+// in a few places, so it isn't preloaded.
+const poppins = Poppins({ variable: "--font-poppins", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"] });
+const inconsolata = Inconsolata({ variable: "--font-inconsolata", subsets: ["latin", "latin-ext"], preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
