@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Check, CheckCircle2, Hourglass, Lock, MessageCircle, Minus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { InstallCard } from "@/components/install-guide";
 import { NotifyPrefsForm } from "@/components/notify-prefs-form";
 import { PushToggle } from "@/components/push-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +113,20 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           </div>
           <h1 className="text-3xl font-semibold">Merhaba {client.fullName.split(" ")[0]}</h1>
         </header>
+
+        <InstallCard
+          storageKey="install-card-client"
+          title="Bu sayfayı telefonuna ekle"
+          description={`Ana ekranından uygulama gibi açılsın; ders hatırlatmaları ve ${trainerName}'ın mesajları bildirim olarak gelsin.`}
+          appName="Derslerim"
+          url={url}
+          notifyWhere="sayfanın altındaki “Bildirim ayarları” bölümünde"
+          push={{
+            subscribe: subscribeClientAction.bind(null, token),
+            unsubscribe: unsubscribeClientAction.bind(null, token),
+            description: "Ders hatırlatması, onaylar ve eğitmeninin mesajları telefonuna gelsin.",
+          }}
+        />
 
         {yeni && (
           <div className="flex flex-col gap-3 rounded-2xl bg-lime p-5 text-lime-foreground">

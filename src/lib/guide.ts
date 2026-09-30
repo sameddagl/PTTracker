@@ -10,9 +10,11 @@ export type GuideFacts = {
   activeClients: number;
   lessons: number;
   bioLinkAdded: boolean;
+  /** Devices where the trainer turned on notifications. */
+  pushDevices: number;
 };
 
-export type GuideStepId = "profile" | "package" | "availability" | "intake" | "client" | "lesson" | "bio";
+export type GuideStepId = "profile" | "package" | "availability" | "intake" | "client" | "lesson" | "bio" | "app";
 
 export type GuideStep = {
   id: GuideStepId;
@@ -40,6 +42,8 @@ export function buildGuide(f: GuideFacts): Guide {
     { id: "client", done: f.activeClients > 0, optional: false },
     { id: "lesson", done: f.lessons > 0, optional: false },
     { id: "bio", done: f.bioLinkAdded, optional: false },
+    // Done once notifications reach at least one device (on iPhone that means the home-screen app).
+    { id: "app", done: f.pushDevices > 0, optional: false },
   ];
   const counted = steps.filter((s) => !s.optional);
   const done = counted.filter((s) => s.done).length;

@@ -44,6 +44,12 @@ const STEPS: Record<GuideStepId, { title: string; why: string; href: string; cta
     href: "/ders/yeni?next=/bugun",
     cta: "Ders planla",
   },
+  app: {
+    title: "Uygulamayı telefonuna ekle, bildirimleri aç",
+    why: "Ana ekrandan tek dokunuşla açılır; yeni başvuru, randevu, iptal ve mesajları anında görürsün.",
+    href: "/ayarlar/bildirimler",
+    cta: "Nasıl yapılır?",
+  },
   bio: {
     title: "Sayfanın linkini Instagram bio'na koy",
     why: "Takipçilerin linke dokunup paket seçer ve başvurur; başvurular sana düşer.",

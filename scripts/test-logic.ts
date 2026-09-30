@@ -1092,6 +1092,7 @@ async function main() {
     activeClients: 0,
     lessons: 0,
     bioLinkAdded: false,
+    pushDevices: 0,
   };
   const empty = buildGuide(fresh);
   assert.equal(empty.total, 6, "availability is optional while booking is off");
@@ -1103,7 +1104,7 @@ async function main() {
   assert.ok(partial.steps.find((s) => s.id === "availability")?.done);
   const booking = buildGuide({ ...fresh, bookingEnabled: true });
   assert.equal(booking.total, 7, "working hours are required once booking is on");
-  const all = buildGuide({ ...fresh, pagePublished: true, templates: 1, intakeFields: 4, activeClients: 1, lessons: 1, bioLinkAdded: true });
+  const all = buildGuide({ ...fresh, pagePublished: true, templates: 1, intakeFields: 4, activeClients: 1, lessons: 1, bioLinkAdded: true, pushDevices: 1 });
   assert.ok(all.complete);
   assert.equal(guideMode(all, false), "congrats");
   assert.equal(guideMode(all, true), "hidden");

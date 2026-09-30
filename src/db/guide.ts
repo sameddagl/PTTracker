@@ -2,7 +2,7 @@ import "server-only";
 import { and, count, eq, isNull } from "drizzle-orm";
 import type { GuideFacts } from "@/lib/guide";
 import type { Tx } from "./index";
-import { availabilityRules, clients, intakeFields, lessons, packageTemplates, trainers } from "./schema";
+import { availabilityRules, clients, intakeFields, lessons, packageTemplates, pushSubscriptions, trainers } from "./schema";
 
 type GuideTrainer = Pick<
   typeof trainers.$inferSelect,
@@ -29,6 +29,12 @@ export async function getGuideFacts(tx: Tx, trainer: GuideTrainer): Promise<Guid
       .from(lessons)
       .where(and(eq(lessons.trainerId, id), eq(lessons.status, "scheduled"))),
   );
+  const pushDevices = await n(
+    tx
+      .select({ n: count() })
+      .from(pushSubscriptions)
+      .where(and(eq(pushSubscriptions.trainerId, id), isNull(pushSubscriptions.clientId))),
+  );
 
   return {
     pagePublished: trainer.publicPageEnabled && !!trainer.slug,
@@ -39,6 +45,7 @@ export async function getGuideFacts(tx: Tx, trainer: GuideTrainer): Promise<Guid
     activeClients,
     lessons: lessonCount,
     bioLinkAdded: trainer.bioLinkAddedAt !== null,
+    pushDevices,
   };
 }
 

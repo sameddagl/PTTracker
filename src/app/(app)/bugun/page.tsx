@@ -24,7 +24,9 @@ import {
   greeting,
   todayISO,
 } from "@/lib/format";
-import { siteUrl } from "@/lib/config";
+import { APP_NAME, siteUrl } from "@/lib/config";
+import { InstallCard } from "@/components/install-guide";
+import { subscribeTrainerAction, unsubscribeTrainerAction } from "../ayarlar/push-actions";
 import { buildGuide, guideMode } from "@/lib/guide";
 import { portalUrl } from "@/lib/portal";
 import { cn } from "@/lib/utils";
@@ -76,6 +78,21 @@ export default async function TodayPage() {
       />
 
       {guide && guideView === "checklist" && <GettingStarted guide={guide} pageUrl={pageUrl} />}
+      <div className="mb-8 empty:hidden">
+        <InstallCard
+          storageKey="install-card-trainer"
+          title={`${APP_NAME}'u telefonuna ekle`}
+          description="Ana ekranından uygulama gibi açılsın; yeni başvuru, randevu, iptal ve mesajlar anında bildirim olarak gelsin."
+          appName={APP_NAME}
+          url={`${siteUrl()}/bugun`}
+          notifyWhere="Ayarlar → Bildirimler'de"
+          push={{
+            subscribe: subscribeTrainerAction,
+            unsubscribe: unsubscribeTrainerAction,
+            description: "Yeni başvuru, randevu, iptal, ödeme ve mesajlar bu cihaza gelsin.",
+          }}
+        />
+      </div>
       {guideView === "congrats" && <GuideComplete />}
 
       <section aria-label="Özet" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
