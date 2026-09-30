@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Local copy of the claude-seo plugin (installed for SEO audits), not part of the app
 /claude-seo/
+
+# Screen recordings from argent
+/.argent/
