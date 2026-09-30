@@ -212,14 +212,6 @@ const FAQ = [
 
 const HERO_CHECKS = ["Kredi kartı gerekmez", "Danışanlarınız uygulama indirmez", "Türkçe arayüz, TL fiyatlar"];
 
-const NAV = [
-  { href: "#ozellikler", label: "Özellikler" },
-  { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri" },
-  { href: "/personal-trainer", label: "Personal trainer" },
-  { href: "/fiyatlar", label: "Fiyatlar" },
-  { href: "#sss", label: "SSS" },
-];
-
 const AUDIENCES = [
   {
     href: "/pilates-egitmenleri",
@@ -307,7 +299,7 @@ export default function Home() {
       <Analytics />
       <Reveal />
       <JsonLd data={JSON_LD} />
-      <SiteHeader nav={NAV} page="landing" />
+      <SiteHeader page="landing" />
 
       <main>
         {/* Hero */}

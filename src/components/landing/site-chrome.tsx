@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Activity, ArrowRight, ChevronRight, Plus } from "lucide-react";
+import { SiteMenu } from "@/components/landing/site-menu";
 import { Button } from "@/components/ui/button";
 import { APP_NAME, siteUrl } from "@/lib/config";
 import { LEGAL } from "@/lib/legal";
@@ -13,11 +14,18 @@ export const card = "rounded-[1.75rem] border bg-card shadow-card";
 
 export type NavLink = { href: string; label: string };
 
-/** Marketing pages linked from every footer (and the header on inner pages). */
+/** Marketing pages linked from every footer. */
 export const MARKETING_PAGES: NavLink[] = [
   { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri" },
   { href: "/personal-trainer", label: "Personal trainer" },
   { href: "/fiyatlar", label: "Fiyatlar" },
+];
+
+/** The same header menu on every marketing page; the landing's sections are linked from inner pages too. */
+export const SITE_NAV: NavLink[] = [
+  { href: "/#ozellikler", label: "Özellikler" },
+  ...MARKETING_PAGES,
+  { href: "/#sss", label: "SSS" },
 ];
 
 export function Logo() {
@@ -31,27 +39,27 @@ export function Logo() {
   );
 }
 
-export function SiteHeader({ nav = MARKETING_PAGES, page = "landing" }: { nav?: NavLink[]; page?: string }) {
-  // Longer menus only fit next to the logo and buttons from lg up.
-  const navShow = nav.length > 3 ? "lg:flex" : "md:flex";
+export function SiteHeader({ nav = SITE_NAV, page = "landing" }: { nav?: NavLink[]; page?: string }) {
+  // The links fit next to the logo and buttons from lg up; below that they sit behind the "Menü" button.
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-canvas/80 backdrop-blur-xl backdrop-saturate-150">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6 lg:gap-8">
         <Logo />
-        <nav aria-label="Sayfa" className={cn("hidden items-center gap-1 text-sm text-muted-foreground", navShow)}>
+        <nav aria-label="Sayfa" className="hidden items-center gap-1 text-sm whitespace-nowrap text-muted-foreground lg:flex">
           {nav.map((n) => (
             <Link key={n.href} href={n.href} className="flex min-h-11 items-center rounded-full px-3 transition-colors hover:text-foreground">
               {n.label}
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-1">
-          <Button asChild variant="ghost" className="max-sm:hidden">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <SiteMenu nav={nav} className="lg:hidden" />
+          <Button asChild variant="ghost" className="max-lg:hidden">
             <Link href="/giris" data-umami-event={`${page}-giris`}>
               Giriş yap
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="max-sm:px-4">
             <Link href="/giris" data-umami-event={`${page}-basla`} data-umami-event-yer="ust-menu">
               Ücretsiz başlayın
             </Link>
