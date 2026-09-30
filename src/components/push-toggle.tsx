@@ -14,7 +14,7 @@ function urlBase64ToUint8Array(base64: string) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-type Support = "loading" | "ok" | "ios-install" | "unsupported";
+type Support = "loading" | "ok" | "ios-install" | "insecure" | "denied" | "unsupported";
 
 /**
  * "Bildirimleri aç": registers the service worker, asks permission and hands
@@ -39,7 +39,10 @@ export function PushToggle({
       const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
       const standalone =
         window.matchMedia("(display-mode: standalone)").matches || ("standalone" in navigator && (navigator as { standalone?: boolean }).standalone);
+      // Browsers only offer service workers and push on https (or localhost), so a LAN address like http://192.168… can't.
+      if (!window.isSecureContext) return ["insecure", null];
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return [ios && !standalone ? "ios-install" : "unsupported", null];
+      if ("Notification" in window && Notification.permission === "denied") return ["denied", null];
       const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
       const sub = await reg.pushManager.getSubscription();
       return ["ok", sub?.endpoint ?? null];
@@ -86,7 +89,14 @@ export function PushToggle({
     });
   }
 
-  if (support === "loading" || support === "unsupported") return null;
+  if (support === "loading") return null;
+  const note = {
+    ok: description,
+    "ios-install": null,
+    insecure: "Bildirimler yalnızca güvenli (https) adreste çalışır. Bu adreste açılamıyor.",
+    denied: "Bildirim izni kapalı. Telefonun Ayarlar → Bildirimler bölümünden bu uygulamaya izin ver, sonra tekrar dene.",
+    unsupported: "Bu tarayıcı bildirimleri desteklemiyor. iPhone'da iOS 16.4 ve üstü gerekir.",
+  }[support];
 
   return (
     <div className="flex items-center gap-3 surface p-4">
@@ -102,7 +112,7 @@ export function PushToggle({
               → Ana Ekrana Ekle, sonra oradan aç.
             </>
           ) : (
-            description
+            note
           )}
         </p>
       </div>
