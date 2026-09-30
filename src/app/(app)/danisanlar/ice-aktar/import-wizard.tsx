@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { CircleCheck, Download, FileSpreadsheet, RotateCcw, ShieldCheck, Upload } from "lucide-react";
 import { Field, FormError, NativeSelect } from "@/components/field";
+import { FormSubmit } from "@/components/form-submit";
 import { SectionTitle } from "@/components/page-header";
 import { StatTile } from "@/components/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,7 @@ export function ImportWizard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <form action={action} onSubmit={() => setUpload((n) => n + 1)} className="flex flex-col gap-5 surface p-5">
+      <form action={action} onSubmit={() => setUpload((n) => n + 1)} className="flex flex-col gap-5 surface p-5" noValidate>
         <FormError message={current.error} />
         <Field id="file" label="Excel veya CSV dosyası" hint={`.xlsx, .csv · en fazla 2 MB, ${MAX_IMPORT_ROWS} danışan`}>
           <Input
@@ -59,15 +60,16 @@ export function ImportWizard() {
             name="file"
             type="file"
             required
+            data-missing-message="Bir dosya seç."
             accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
             className="py-2.5 file:mr-3 file:h-7 file:rounded-full file:bg-muted file:px-3"
           />
         </Field>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" loading={reading}>
+          <FormSubmit loading={reading}>
             <Upload />
             {reading ? "Okunuyor…" : "Dosyayı yükle"}
-          </Button>
+          </FormSubmit>
           <Button asChild variant="outline">
             <a href="/danisanlar/ice-aktar/ornek" download>
               <Download />
@@ -169,7 +171,13 @@ function Review({ file, onReset }: { file: ParsedFile; onReset: () => void }) {
         <SectionTitle id="mapping-title">Sütunları eşleştir</SectionTitle>
         <div className="grid gap-4 surface p-5 sm:grid-cols-2">
           {IMPORT_FIELDS.map((field) => (
-            <Field key={field} id={`map-${field}`} label={IMPORT_FIELD_LABELS[field]} hint={FIELD_HINTS[field]}>
+            <Field
+              key={field}
+              id={`map-${field}`}
+              label={IMPORT_FIELD_LABELS[field]}
+              hint={FIELD_HINTS[field]}
+              error={field === "fullName" && !hasName ? "Ad soyad ya da Ad sütununu seç." : undefined}
+            >
               <NativeSelect
                 id={`map-${field}`}
                 value={mapping[field] ?? ""}

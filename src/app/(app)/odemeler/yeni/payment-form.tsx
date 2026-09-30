@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Field, NativeSelect } from "@/components/field";
-import { Button } from "@/components/ui/button";
+import { FormSubmit } from "@/components/form-submit";
 import { Input } from "@/components/ui/input";
 import { PAYMENT_METHOD_LABELS, formatShortDate, formatTRY } from "@/lib/format";
 import type { FormState } from "@/lib/forms";
@@ -10,6 +10,9 @@ import { submitWithoutReset } from "@/lib/use-form-submit";
 import { recordPaymentAction, type PaymentField } from "../actions";
 
 export type PayablePackage = { id: string; clientId: string; name: string; startsOn: string; due: string };
+
+// A Turkish amount with at least one non-zero digit ("2.500", "0,50"); parseTRY on the server has the final say.
+const AMOUNT_PATTERN = "[0-9.,₺\\s]*[1-9][0-9.,₺\\s]*";
 
 /** Amount as the trainer would type it: "2500" or "2500,50". */
 const asInput = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(".", ","));
@@ -67,7 +70,7 @@ export function PaymentForm({
       <input type="hidden" name="next" value={next} />
 
       <Field id="clientId" label="Danışan" error={e.clientId}>
-        <NativeSelect id="clientId" name="clientId" value={clientId} onChange={(ev) => changeClient(ev.target.value)}>
+        <NativeSelect id="clientId" name="clientId" required value={clientId} onChange={(ev) => changeClient(ev.target.value)}>
           <option value="" disabled>
             Seç
           </option>
@@ -103,14 +106,24 @@ export function PaymentForm({
             id="amount"
             name="amount"
             inputMode="decimal"
+            required
+            pattern={AMOUNT_PATTERN}
+            data-invalid-message="Tutarı rakamla yaz, örn. 2.500"
             placeholder="0"
             value={amount}
             onChange={(ev) => setAmount(ev.target.value)}
-            aria-invalid={!!e.amount || undefined}
           />
         </Field>
         <Field id="paidOn" label="Tarih" error={e.paidOn}>
-          <Input id="paidOn" name="paidOn" type="date" max={today} defaultValue={v?.paidOn ?? today} />
+          <Input
+            id="paidOn"
+            name="paidOn"
+            type="date"
+            required
+            max={today}
+            data-invalid-message="İleri bir tarih seçemezsin."
+            defaultValue={v?.paidOn ?? today}
+          />
         </Field>
       </div>
 
@@ -125,6 +138,7 @@ export function PaymentForm({
               <input
                 type="radio"
                 name="method"
+                required
                 value={value}
                 defaultChecked={(v?.method ?? "bank_transfer") === value}
                 className="sr-only"
@@ -136,12 +150,12 @@ export function PaymentForm({
       </fieldset>
 
       <Field id="note" label="Not" hint="isteğe bağlı">
-        <Input id="note" name="note" defaultValue={v?.note} placeholder="Örn. 2. taksit" />
+        <Input id="note" name="note" maxLength={300} defaultValue={v?.note} placeholder="Örn. 2. taksit" />
       </Field>
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Ödemeyi kaydet"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

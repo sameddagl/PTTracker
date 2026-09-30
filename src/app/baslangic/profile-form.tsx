@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button } from "@/components/ui/button";
+import { Field } from "@/components/field";
+import { FieldError } from "@/components/field-error";
+import { FormSubmit } from "@/components/form-submit";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { saveProfile, type ProfileFormState } from "./actions";
 
@@ -20,19 +21,24 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
 
   return (
     <form action={action} className="flex flex-col gap-5" noValidate>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="fullName">Adın soyadın</Label>
-        <Input id="fullName" name="fullName" autoComplete="name" defaultValue={v.fullName} required autoFocus />
-        {e.fullName && <p className="text-sm text-destructive-strong">{e.fullName}</p>}
-      </div>
+      <Field id="fullName" label="Adın soyadın" error={e.fullName}>
+        <Input
+          id="fullName"
+          name="fullName"
+          autoComplete="name"
+          defaultValue={v.fullName}
+          required
+          minLength={2}
+          maxLength={120}
+          data-missing-message="Adını yaz."
+          autoFocus
+        />
+      </Field>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="businessName">
-          Stüdyo / işletme adı <span className="font-normal text-muted-foreground">· isteğe bağlı</span>
-        </Label>
-        <Input id="businessName" name="businessName" defaultValue={v.businessName} />
+      <Field id="businessName" label="Stüdyo / işletme adı" hint="isteğe bağlı" error={e.businessName}>
+        <Input id="businessName" name="businessName" defaultValue={v.businessName} maxLength={120} autoComplete="organization" />
         <p className="text-xs text-muted-foreground">Danışanların kendi sayfalarında bu adı görür.</p>
-      </div>
+      </Field>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">Branşın</legend>
@@ -46,8 +52,10 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
               )}
             >
               <input
+                id={`discipline-${d.value}`}
                 type="radio"
                 name="discipline"
+                required
                 value={d.value}
                 defaultChecked={(v.discipline ?? "both") === d.value}
                 className="sr-only"
@@ -56,12 +64,12 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
             </label>
           ))}
         </div>
-        {e.discipline && <p className="text-sm text-destructive-strong">{e.discipline}</p>}
+        <FieldError id="discipline-pt" error={e.discipline} />
       </fieldset>
 
-      <Button type="submit" size="lg" loading={pending}>
+      <FormSubmit size="lg" loading={pending}>
         {pending ? "Kaydediliyor…" : "Başla"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

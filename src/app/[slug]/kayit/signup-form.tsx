@@ -1,12 +1,14 @@
 "use client";
 
+import { PHONE_PATTERN } from "@/lib/whatsapp";
 import { useActionState, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, ShieldCheck } from "lucide-react";
 import { Field, FormError } from "@/components/field";
+import { FieldError } from "@/components/field-error";
+import { FormSubmit } from "@/components/form-submit";
 import { PriceTag } from "@/components/price-tag";
 import { IntakeInput } from "@/components/intake-input";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
@@ -164,10 +166,26 @@ export function SignupForm({
           <StepLegend n={step.details}>Bilgilerin</StepLegend>
           <div className="grid grid-cols-2 gap-3">
             <Field id="firstName" label="Ad" error={e.firstName}>
-              <Input id="firstName" name="firstName" autoComplete="given-name" aria-invalid={!!e.firstName || undefined} />
+              <Input
+                id="firstName"
+                name="firstName"
+                autoComplete="given-name"
+                required
+                minLength={2}
+                maxLength={60}
+                data-missing-message="Adını yaz."
+              />
             </Field>
             <Field id="lastName" label="Soyad" error={e.lastName}>
-              <Input id="lastName" name="lastName" autoComplete="family-name" aria-invalid={!!e.lastName || undefined} />
+              <Input
+                id="lastName"
+                name="lastName"
+                autoComplete="family-name"
+                required
+                minLength={2}
+                maxLength={60}
+                data-missing-message="Soyadını yaz."
+              />
             </Field>
           </div>
           <Field id="phone" label="Telefon" hint="WhatsApp" error={e.phone}>
@@ -178,7 +196,10 @@ export function SignupForm({
               inputMode="tel"
               autoComplete="tel"
               placeholder="0532 123 45 67"
-              aria-invalid={!!e.phone || undefined}
+              required
+              pattern={PHONE_PATTERN}
+              data-missing-message="Telefon numaranı yaz."
+              data-invalid-message="Geçerli bir telefon numarası gir."
             />
           </Field>
           <Field id="email" label="E-posta" hint="kişisel linkini buraya da göndeririz" error={e.email}>
@@ -188,7 +209,6 @@ export function SignupForm({
               type="email"
               inputMode="email"
               autoComplete="email"
-              aria-invalid={!!e.email || undefined}
             />
           </Field>
           {general.map((f) => (
@@ -241,10 +261,12 @@ export function SignupForm({
           <div className="flex flex-col gap-2">
             <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-muted/60 p-3 text-sm">
               <input
+                id="kvkk"
                 type="checkbox"
                 name="kvkk"
+                required
+                data-missing-message="Devam etmek için Aydınlatma Metni'ni okuduğunu onayla."
                 className="mt-0.5 size-5 shrink-0 accent-[var(--primary)]"
-                aria-invalid={!!e.kvkk || undefined}
               />
               <span className="text-muted-foreground">
                 Bilgilerimin başvurumun değerlendirilmesi ve derslerimin yürütülmesi için veri sorumlusu {trainerName} tarafından
@@ -255,7 +277,7 @@ export function SignupForm({
                 &apos;ni okudum.
               </span>
             </label>
-            {e.kvkk && <p className="text-sm text-destructive-strong">{e.kvkk}</p>}
+            <FieldError id="kvkk" error={e.kvkk} />
           </div>
         </fieldset>
       </div>
@@ -270,9 +292,9 @@ export function SignupForm({
             </span>
           </p>
         )}
-        <Button type="submit" size="lg" className="w-full" loading={pending} disabled={!pkgId} data-umami-event="kayit-gonder">
+        <FormSubmit size="lg" className="w-full" loading={pending} disabled={!pkgId} data-umami-event="kayit-gonder">
           {pending ? "Gönderiliyor…" : "Başvuruyu gönder"}
-        </Button>
+        </FormSubmit>
       </div>
     </form>
   );

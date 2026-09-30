@@ -4,6 +4,8 @@ import { useActionState, useEffect, useState } from "react";
 import { Copy, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Field, FormError, NativeSelect } from "@/components/field";
+import { FieldError } from "@/components/field-error";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WEEKDAY_LABELS } from "@/lib/dates";
@@ -135,33 +137,43 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
                   </span>
                 </div>
                 {ranges.map((r, j) => (
-                  <div key={j} className="flex items-center gap-2">
-                    <Input
-                      type="time"
-                      step={900}
-                      value={r.start}
-                      aria-label={`${name} ${j + 1}. aralık başlangıç`}
-                      onChange={(ev) => update(day, (rs) => rs.map((x, k) => (k === j ? { ...x, start: ev.target.value } : x)))}
-                      className="max-w-32"
-                    />
-                    <span className="text-muted-foreground">–</span>
-                    <Input
-                      type="time"
-                      step={900}
-                      value={r.end}
-                      aria-label={`${name} ${j + 1}. aralık bitiş`}
-                      onChange={(ev) => update(day, (rs) => rs.map((x, k) => (k === j ? { ...x, end: ev.target.value } : x)))}
-                      className="max-w-32"
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`${name} ${j + 1}. aralığı sil`}
-                      onClick={() => update(day, (rs) => rs.filter((_, k) => k !== j))}
-                    >
-                      <X />
-                    </Button>
+                  <div key={j} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id={`range-${day}-${j}-start`}
+                        type="time"
+                        required
+                        data-missing-message="Başlangıç saatini seç."
+                        value={r.start}
+                        aria-label={`${name} ${j + 1}. aralık başlangıç`}
+                        onChange={(ev) => update(day, (rs) => rs.map((x, k) => (k === j ? { ...x, start: ev.target.value } : x)))}
+                        className="max-w-32"
+                      />
+                      <span className="text-muted-foreground">–</span>
+                      <Input
+                        id={`range-${day}-${j}-end`}
+                        type="time"
+                        required
+                        min={r.start || undefined}
+                        data-missing-message="Bitiş saatini seç."
+                        data-invalid-message="Bitiş, başlangıçtan sonra olmalı."
+                        value={r.end}
+                        aria-label={`${name} ${j + 1}. aralık bitiş`}
+                        onChange={(ev) => update(day, (rs) => rs.map((x, k) => (k === j ? { ...x, end: ev.target.value } : x)))}
+                        className="max-w-32"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`${name} ${j + 1}. aralığı sil`}
+                        onClick={() => update(day, (rs) => rs.filter((_, k) => k !== j))}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  <FieldError id={`range-${day}-${j}-start`} />
+                  <FieldError id={`range-${day}-${j}-end`} />
                   </div>
                 ))}
               </li>
@@ -173,9 +185,9 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
         </p>
       </fieldset>
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Kaydet"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

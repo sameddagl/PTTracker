@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Field, FormError } from "@/components/field";
-import { Button } from "@/components/ui/button";
+import { FormSubmit } from "@/components/form-submit";
 import { Input } from "@/components/ui/input";
 import { WEEKDAY_LABELS } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,14 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
   const [state, action, pending] = useActionState<GroupFormState, FormData>(id ? updateGroupAction.bind(null, id) : createGroupAction, {});
   const v = { ...initial, ...state.values };
   const e = state.errors ?? {};
-  const days = new Set((v.weekdays ?? "").split(",").filter(Boolean).map(Number));
+  // Controlled so the submit button knows whether at least one day is picked.
+  const [days, setDays] = useState(() => new Set((initial.weekdays ?? "").split(",").filter(Boolean).map(Number)));
+  const toggleDay = (d: number) =>
+    setDays((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(d)) next.add(d);
+      return next;
+    });
 
   useEffect(() => {
     if (state.savedAt) toast.success("Grup dersi güncellendi");
@@ -47,7 +54,16 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
     <form action={action} className="flex flex-col gap-5" noValidate>
       <FormError message={e.form} />
       <Field id="title" label="Ders adı" error={e.title}>
-        <Input id="title" name="title" placeholder="Örn. Grup Reformer" defaultValue={v.title} />
+        <Input
+          id="title"
+          name="title"
+          placeholder="Örn. Grup Reformer"
+          required
+          minLength={2}
+          maxLength={60}
+          data-invalid-message="Ders adı en az 2 karakter olmalı."
+          defaultValue={v.title}
+        />
       </Field>
 
       {!id && (
@@ -57,32 +73,77 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
             <div className="grid grid-cols-7 gap-1">
               {WEEKDAY_LABELS.map((label, i) => (
                 <label key={label} className={cn(chip, "h-11 text-xs")}>
-                  <input type="checkbox" name="weekdays" value={i + 1} defaultChecked={days.has(i + 1)} className="sr-only" />
+                  <input
+                    type="checkbox"
+                    name="weekdays"
+                    value={i + 1}
+                    checked={days.has(i + 1)}
+                    onChange={() => toggleDay(i + 1)}
+                    className="sr-only"
+                  />
                   {label}
                 </label>
               ))}
             </div>
-            {e.weekdays && <p className="mt-2 text-sm text-destructive-strong">{e.weekdays}</p>}
+            {e.weekdays ? (
+              <p className="mt-2 text-sm text-destructive-strong">{e.weekdays}</p>
+            ) : (
+              days.size === 0 && <p className="mt-2 text-sm text-muted-foreground">En az bir gün seç.</p>
+            )}
           </fieldset>
           <div className="grid grid-cols-2 gap-4">
             <Field id="startTime" label="Saat" error={e.startTime}>
-              <Input id="startTime" name="startTime" type="time" step={300} defaultValue={v.startTime} />
+              <Input id="startTime" name="startTime" type="time" required data-missing-message="Saat seç." defaultValue={v.startTime} />
             </Field>
             <Field id="durationMinutes" label="Süre (dk)" error={e.durationMinutes}>
-              <Input id="durationMinutes" name="durationMinutes" type="number" inputMode="numeric" min={15} defaultValue={v.durationMinutes} />
+              <Input
+                id="durationMinutes"
+                name="durationMinutes"
+                type="number"
+                inputMode="numeric"
+                required
+                min={15}
+                max={240}
+                step={1}
+                data-invalid-message="Süre 15 ile 240 dakika arasında olmalı."
+                defaultValue={v.durationMinutes}
+              />
             </Field>
             <Field id="startsOn" label="Başlangıç" error={e.startsOn}>
-              <Input id="startsOn" name="startsOn" type="date" defaultValue={v.startsOn} />
+              <Input id="startsOn" name="startsOn" type="date" required data-missing-message="Başlangıç tarihi seç." defaultValue={v.startsOn} />
             </Field>
             <Field id="capacity" label="Kapasite" hint="kişi" error={e.capacity}>
-              <Input id="capacity" name="capacity" type="number" inputMode="numeric" min={1} defaultValue={v.capacity} />
+              <Input
+                id="capacity"
+                name="capacity"
+                type="number"
+                inputMode="numeric"
+                required
+                min={1}
+                max={100}
+                step={1}
+                data-invalid-message="Kapasite 1 ile 100 arasında olmalı."
+                defaultValue={v.capacity}
+              />
             </Field>
           </div>
         </>
       )}
       {id && (
         <Field id="capacity" label="Kapasite" hint="kişi" error={e.capacity}>
-          <Input id="capacity" name="capacity" type="number" inputMode="numeric" min={1} defaultValue={v.capacity} className="max-w-32" />
+          <Input
+            id="capacity"
+            name="capacity"
+            type="number"
+            inputMode="numeric"
+            required
+            min={1}
+            max={100}
+            step={1}
+            data-invalid-message="Kapasite 1 ile 100 arasında olmalı."
+            defaultValue={v.capacity}
+            className="max-w-32"
+          />
         </Field>
       )}
 
@@ -98,6 +159,7 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
                 type="radio"
                 name="joinMode"
                 value={m.value}
+                required
                 defaultChecked={v.joinMode === m.value}
                 className="mt-1 size-4 accent-[var(--primary)]"
               />
@@ -111,9 +173,9 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
         {e.joinMode && <p className="mt-2 text-sm text-destructive-strong">{e.joinMode}</p>}
       </fieldset>
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit size="lg" loading={pending} disabled={!id && days.size === 0} className="sm:self-start">
         {id ? "Kaydet" : "Grup dersini oluştur"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

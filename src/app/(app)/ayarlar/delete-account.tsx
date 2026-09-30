@@ -14,7 +14,10 @@ export function DeleteAccount({ trainerId, clientCount }: { trainerId: string; c
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState("");
   const [pending, start] = useTransition();
-  const ready = confirm.trim().toLocaleUpperCase("tr") === "SİL";
+  const typed = confirm.trim().toLocaleUpperCase("tr");
+  const ready = typed === "SİL";
+  // Red only once the text can no longer turn into "SİL".
+  const wrong = typed !== "" && !"SİL".startsWith(typed);
 
   function erase() {
     start(async () => {
@@ -51,7 +54,19 @@ export function DeleteAccount({ trainerId, clientCount }: { trainerId: string; c
       </p>
       <label className="flex flex-col gap-2 text-sm font-medium">
         Onaylamak için SİL yaz
-        <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" className="max-w-40" />
+        <Input
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          autoComplete="off"
+          className="max-w-40"
+          aria-invalid={wrong || undefined}
+          aria-describedby={wrong ? "delete-confirm-error" : undefined}
+        />
+        {wrong && (
+          <span id="delete-confirm-error" className="font-normal text-destructive-strong">
+            Tam olarak SİL yaz (noktalı İ ile).
+          </span>
+        )}
       </label>
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="destructive" disabled={!ready} loading={pending} onClick={erase}>

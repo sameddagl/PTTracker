@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Field, FormError, NativeSelect } from "@/components/field";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PAYMENT_METHOD_LABELS, SESSION_TYPE_LABELS, formatShortDate, formatTRY } from "@/lib/format";
@@ -25,6 +26,10 @@ export type TemplateOption = {
   makeupAllowance: number;
   installments: number;
 };
+
+// Turkish amounts ("4.000", "2.500,50 ₺"); parseTRY on the server has the final say.
+const MONEY_PATTERN = "[0-9.,₺\\s]+";
+const MONEY_MESSAGE = "Tutarı rakamla yaz, örn. 4.000";
 
 type Values = Record<
   "templateId" | "name" | "sessionType" | "totalSessions" | "validityDays" | "price" | "makeupAllowance" | "installments",
@@ -75,6 +80,8 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
   const templateOptions = chosen ? paymentOptions(chosen) : [];
   const expiry = expiryPreview(startsOn, values.validityDays);
   const price = parseTRY(values.price);
+  const paid = parseTRY(paymentAmount);
+  const overpaid = price !== null && Number.isFinite(price) && price > 0 && paid !== null && paid > price;
   const plan = price && Number.isFinite(price) && startsOn ? installmentPlan(price, Number(values.installments), startsOn) : [];
 
   return (
@@ -134,11 +141,20 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
 
       <div className="flex flex-col gap-4">
         <Field id="name" label="Paket adı" error={e.name}>
-          <Input id="name" name="name" value={values.name} onChange={set("name")} placeholder="Örn. 8 Ders Özel" />
+          <Input
+            id="name"
+            name="name"
+            required
+            minLength={2}
+            maxLength={80}
+            value={values.name}
+            onChange={set("name")}
+            placeholder="Örn. 8 Ders Özel"
+          />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field id="sessionType" label="Ders türü" error={e.sessionType}>
-            <NativeSelect id="sessionType" name="sessionType" value={values.sessionType} onChange={set("sessionType")}>
+            <NativeSelect id="sessionType" name="sessionType" required value={values.sessionType} onChange={set("sessionType")}>
               {Object.entries(SESSION_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -152,13 +168,16 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
               name="totalSessions"
               type="number"
               inputMode="numeric"
+              required
               min={1}
+              max={200}
+              step={1}
               value={values.totalSessions}
               onChange={set("totalSessions")}
             />
           </Field>
           <Field id="startsOn" label="Başlangıç" error={e.startsOn}>
-            <Input id="startsOn" name="startsOn" type="date" value={startsOn} onChange={(ev) => setStartsOn(ev.target.value)} />
+            <Input id="startsOn" name="startsOn" type="date" required value={startsOn} onChange={(ev) => setStartsOn(ev.target.value)} />
           </Field>
           <Field id="validityDays" label="Geçerlilik (gün)" error={e.validityDays}>
             <Input
@@ -167,13 +186,24 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
               type="number"
               inputMode="numeric"
               min={1}
+              max={730}
+              step={1}
               placeholder="süresiz"
               value={values.validityDays}
               onChange={set("validityDays")}
             />
           </Field>
           <Field id="price" label="Fiyat (₺)" error={e.price}>
-            <Input id="price" name="price" inputMode="decimal" placeholder="4.000" value={values.price} onChange={set("price")} />
+            <Input
+              id="price"
+              name="price"
+              inputMode="decimal"
+              pattern={MONEY_PATTERN}
+              data-invalid-message={MONEY_MESSAGE}
+              placeholder="4.000"
+              value={values.price}
+              onChange={set("price")}
+            />
           </Field>
           <Field id="makeupAllowance" label="Telafi hakkı" error={e.makeupAllowance}>
             <Input
@@ -182,6 +212,8 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
               type="number"
               inputMode="numeric"
               min={0}
+              max={50}
+              step={1}
               value={values.makeupAllowance}
               onChange={set("makeupAllowance")}
             />
@@ -227,6 +259,8 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
               id="paymentAmount"
               name="paymentAmount"
               inputMode="decimal"
+              pattern={MONEY_PATTERN}
+              data-invalid-message={MONEY_MESSAGE}
               placeholder="0"
               value={paymentAmount}
               onChange={(ev) => setPaymentAmount(ev.target.value)}
@@ -242,6 +276,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
             </NativeSelect>
           </Field>
         </div>
+        {overpaid && !e.paymentAmount && <p className="text-sm text-destructive-strong">Alınan tutar paket fiyatını geçemez.</p>}
         {plan.length > 1 && (
           <Button
             type="button"
@@ -266,9 +301,9 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
         )}
       </fieldset>
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit size="lg" loading={pending} className="sm:self-start">
         {pending ? "Kaydediliyor…" : "Paketi sat"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

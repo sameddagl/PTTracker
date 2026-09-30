@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { AlertTriangle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Field, FormError, NativeSelect } from "@/components/field";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { submitWithoutReset } from "@/lib/use-form-submit";
@@ -51,13 +52,13 @@ export function RescheduleForm({
       <FormError message={e.lessonId} />
       <div className="grid grid-cols-3 gap-3">
         <Field id="r-date" label="Tarih" error={e.date}>
-          <Input id="r-date" name="date" type="date" defaultValue={date} />
+          <Input id="r-date" name="date" type="date" required data-missing-message="Tarih seç." defaultValue={date} />
         </Field>
         <Field id="r-time" label="Saat" error={e.time}>
-          <Input id="r-time" name="time" type="time" step={300} defaultValue={time} />
+          <Input id="r-time" name="time" type="time" required data-missing-message="Saat seç." defaultValue={time} />
         </Field>
         <Field id="r-duration" label="Süre">
-          <NativeSelect id="r-duration" name="durationMinutes" defaultValue={durationMinutes}>
+          <NativeSelect id="r-duration" name="durationMinutes" required defaultValue={durationMinutes}>
             {durations.map((m) => (
               <option key={m} value={m}>
                 {m} dk
@@ -78,16 +79,16 @@ export function RescheduleForm({
               <li key={c}>{c}</li>
             ))}
           </ul>
-          <Button type="submit" name="intent" value="force" variant="outline" size="sm" disabled={pending} className="self-start">
+          <FormSubmit always name="intent" value="force" variant="outline" size="sm" disabled={pending} className="self-start">
             Yine de taşı
-          </Button>
+          </FormSubmit>
         </div>
       )}
 
       <div className="flex gap-2">
-        <Button type="submit" loading={pending}>
+        <FormSubmit loading={pending}>
           {pending ? "Kaydediliyor…" : "Kaydet"}
-        </Button>
+        </FormSubmit>
         <Button type="button" variant="ghost" onClick={() => setOpenedAt(null)}>
           Vazgeç
         </Button>

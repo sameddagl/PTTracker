@@ -84,7 +84,7 @@ export function MemberList({
           <div className="flex flex-col gap-3 surface p-4 sm:flex-row sm:items-end">
             <label className="flex flex-1 flex-col gap-2 text-sm font-medium">
               Danışan
-              <NativeSelect value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <NativeSelect value={clientId} required onChange={(e) => setClientId(e.target.value)}>
                 <option value="">Seç</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -95,9 +95,9 @@ export function MemberList({
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium">
               Başlangıç
-              <Input type="date" value={startsOn} min={today} onChange={(e) => setStartsOn(e.target.value)} />
+              <Input type="date" required value={startsOn} min={today} onChange={(e) => setStartsOn(e.target.value)} />
             </label>
-            <Button type="button" loading={adding} disabled={!clientId} onClick={add}>
+            <Button type="button" loading={adding} disabled={!clientId || !startsOn} onClick={add}>
               <UserPlus />
               Sabit yer ver
             </Button>

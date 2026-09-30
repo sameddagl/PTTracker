@@ -4,7 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { AlertTriangle, Check, Repeat, Search } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { Field, NativeSelect } from "@/components/field";
-import { Button } from "@/components/ui/button";
+import { FormSubmit } from "@/components/form-submit";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WEEKDAY_LABELS, addDays, dayShort, isoWeekday, recurringDates } from "@/lib/dates";
@@ -119,18 +119,22 @@ export function LessonForm({
           })}
           {visible.length === 0 && <li className="px-3 py-4 text-center text-sm text-muted-foreground">Sonuç yok</li>}
         </ul>
-        {e.clientIds && <p className="text-sm text-destructive-strong">{e.clientIds}</p>}
+        {e.clientIds ? (
+          <p className="text-sm text-destructive-strong">{e.clientIds}</p>
+        ) : (
+          selected.length === 0 && <p className="text-sm text-muted-foreground">En az bir danışan seç.</p>
+        )}
       </fieldset>
 
       <div className="grid grid-cols-2 gap-4">
         <Field id="date" label={repeat ? "Başlangıç" : "Tarih"} error={e.date}>
-          <Input id="date" name="date" type="date" value={date} onChange={(ev) => changeDate(ev.target.value)} />
+          <Input id="date" name="date" type="date" required data-missing-message="Tarih seç." value={date} onChange={(ev) => changeDate(ev.target.value)} />
         </Field>
         <Field id="time" label="Saat" error={e.time}>
-          <Input id="time" name="time" type="time" step={300} defaultValue={defaultTime} />
+          <Input id="time" name="time" type="time" required data-missing-message="Saat seç." defaultValue={defaultTime} />
         </Field>
         <Field id="durationMinutes" label="Süre" error={e.durationMinutes}>
-          <NativeSelect id="durationMinutes" name="durationMinutes" defaultValue="60">
+          <NativeSelect id="durationMinutes" name="durationMinutes" required defaultValue="60">
             {[30, 45, 50, 55, 60, 75, 90].map((m) => (
               <option key={m} value={m}>
                 {m} dk
@@ -185,7 +189,11 @@ export function LessonForm({
                 </label>
               ))}
             </div>
-            {e.weekdays && <p className="text-sm text-destructive-strong">{e.weekdays}</p>}
+            {e.weekdays ? (
+              <p className="text-sm text-destructive-strong">{e.weekdays}</p>
+            ) : (
+              weekdays.length === 0 && <p className="text-sm text-muted-foreground">En az bir gün seç.</p>
+            )}
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">Süre</span>
               <NativeSelect
@@ -205,7 +213,7 @@ export function LessonForm({
             <p className="text-sm text-muted-foreground">
               {occurrences.length > 0
                 ? `${occurrences.length} ders: ${dayShort(occurrences[0])} – ${dayShort(occurrences.at(-1)!)}`
-                : "Seçtiğin günler bu aralığa denk gelmiyor."}
+                : weekdays.length > 0 && "Seçtiğin günler bu aralığa denk gelmiyor."}
             </p>
           </>
         )}
@@ -225,7 +233,7 @@ export function LessonForm({
       {e.status && <p className="text-sm text-destructive-strong">{e.status}</p>}
 
       <Field id="note" label="Not" hint="isteğe bağlı">
-        <Textarea id="note" name="note" rows={2} />
+        <Textarea id="note" name="note" rows={2} maxLength={500} />
       </Field>
 
       {state.conflicts && state.conflicts.length > 0 && (
@@ -240,13 +248,18 @@ export function LessonForm({
             ))}
             {state.conflicts.length > 5 && <li>ve {state.conflicts.length - 5} çakışma daha</li>}
           </ul>
-          <Button type="submit" name="intent" value="force" variant="outline" disabled={pending} className="self-start">
+          <FormSubmit always name="intent" value="force" variant="outline" disabled={pending} className="self-start">
             {state.count && state.count > 1 ? `Yine de ${state.count} dersi kaydet` : "Yine de kaydet"}
-          </Button>
+          </FormSubmit>
         </div>
       )}
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit
+        size="lg"
+        loading={pending}
+        disabled={selected.length === 0 || (repeat && occurrences.length === 0)}
+        className="sm:self-start"
+      >
         {pending
           ? "Kaydediliyor…"
           : repeat
@@ -254,7 +267,7 @@ export function LessonForm({
             : isPast && done
               ? "Dersi kaydet"
               : "Dersi planla"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

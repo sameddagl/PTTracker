@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { Field, FormError, NativeSelect } from "@/components/field";
 import { PriceTag } from "@/components/price-tag";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,10 @@ const PRESETS = [
   { name: "8 Ders Düet", sessionType: "duet", sessionCount: 8, validityDays: 35, makeupAllowance: 1 },
   { name: "10 Ders Grup", sessionType: "group", sessionCount: 10, validityDays: 60, makeupAllowance: 1 },
 ] as const;
+
+// Turkish amounts ("4.000", "2.500,50 ₺"); parseTRY on the server has the final say.
+const MONEY_PATTERN = "[0-9.,₺\\s]+";
+const MONEY_MESSAGE = "Tutarı rakamla yaz, örn. 4.000";
 
 const PLAN_COUNTS = INSTALLMENT_OPTIONS.filter((n) => n > 1);
 
@@ -64,13 +69,18 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
   const was = amount(compareAt);
   const pct = discountPercent(was, cash);
   const planTotal = amount(planPrice);
+  // The struck-through price needs a cash price to compare against.
+  const needsPrice = compareAt.trim() !== "" && price.trim() === "";
 
   function applyPreset(p: (typeof PRESETS)[number]) {
     const form = formRef.current;
     if (!form) return;
     for (const [key, value] of Object.entries(p)) {
       const el = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement | null;
-      if (el) el.value = String(value);
+      if (!el) continue;
+      el.value = String(value);
+      // Let the submit button re-check the form.
+      el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     (form.elements.namedItem("price") as HTMLInputElement | null)?.focus();
   }
@@ -91,11 +101,19 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
 
       <div className="flex flex-col gap-4">
         <Field id="name" label="Paket adı" error={e.name}>
-          <Input id="name" name="name" placeholder="Örn. 8 Ders Özel Reformer" defaultValue={val("name")} required />
+          <Input
+            id="name"
+            name="name"
+            placeholder="Örn. 8 Ders Özel Reformer"
+            defaultValue={val("name")}
+            required
+            minLength={2}
+            maxLength={80}
+          />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field id="sessionType" label="Ders türü" error={e.sessionType}>
-            <NativeSelect id="sessionType" name="sessionType" defaultValue={val("sessionType")}>
+            <NativeSelect id="sessionType" name="sessionType" required defaultValue={val("sessionType")}>
               {Object.entries(SESSION_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -104,7 +122,17 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
             </NativeSelect>
           </Field>
           <Field id="sessionCount" label="Ders sayısı" error={e.sessionCount}>
-            <Input id="sessionCount" name="sessionCount" type="number" inputMode="numeric" min={1} defaultValue={val("sessionCount")} />
+            <Input
+              id="sessionCount"
+              name="sessionCount"
+              type="number"
+              inputMode="numeric"
+              required
+              min={1}
+              max={200}
+              step={1}
+              defaultValue={val("sessionCount")}
+            />
           </Field>
           <Field id="validityDays" label="Geçerlilik (gün)" error={e.validityDays}>
             <Input
@@ -113,12 +141,23 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
               type="number"
               inputMode="numeric"
               min={1}
+              max={730}
+              step={1}
               placeholder="süresiz"
               defaultValue={val("validityDays")}
             />
           </Field>
           <Field id="makeupAllowance" label="Telafi hakkı" error={e.makeupAllowance}>
-            <Input id="makeupAllowance" name="makeupAllowance" type="number" inputMode="numeric" min={0} defaultValue={val("makeupAllowance")} />
+            <Input
+              id="makeupAllowance"
+              name="makeupAllowance"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={50}
+              step={1}
+              defaultValue={val("makeupAllowance")}
+            />
           </Field>
         </div>
         <p className="text-sm text-muted-foreground">Telafi hakkı: geç iptalde paketten düşmeyen ders sayısı.</p>
@@ -128,19 +167,35 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
         <legend className="px-1 text-sm font-medium">Fiyat</legend>
         <div className="grid grid-cols-2 gap-4">
           <Field id="price" label="Peşin fiyat (₺)" error={e.price}>
-            <Input id="price" name="price" inputMode="decimal" placeholder="4.000" value={price} onChange={(ev) => setPrice(ev.target.value)} />
+            <Input
+              id="price"
+              name="price"
+              inputMode="decimal"
+              required={needsPrice}
+              pattern={MONEY_PATTERN}
+              data-invalid-message={MONEY_MESSAGE}
+              data-missing-message="İndirimsiz fiyat için peşin fiyatı da gir."
+              placeholder="4.000"
+              value={price}
+              onChange={(ev) => setPrice(ev.target.value)}
+            />
           </Field>
           <Field id="compareAtPrice" label="İndirimsiz fiyat (₺)" hint="isteğe bağlı" error={e.compareAtPrice}>
             <Input
               id="compareAtPrice"
               name="compareAtPrice"
               inputMode="decimal"
+              pattern={MONEY_PATTERN}
+              data-invalid-message={MONEY_MESSAGE}
               placeholder="5.000"
               value={compareAt}
               onChange={(ev) => setCompareAt(ev.target.value)}
             />
           </Field>
         </div>
+        {was !== null && cash !== null && was <= cash && !e.compareAtPrice && (
+          <p className="text-sm text-destructive-strong">İndirimsiz fiyat peşin fiyattan yüksek olmalı.</p>
+        )}
         {cash !== null && (
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             Sayfanda böyle görünür:
@@ -175,6 +230,10 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
                   id="installmentPrice"
                   name="installmentPrice"
                   inputMode="decimal"
+                  required
+                  pattern={MONEY_PATTERN}
+                  data-invalid-message={MONEY_MESSAGE}
+                  data-missing-message="Taksitli toplam fiyatı gir."
                   placeholder={cash ? String(Math.round(cash * 1.1)) : "4.400"}
                   value={planPrice}
                   onChange={(ev) => setPlanPrice(ev.target.value)}
@@ -239,9 +298,9 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
         </Field>
       </fieldset>
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit size="lg" loading={pending} className="sm:self-start">
         {id ? "Değişiklikleri kaydet" : "Paketi ekle"}
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

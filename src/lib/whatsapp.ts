@@ -3,6 +3,13 @@
 // trainer still presses send themselves.
 
 /** Normalizes Turkish numbers to international digits: "0532 123 45 67" → "905321234567". */
+/**
+ * HTML `pattern` for phone inputs that accepts exactly what normalizePhone
+ * accepts (spaces, dashes, +90, a leading 0…), so the browser and the server agree.
+ */
+export const PHONE_PATTERN =
+  "[^0-9]*(?:0[^0-9]*0(?:[^0-9]*[0-9]){10,15}|(?:0[^0-9]*[1-9]|[1-9][^0-9]*[0-9])(?:[^0-9]*[0-9]){8,13})[^0-9]*";
+
 export function normalizePhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
   let digits = raw.replace(/\D/g, "");

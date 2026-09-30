@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Field } from "@/components/field";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatShortDate } from "@/lib/format";
@@ -15,6 +16,8 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
   const [removing, startTransition] = useTransition();
   const form = useRef<HTMLFormElement>(null);
   const e = state.errors ?? {};
+  // The end date can't be before the start date.
+  const [start, setStart] = useState("");
 
   useEffect(() => {
     if (state.savedAt) toast.success("İzin eklendi");
@@ -44,21 +47,36 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
           ))}
         </ul>
       )}
-      <form ref={form} action={action} className="flex flex-col gap-3 surface p-4" noValidate>
+      <form ref={form} action={action} onReset={() => setStart("")} className="flex flex-col gap-3 surface p-4" noValidate>
         <div className="grid grid-cols-2 gap-3">
           <Field id="startsOn" label="Başlangıç" error={e.startsOn}>
-            <Input id="startsOn" name="startsOn" type="date" min={today} />
+            <Input
+              id="startsOn"
+              name="startsOn"
+              type="date"
+              min={today}
+              required
+              onChange={(ev) => setStart(ev.target.value)}
+              data-missing-message="Başlangıç tarihini seç."
+              data-invalid-message="Geçmiş bir tarih seçilemez."
+            />
           </Field>
           <Field id="endsOn" label="Bitiş" hint="tek günse boş bırak" error={e.endsOn}>
-            <Input id="endsOn" name="endsOn" type="date" min={today} />
+            <Input
+              id="endsOn"
+              name="endsOn"
+              type="date"
+              min={start > today ? start : today}
+              data-invalid-message="Bitiş tarihi başlangıçtan önce olamaz."
+            />
           </Field>
         </div>
         <Field id="offNote" label="Not" hint="isteğe bağlı">
           <Input id="offNote" name="note" maxLength={100} placeholder="Örn. bayram" />
         </Field>
-        <Button type="submit" variant="outline" loading={pending} className="self-start">
+        <FormSubmit variant="outline" loading={pending} className="self-start">
           İzin ekle
-        </Button>
+        </FormSubmit>
       </form>
     </div>
   );

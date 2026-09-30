@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { FormError } from "@/components/field";
 import { IntakeInput } from "@/components/intake-input";
-import { Button } from "@/components/ui/button";
+import { FormSubmit } from "@/components/form-submit";
 import { answerName, type IntakeFieldDef } from "@/lib/intake";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { saveAnswersAction, type AnswersState } from "./actions";
@@ -67,9 +67,9 @@ export function AnswersForm({ clientId, fields, hasConsent }: { clientId: string
         </section>
       )}
 
-      <Button type="submit" size="lg" loading={pending} className="sm:self-start">
+      <FormSubmit size="lg" loading={pending} className="sm:self-start">
         Kaydet
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { startTransition, useActionState, useEffect, useState, type FormEvent } 
 import { CheckCircle2, Copy, Hourglass, Landmark, Paperclip, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Field, FormError } from "@/components/field";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatShortDate, formatTRY } from "@/lib/format";
@@ -191,10 +192,10 @@ export function PaymentPanel({
                       <Input id="note" name="note" maxLength={300} />
                     </Field>
                     <div className="flex gap-2">
-                      <Button type="submit" loading={pending || preparing} className="flex-1 sm:flex-none">
+                      <FormSubmit loading={pending || preparing} className="flex-1 sm:flex-none">
                         <Paperclip />
                         {preparing ? "Hazırlanıyor…" : pending ? "Gönderiliyor…" : "Bildir"}
-                      </Button>
+                      </FormSubmit>
                       <Button type="button" variant="ghost" onClick={() => setOpened(null)}>
                         Vazgeç
                       </Button>

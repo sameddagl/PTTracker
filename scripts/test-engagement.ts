@@ -26,6 +26,7 @@ import { recordSignup } from "../src/lib/signup-core";
 import { addDays } from "../src/lib/dates";
 import { todayISO } from "../src/lib/format";
 import { whenPhrase } from "../src/lib/when";
+import { PHONE_PATTERN, normalizePhone } from "../src/lib/whatsapp";
 import * as schema from "../src/db/schema";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -259,7 +260,14 @@ async function main() {
   assert.equal(trainersSeen.length, 2);
   assert.ok(trainersSeen.find((t) => t.id === A)?.onboarded);
   assert.ok(trainersSeen.every((t) => !("phone" in t)), "no client contact details");
-  console.log("owner metrics ok\n\nall engagement checks passed");
+  console.log("owner metrics ok");
+
+  // The browser's phone pattern accepts exactly what the server normalises.
+  const phone = new RegExp(`^(?:${PHONE_PATTERN})$`, "v");
+  for (const sample of ["0532 123 45 67", "+90 532 123 45 67", "905321234567", "5321234567", "0 (532) 123-45-67", "123", "abc", "", "0532", "+1 415 555 0100"]) {
+    assert.equal(phone.test(sample), normalizePhone(sample) !== null, `phone pattern vs normalizePhone: ${JSON.stringify(sample)}`);
+  }
+  console.log("phone pattern ok\n\nall engagement checks passed");
 }
 
 main().catch((e) => {

@@ -269,7 +269,7 @@ export function ChatThread({
               </span>
             )}
           </div>
-          <Button type="submit" size="icon" loading={pending} disabled={!text.trim()} aria-label="Gönder">
+          <Button type="submit" size="icon" loading={pending} disabled={!text.trim() || length > MAX_LENGTH} aria-label="Gönder">
             <SendHorizontal />
           </Button>
         </form>

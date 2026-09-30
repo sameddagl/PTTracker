@@ -1,13 +1,16 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { Field } from "@/components/field";
+import { FormSubmit } from "@/components/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { loginAction, type LoginState } from "./actions";
 
 // Matches Supabase's default minimum interval between emails to one address.
 const RESEND_AFTER_SECONDS = 60;
+// Same as the server: 6–10 digits, spaces ignored.
+const CODE_PATTERN = String.raw`\s*(?:[0-9]\s*){6,10}`;
 
 export function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, { step: "email" });
@@ -23,30 +26,23 @@ export function LoginForm({ next }: { next?: string }) {
 function EmailStep({ state, pending }: { state: Extract<LoginState, { step: "email" }>; pending: boolean }) {
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email">E-posta</Label>
+      <Field id="email" label="E-posta" error={state.error}>
         <Input
           id="email"
           name="email"
           type="email"
           inputMode="email"
           autoComplete="email"
+          data-missing-message="E-posta adresini yaz."
           placeholder="ornek@mail.com"
           defaultValue={state.email}
           required
           autoFocus
-          aria-invalid={!!state.error || undefined}
-          aria-describedby={state.error ? "email-error" : undefined}
         />
-        {state.error && (
-          <p id="email-error" className="text-sm text-destructive-strong">
-            {state.error}
-          </p>
-        )}
-      </div>
-      <Button type="submit" size="lg" loading={pending} data-umami-event="giris-kod-iste">
+      </Field>
+      <FormSubmit size="lg" loading={pending} data-umami-event="giris-kod-iste">
         {pending ? "Gönderiliyor…" : "Giriş kodu gönder"}
-      </Button>
+      </FormSubmit>
     </>
   );
 }
@@ -60,31 +56,25 @@ function CodeStep({ state, pending }: { state: Extract<LoginState, { step: "code
         <span className="font-medium text-foreground">{state.email}</span> adresine bir giriş kodu gönderdik.
         {state.resent && " Yeni kod gönderildi."}
       </p>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="code">Kod</Label>
+      <Field id="code" label="Kod" error={state.error}>
         <Input
           id="code"
           name="code"
           inputMode="numeric"
           autoComplete="one-time-code"
-          pattern="[0-9]*"
-          maxLength={10}
+          pattern={CODE_PATTERN}
+          data-missing-message="E-postana gelen kodu yaz."
+          data-invalid-message="E-postadaki kodu eksiksiz yaz."
+          maxLength={14}
           placeholder="123456"
           className="h-14 text-center text-2xl font-semibold tracking-[0.4em] tabular-nums md:h-14 md:text-2xl"
           required
           autoFocus
-          aria-invalid={!!state.error || undefined}
-          aria-describedby={state.error ? "code-error" : undefined}
         />
-        {state.error && (
-          <p id="code-error" className="text-sm text-destructive-strong">
-            {state.error}
-          </p>
-        )}
-      </div>
-      <Button type="submit" size="lg" loading={pending}>
+      </Field>
+      <FormSubmit size="lg" loading={pending}>
         {pending ? "Kontrol ediliyor…" : "Giriş yap"}
-      </Button>
+      </FormSubmit>
       <div className="flex items-center justify-between text-sm">
         <Button type="submit" name="intent" value="change-email" variant="link" className="h-11 px-0 md:h-auto" formNoValidate>
           E-postayı değiştir

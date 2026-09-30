@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Field, NativeSelect } from "@/components/field";
-import { Button } from "@/components/ui/button";
+import { FormSubmit } from "@/components/form-submit";
 import type { FormState } from "@/lib/forms";
 import { saveLateCancelAction } from "./actions";
 import { LATE_CANCEL_OPTIONS, lateCancelLabel } from "./options";
@@ -17,13 +17,14 @@ export function LateCancelForm({ initial }: { initial: number }) {
   }, [state.savedAt]);
 
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <form action={action} className="flex flex-col gap-5" noValidate>
       <Field id="lateCancelHours" label="Danışan dersten en geç kaç saat önce ücretsiz iptal edebilsin?" error={state.errors?.lateCancelHours}>
         <NativeSelect
           id="lateCancelHours"
           name="lateCancelHours"
           value={hours}
           onChange={(e) => setHours(Number(e.target.value))}
+          required
           className="max-w-72"
         >
           {LATE_CANCEL_OPTIONS.map((h) => (
@@ -47,9 +48,9 @@ export function LateCancelForm({ initial }: { initial: number }) {
         )}
       </p>
 
-      <Button type="submit" loading={pending} className="sm:self-start">
+      <FormSubmit loading={pending} className="sm:self-start">
         Kaydet
-      </Button>
+      </FormSubmit>
     </form>
   );
 }

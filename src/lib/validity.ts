@@ -1,6 +1,7 @@
 // Turkish messages for the browser's built-in form checks (required,
 // type="email", minLength, min/max, pattern…). An input can override the
-// text with data-invalid-message, e.g. to explain a pattern.
+// text for a wrong value with data-invalid-message (e.g. to explain a
+// pattern) and for an empty required field with data-missing-message.
 
 type Checkable = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -14,7 +15,8 @@ export function validityMessage(el: Checkable): string | null {
   const custom = el.dataset.invalidMessage;
   if (v.customError) return el.validationMessage;
   if (v.valueMissing) {
-    if (custom) return custom;
+    // data-invalid-message explains a wrong value; an empty field gets its own text.
+    if (el.dataset.missingMessage) return el.dataset.missingMessage;
     const choice = el instanceof HTMLSelectElement || (el instanceof HTMLInputElement && (el.type === "radio" || el.type === "checkbox"));
     return choice ? "Birini seç." : "Bu alanı doldur.";
   }
