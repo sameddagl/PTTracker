@@ -23,7 +23,7 @@ export default function TermsPage() {
           {APP_NAME}; danışan, ders, paket, randevu ve ödeme kayıtlarınızı tutmanızı, herkese açık bir sayfa yayımlamanızı ve
           danışanlarınıza kişisel link göndermenizi sağlayan bir yazılımdır. Hizmet şu an <strong>beta</strong> aşamasındadır ve
           ücretsizdir. Beta süresince özellikler değişebilir, geçici kesintiler yaşanabilir. Ücretli bir plana geçilecekse bu, en
-          az 30 gün önceden bildirilir; ücretli plana geçmek sizin tercihinizdir.
+          az bir hafta önceden bildirilir; ücretli plana geçmek sizin tercihinizdir.
         </p>
       </Section>
 

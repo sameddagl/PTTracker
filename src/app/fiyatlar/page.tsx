@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const PATH = "/fiyatlar";
 const TITLE = "Fiyatlar: Beta Süresince Ücretsiz";
-const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri ve personal trainer'lar için ücretsiz. Kart bilgisi yok, komisyon yok. Ücretli plana geçmeden en az 30 gün önce haber veririz.`;
+const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri ve personal trainer'lar için ücretsiz. Kart bilgisi yok, komisyon yok. Ücretli plana geçmeden en az bir hafta önce haber veririz.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -32,13 +32,13 @@ const INCLUDED = [
 const PROMISES = [
   {
     icon: ShieldCheck,
-    title: "30 gün önceden haber",
-    text: "Ücretli plana geçmeden en az 30 gün önce e-postayla haber veririz. Devam edip etmemek size kalır.",
+    title: "Bir hafta önceden haber",
+    text: "Ücretli plana geçmeden en az bir hafta önce e-postayla haber veririz. Devam edip etmemek size kalır.",
   },
   {
     icon: Percent,
-    title: "Beta kullanıcılarına ilk yıl indirim",
-    text: "Beta sırasında başlayan eğitmenler ücretli plana geçtiğinde ilk yıl indirimli öder.",
+    title: "Beta kullanıcılarına ilk abonelikte indirim",
+    text: "Beta sırasında başlayan eğitmenler ücretli plana geçerken ilk aboneliklerini indirimli alır.",
   },
   {
     icon: Download,
@@ -50,7 +50,7 @@ const PROMISES = [
 const FAQ: Faq[] = [
   {
     q: "Beta ne zaman bitecek?",
-    a: "Kesin bir tarih yok. Ücretli plana geçmeden en az 30 gün önce haber veririz; o zamana kadar bütün özellikler ücretsiz.",
+    a: "Kesin bir tarih yok. Ücretli plana geçmeden en az bir hafta önce haber veririz; o zamana kadar bütün özellikler ücretsiz.",
   },
   {
     q: "Danışan sayısında sınır var mı?",

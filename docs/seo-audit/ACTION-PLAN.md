@@ -63,5 +63,5 @@ Anahtar kelime notu: "danışan takip programı" diyetisyen ve klinik yazılıml
 ## Senin kararın gereken konular
 
 1. Birden fazla eğitmenli stüdyolara ne diyoruz? Önerim: "Şimdilik tek başına çalışan eğitmenler için."
-2. Beta sonrası fiyat sözü. Örnek: "Ücretli plana geçmeden en az 30 gün önce haber veririz; beta kullanıcılarına ilk yıl indirim."
+2. Beta sonrası fiyat sözü: karar verildi. "Ücretli plana geçmeden en az bir hafta önce haber veririz; beta kullanıcılarına ilk abonelikte indirim."
 3. Sosyal hesaplar: açılınca adreslerini ver, yapılandırılmış veriye (`sameAs`) eklenecek.

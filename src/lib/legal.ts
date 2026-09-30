@@ -10,7 +10,7 @@ export const LEGAL = {
   /** Version stamps stored with each consent (see consents.text_version); bump when a text changes. */
   noticeVersion: "aydinlatma-2026-09-30",
   healthConsentVersion: "saglik-rizasi-2026-09-29",
-  termsVersion: "kosullar-2026-09-30",
+  termsVersion: "kosullar-2026-09-30b",
   updatedOn: "30 Eylül 2026",
   /** Same date for the sitemap; keep it in step with updatedOn. */
   updatedIso: "2026-09-30",
