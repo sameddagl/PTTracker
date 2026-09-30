@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Activity,
   ArrowRight,
   CalendarCheck,
   Check,
   ClipboardCheck,
-  Plus,
   Smartphone,
   UserPlus,
   UserRoundSearch,
@@ -24,6 +22,7 @@ import {
 } from "@/components/landing/feature-demos";
 import { Analytics } from "@/components/analytics";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
+import { Chips, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
 import { APP_DESCRIPTION, APP_DOMAIN, APP_NAME, siteUrl } from "@/lib/config";
 import { LEGAL } from "@/lib/legal";
@@ -212,6 +211,7 @@ const HERO_CHECKS = ["Kredi kartı gerekmez", "Danışanlarınız uygulama indir
 const NAV = [
   { href: "#ozellikler", label: "Özellikler" },
   { href: "#nasil-calisir", label: "Nasıl çalışıyor" },
+  { href: "/fiyatlar", label: "Fiyatlar" },
   { href: "#sss", label: "SSS" },
 ];
 
@@ -281,85 +281,12 @@ const JSON_LD = {
   ],
 };
 
-// Rounded white card on the canvas; one radius for every card on the page.
-const card = "rounded-[1.75rem] border bg-card shadow-card";
-
-function Logo() {
-  return (
-    <Link href="/" className="flex min-h-11 items-center gap-2.5 rounded-full text-[1.0625rem] font-semibold tracking-[-0.02em]">
-      <span className="flex size-8 items-center justify-center rounded-[10px] bg-lime text-lime-foreground">
-        <Activity className="size-[18px]" strokeWidth={2.5} aria-hidden />
-      </span>
-      {APP_NAME}
-    </Link>
-  );
-}
-
-function SectionHeading({
-  id,
-  eyebrow,
-  lead,
-  rest,
-  className,
-}: {
-  id: string;
-  eyebrow: string;
-  lead: string;
-  rest: string;
-  className?: string;
-}) {
-  return (
-    <div className={cn("mx-auto max-w-4xl text-center", className)}>
-      <p className="eyebrow mb-4">{eyebrow}</p>
-      <h2 id={id} className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
-        <span className="text-foreground">{lead}</span>
-        {rest && <span className="text-muted-foreground"> {rest}</span>}
-      </h2>
-    </div>
-  );
-}
-
-function Chips({ items }: { items: string[] }) {
-  return (
-    <ul className="flex flex-wrap gap-1.5" aria-label="Kapsam">
-      {items.map((c) => (
-        <li key={c} className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
-          {c}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function Home() {
   return (
     <div className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
-      <script
-        type="application/ld+json"
-        // Escaping "<" keeps the JSON from closing the script tag.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }}
-      />
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-canvas/80 backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
-          <Logo />
-          <nav aria-label="Sayfa" className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
-            {NAV.map((n) => (
-              <a key={n.href} href={n.href} className="flex min-h-11 items-center rounded-full px-3 transition-colors hover:text-foreground">
-                {n.label}
-              </a>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-1">
-            <Button asChild variant="ghost" className="max-sm:hidden">
-              <Link href="/giris" data-umami-event="landing-giris">Giriş yap</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/giris" data-umami-event="landing-basla" data-umami-event-yer="ust-menu">Ücretsiz başlayın</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <JsonLd data={JSON_LD} />
+      <SiteHeader nav={NAV} page="landing" />
 
       <main>
         {/* Hero */}
@@ -540,76 +467,16 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section id="sss" aria-labelledby="faq-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
-          <SectionHeading id="faq-heading" eyebrow="SSS" lead="Sık sorulan sorular" rest="" />
-          <div className={cn(card, "mx-auto mt-12 max-w-3xl divide-y")}>
-            {FAQ.map(({ q, a }) => (
-              <details key={q} className="group px-5 sm:px-7 [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 py-4 text-base font-medium outline-none focus-visible:underline">
-                  {q}
-                  <span
-                    aria-hidden
-                    className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary transition-transform group-open:rotate-45"
-                  >
-                    <Plus className="size-4" />
-                  </span>
-                </summary>
-                <p className="-mt-1 max-w-2xl pb-6 text-sm leading-relaxed text-muted-foreground">{a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
+        <FaqSection items={FAQ} />
 
-        {/* Final CTA */}
-        <section aria-labelledby="cta-heading" className="px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-24">
-          <div className="relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden rounded-[1.75rem] bg-lime px-6 py-16 text-center text-lime-foreground sm:py-20">
-            <span aria-hidden className="mb-6 flex size-12 items-center justify-center rounded-2xl bg-lime-foreground text-lime">
-              <Activity className="size-6" strokeWidth={2.5} />
-            </span>
-            <h2 id="cta-heading" className="max-w-2xl text-[2rem] leading-[1.08] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-              Defteri bu akşam kapatın. Yarınki yoklamayı telefondan alın.
-            </h2>
-            <p className="mt-4 max-w-md text-base">Beta döneminde ücretsiz. Kurulum birkaç dakika sürer.</p>
-            <Link
-              href="/giris"
-              data-umami-event="landing-basla"
-              data-umami-event-yer="alt"
-              className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-lime-foreground px-7 text-base font-medium text-lime transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-lime-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-lime"
-            >
-              Ücretsiz başlayın
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-          </div>
-        </section>
+        <CtaBand
+          page="landing"
+          title="Defteri bu akşam kapatın. Yarınki yoklamayı telefondan alın."
+          text="Beta döneminde ücretsiz. Kurulum birkaç dakika sürer."
+        />
       </main>
 
-      <footer className="border-t">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="flex flex-col gap-1">
-            <Logo />
-            <p className="text-sm text-muted-foreground">Pilates ve PT eğitmenleri için danışan, seans ve ödeme takibi.</p>
-            <p className="text-sm text-muted-foreground">
-              {LEGAL.controller} ·{" "}
-              <a href={`mailto:${LEGAL.email}`} className="underline-offset-2 hover:text-foreground hover:underline">
-                {LEGAL.email}
-              </a>
-            </p>
-          </div>
-          <nav aria-label="Alt bilgi" className="flex flex-wrap gap-x-6 text-sm text-muted-foreground">
-            {[
-              { href: "/kvkk", label: "KVKK Aydınlatma Metni" },
-              { href: "/kosullar", label: "Kullanım Koşulları" },
-              { href: "/giris", label: "Giriş yap" },
-              { href: "#sss", label: "SSS" },
-            ].map((l) => (
-              <Link key={l.href} href={l.href} className="inline-flex min-h-11 items-center whitespace-nowrap hover:text-foreground">
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

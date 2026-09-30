@@ -19,6 +19,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .where(and(eq(trainers.publicPageEnabled, true), isNotNull(trainers.slug)));
   return [
     { url: base, lastModified: LANDING_UPDATED, changeFrequency: "weekly", priority: 1 },
+    ...["/pilates-egitmenleri", "/personal-trainer", "/fiyatlar"].map((path) => ({
+      url: `${base}${path}`,
+      lastModified: LANDING_UPDATED,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     ...["/kvkk", "/acik-riza", "/kosullar"].map((path) => ({
       url: `${base}${path}`,
       lastModified: LEGAL.updatedIso,
