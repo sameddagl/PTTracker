@@ -6,3 +6,10 @@ allowBuilds:
 # pnpm 10 (the version hosting installs) reads this instead of allowBuilds.
 onlyBuiltDependencies:
   - esbuild
+
+# Security advisories flagged by the host. esbuild only reaches us through
+# drizzle-kit (a dev tool); uuid through exceljs, which only uses v4. Pinned
+# forward anyway so the audit stays clean; uuid 11 still ships CommonJS.
+overrides:
+  esbuild: ^0.28.1
+  uuid: ^11.1.1
