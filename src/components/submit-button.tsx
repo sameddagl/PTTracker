@@ -2,10 +2,10 @@
 
 import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
-import { Button } from "@/components/ui/button";
+import { FormSubmit } from "@/components/form-submit";
 
-/** Submit button for plain `<form action>` forms: spins while the action runs. */
-export function SubmitButton(props: Omit<ComponentProps<typeof Button>, "type" | "loading">) {
+/** Submit button for plain `<form action>` forms: spins while the action runs, disabled while the form is incomplete. */
+export function SubmitButton(props: Omit<ComponentProps<typeof FormSubmit>, "loading">) {
   const { pending } = useFormStatus();
-  return <Button type="submit" loading={pending} {...props} />;
+  return <FormSubmit loading={pending} {...props} />;
 }

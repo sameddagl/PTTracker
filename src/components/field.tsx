@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
+import { FieldError } from "@/components/field-error";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -25,11 +26,7 @@ export function Field({
         {hint && <span className="font-normal text-muted-foreground">· {hint}</span>}
       </Label>
       {children}
-      {error && (
-        <p id={`${id}-error`} className="text-sm text-destructive-strong">
-          {error}
-        </p>
-      )}
+      <FieldError id={id} error={error} />
     </div>
   );
 }
