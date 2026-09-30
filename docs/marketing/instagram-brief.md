@@ -70,3 +70,17 @@ Ekranda görünebilecek demo örnekleri: "Reform Pilates Ataşehir", "8 Ders Öz
 2. **Danışan tarafı:** "Danışanınız dersini / kendisi alır." Telefonda danışan sayfası (kalan 6/12, gün seçimi, "Geliyorum"). Kartlar: "Şifre yok, kendi linki", "Havaleyi kendisi bildirir", "Dersten önce 'Geliyorum' der".
 
 Her ikisinde de altta: **studyomapp.com** ve küçük "Beta · ücretsiz" etiketi.
+
+## Instagram profili
+
+- **Profil fotoğrafı:** `docs/marketing/instagram/profil-lime.png` (1080×1080, lime zemin, koyu nabız işareti; uygulama ikonuyla aynı). Koyu alternatif: `profil-koyu.png`. İşaret daire kırpımına göre ortalandı.
+- **Kullanıcı adı:** `studyomapp` (alan adıyla aynı). Alınmışsa sırayla: `studyom.app`, `studyom_app`, `studyomtr`.
+- **Ad alanı** (Instagram aramasında bu alan da taranır, 30 karakter): `Stüdyom | Pilates ve PT takibi`
+- **Açıklama** (150 karakter sınırı):
+  ```
+  Pilates eğitmenleri ve personal trainer'lar için danışan, seans paketi ve ödeme takibi.
+  Beta süresince ücretsiz 👇
+  ```
+- **Bağlantı:** `https://studyomapp.com/?utm_source=instagram&utm_medium=bio` (Umami'de Instagram'dan gelenler ayrı görünür).
+- **Hesap türü:** Profesyonel hesap → İşletme, kategori "Yazılım" (yoksa "Uygulama sayfası"). İletişim e-postası: info@studyomapp.com.
+- **Öne çıkanlar** (hikâyeler geldikçe): Nasıl çalışır · Danışan · Ödemeler · SSS · Beta
