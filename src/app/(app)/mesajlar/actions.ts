@@ -8,9 +8,7 @@ import { withTrainer } from "@/db";
 import { type Message, getThread, markThreadRead, sendTrainerMessage } from "@/db/messages";
 import { getActivePortalLink } from "@/db/portal";
 import { clients, trainers } from "@/db/schema";
-import { layout, sendMail } from "@/lib/mail";
-import { portalUrl } from "@/lib/portal";
-import { sendPush } from "@/lib/push";
+import { notifyClient } from "@/lib/notify";
 
 type Result = { ok: true; message: Message } | { ok: false; error: string };
 
@@ -41,22 +39,11 @@ export async function sendMessageAction(clientId: string, body: string): Promise
 
   const { result, trainerId, info, token } = out;
   // The client reads messages on their portal; without a link there is nowhere to send them.
+  // Messages never go by e-mail, only as a push when the client wants them.
   if (token && info) {
-    const { message, firstUnread } = result;
     const name = info.trainerName || info.businessName || "Eğitmenin";
-    const url = `${portalUrl(token)}#mesajlar`;
-    after(async () => {
-      const pushed = await sendPush({ trainerId, clientId }, { title: name, body: preview(message.body), url, tag: `message-${clientId}` });
-      // Email only when no device got it, and once per burst of unread messages.
-      if (pushed === 0 && firstUnread && info.clientEmail) {
-        const { html, text } = layout({
-          heading: `${name} sana mesaj gönderdi`,
-          lines: [preview(message.body)],
-          cta: { label: "Mesajı aç", url },
-        });
-        await sendMail({ to: info.clientEmail, subject: `${name} sana mesaj gönderdi`, html, text });
-      }
-    });
+    const body = preview(result.message.body);
+    after(() => notifyClient({ trainerId, clientId }, "message", { title: name, body, hash: "#mesajlar", tag: `message-${clientId}` }));
   }
   return { ok: true, message: result.message };
 }

@@ -54,6 +54,7 @@ export async function getPortalData(token: string) {
       timezone: trainers.timezone,
       iban: trainers.iban,
       ibanHolder: trainers.ibanHolder,
+      notifyPrefs: clients.notifyPrefs,
     })
     .from(clients)
     .innerJoin(trainers, eq(trainers.id, clients.trainerId))

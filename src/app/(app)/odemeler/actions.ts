@@ -1,17 +1,12 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import { confirmPayment, deletePayment, recordPayment, rejectPayment } from "@/db/payments";
-import { getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
-import { clients } from "@/db/schema";
-import { layout, sendMail } from "@/lib/mail";
-import { notifyClient as pushClient } from "@/lib/notify";
-import { portalUrl } from "@/lib/portal";
+import { notifyClient as tellClient } from "@/lib/notify";
 import { safeNext } from "@/lib/config";
 import { formatTRY } from "@/lib/format";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
@@ -77,20 +72,16 @@ export async function deletePaymentAction(id: string): Promise<{ ok: boolean }> 
 
 async function notifyClient(clientId: string, heading: string, lines: string[]) {
   const info = await withTrainer(async (tx, trainerId) => {
-    const [c] = await tx.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
     const trainer = await getTrainer(tx, trainerId);
-    const link = await getActivePortalLink(tx, clientId);
-    return { trainerId, email: c?.email ?? null, trainerName: trainer.businessName || trainer.fullName, token: link?.token ?? null };
+    return { trainerId, trainerName: trainer.businessName || trainer.fullName };
   });
-  await pushClient({ trainerId: info.trainerId, clientId }, { title: heading, body: lines[0], hash: "#paketler", tag: `payment-${clientId}` });
-  if (!info.email) return;
-  const { html, text } = layout({
-    heading,
-    lines,
-    cta: info.token ? { label: "Sayfamı aç", url: portalUrl(info.token) } : undefined,
-    footer: info.trainerName,
+  await tellClient({ trainerId: info.trainerId, clientId }, "package", {
+    title: heading,
+    body: lines[0],
+    hash: "#paketler",
+    tag: `payment-${clientId}`,
+    email: { subject: `${info.trainerName} · ${heading}`, heading, lines, cta: "Sayfamı aç" },
   });
-  await sendMail({ to: info.email, subject: `${info.trainerName} · ${heading}`, html, text });
 }
 
 export async function confirmPaymentAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {

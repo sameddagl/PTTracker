@@ -1,14 +1,10 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { authUsers } from "drizzle-orm/supabase";
-import { adminDb } from "@/db";
-import { siteUrl } from "@/lib/config";
 import { formatTRY } from "@/lib/format";
 import { pickOption } from "@/lib/pricing";
 import { layout, sendMail } from "@/lib/mail";
-import { pushTrainer } from "@/lib/notify";
+import { notifyTrainer } from "@/lib/notify";
 import { portalUrl } from "@/lib/portal";
 import { getPublicPage } from "@/lib/public-page";
 import { submitSignup, type SignupErrors } from "@/lib/signup";
@@ -27,7 +23,7 @@ export async function signupAction(slug: string, _prev: SignupState, formData: F
   const clientName = `${formData.get("firstName")} ${formData.get("lastName")}`.trim();
   const url = portalUrl(result.token);
 
-  // Emails are best-effort: a failure is logged and never blocks the sign-up.
+  // Always sent: it carries the client's personal link. Best effort, never blocks the sign-up.
   if (result.email) {
     const { html, text } = layout({
       heading: "Başvurun alındı",
@@ -42,19 +38,17 @@ export async function signupAction(slug: string, _prev: SignupState, formData: F
   }
 
   if (page) {
-    await pushTrainer(page.trainer.id, `Yeni başvuru: ${clientName}`, `${pkg?.name ?? "Bir paket"}${priceNote} için başvurdu.`, "/danisanlar/basvurular");
-    const [trainerUser] = await adminDb.select({ email: authUsers.email }).from(authUsers).where(eq(authUsers.id, page.trainer.id));
-    if (trainerUser?.email) {
-      const { html, text } = layout({
+    await notifyTrainer(page.trainer.id, "application", {
+      title: `Yeni başvuru: ${clientName}`,
+      body: `${pkg?.name ?? "Bir paket"}${priceNote} için başvurdu.`,
+      path: "/danisanlar/basvurular",
+      email: {
+        subject: `Yeni başvuru: ${clientName}`,
         heading: "Yeni başvuru",
-        lines: [
-          `${clientName}, ${pkg?.name ?? "bir paket"}${priceNote} için başvurdu.`,
-          "Bilgilerine bakıp onaylayabilir ya da reddedebilirsin.",
-        ],
-        cta: { label: "Başvuruyu gör", url: `${siteUrl()}/danisanlar/basvurular` },
-      });
-      await sendMail({ to: trainerUser.email, subject: `Yeni başvuru: ${clientName}`, html, text });
-    }
+        lines: [`${clientName}, ${pkg?.name ?? "bir paket"}${priceNote} için başvurdu.`, "Bilgilerine bakıp onaylayabilir ya da reddedebilirsin."],
+        cta: "Başvuruyu gör",
+      },
+    });
   }
 
   redirect(`/p/${result.token}?yeni=1`);

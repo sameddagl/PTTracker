@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { Bell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { ActionTiles } from "@/components/action-tiles";
-import { PushToggle } from "@/components/push-toggle";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
 import { siteUrl } from "@/lib/config";
 import { signOut } from "../../giris/actions";
 import { DeleteAccount } from "./delete-account";
-import { subscribeTrainerAction, unsubscribeTrainerAction } from "./push-actions";
 
 export const metadata: Metadata = { title: "Ayarlar" };
 
@@ -94,14 +92,18 @@ export default async function SettingsPage() {
           </ul>
         </section>
 
-        <section aria-labelledby="account-heading" className="flex flex-col gap-3">
+        <section aria-labelledby="account-heading">
           <SectionTitle id="account-heading">Uygulama ve hesap</SectionTitle>
-          <PushToggle
-            subscribe={subscribeTrainerAction}
-            unsubscribe={unsubscribeTrainerAction}
-            description="Yeni başvuru, randevu, iptal, ödeme, mesaj ve haftalık özet bu cihaza gelsin."
-          />
           <ul className="divide-y overflow-hidden surface">
+            <li>
+              <Link href="/ayarlar/bildirimler" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                <RowIcon>
+                  <Bell aria-hidden />
+                </RowIcon>
+                <RowText title="Bildirimler" hint="Hangi bildirim ve e-postaların geleceğini seç" />
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+              </Link>
+            </li>
             <li>
               <Link href="/yardim" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
                 <RowIcon>

@@ -2,32 +2,27 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { authUsers } from "drizzle-orm/supabase";
 import { z } from "zod";
 import { adminDb, type Tx } from "@/db";
 import { bookSlot, cancelBooking } from "@/db/booking";
 import { confirmAttendance } from "@/db/engagement";
 import { joinGroupLesson } from "@/db/groups";
 import { clients, trainers } from "@/db/schema";
-import { siteUrl } from "@/lib/config";
 import { dayLong } from "@/lib/dates";
 import { formatLongDate, formatTime } from "@/lib/format";
-import { layout, sendMail } from "@/lib/mail";
-import { pushTrainer } from "@/lib/notify";
+import { notifyTrainer as tellTrainer } from "@/lib/notify";
 import { resolvePortalToken } from "@/lib/portal";
 import { toHHMM } from "@/lib/slots";
 
 async function notifyTrainer(clientId: string, heading: string, line: string) {
-  const [who] = await adminDb
-    .select({ name: clients.fullName, email: authUsers.email, trainerId: clients.trainerId })
-    .from(clients)
-    .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
-    .where(eq(clients.id, clientId));
+  const [who] = await adminDb.select({ name: clients.fullName, trainerId: clients.trainerId }).from(clients).where(eq(clients.id, clientId));
   if (!who) return;
-  await pushTrainer(who.trainerId, `${heading}: ${who.name}`, `${who.name} ${line}`, "/takvim");
-  if (!who.email) return;
-  const { html, text } = layout({ heading, lines: [`${who.name} ${line}`], cta: { label: "Takvimi aç", url: `${siteUrl()}/takvim` } });
-  await sendMail({ to: who.email, subject: `${heading}: ${who.name}`, html, text });
+  await tellTrainer(who.trainerId, "booking", {
+    title: `${heading}: ${who.name}`,
+    body: `${who.name} ${line}`,
+    path: "/takvim",
+    email: { subject: `${heading}: ${who.name}`, heading, lines: [`${who.name} ${line}`], cta: "Takvimi aç" },
+  });
 }
 
 const bookInput = z.object({ date: z.iso.date(), minute: z.number().int().min(0).max(1439) });

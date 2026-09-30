@@ -20,6 +20,7 @@ import {
   tomorrowAttendees,
 } from "../src/db/engagement";
 import { createTemplate } from "../src/db/packages";
+import { cleanPrefs, clientWants, notifyPrefsSchema, trainerWants } from "../src/lib/notify-prefs";
 import { recordSignup } from "../src/lib/signup-core";
 import { addDays } from "../src/lib/dates";
 import { todayISO } from "../src/lib/format";
@@ -220,7 +221,25 @@ async function main() {
   const wed = await owner((tx) => dueWeeklySummaries(tx, new Date("2026-10-07T12:00:00Z")));
   assert.equal(wed[0]?.week, "2026-10-05", "a missed Monday is caught up later in the week");
   void other;
-  console.log("weekly summary ok\n\nall engagement checks passed");
+  console.log("weekly summary ok");
+
+  // ---- Notification choices ----
+  assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");
+  assert.equal(trainerWants({}, "booking", "email"), false, "bookings are push only by default");
+  assert.equal(trainerWants({ message: { email: true } }, "message", "email"), false, "messages never go by e-mail");
+  assert.equal(clientWants({}, "reminder", "email"), false);
+  assert.equal(clientWants({ reminder: { push: false } }, "reminder", "push"), false);
+  assert.deepEqual(cleanPrefs("client", { reminder: { push: false, email: true }, message: { push: true, email: true }, bogus: { push: true } }), {
+    reminder: { push: false, email: true },
+    message: { push: true },
+  });
+  assert.equal(notifyPrefsSchema.safeParse({ a: { push: "yes" } }).success, false);
+  const [stored] = await db.select({ p: schema.clients.notifyPrefs }).from(schema.clients).where(eq(schema.clients.id, zeynep.id));
+  assert.deepEqual(stored.p, {}, "new rows start with defaults");
+  await db.update(schema.clients).set({ notifyPrefs: { reminder: { push: false } } }).where(eq(schema.clients.id, zeynep.id));
+  const [after] = await db.select({ p: schema.clients.notifyPrefs }).from(schema.clients).where(eq(schema.clients.id, zeynep.id));
+  assert.equal(clientWants(after.p, "reminder", "push"), false);
+  console.log("notification choices ok\n\nall engagement checks passed");
 }
 
 main().catch((e) => {

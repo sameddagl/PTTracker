@@ -36,7 +36,8 @@ export async function approveApplicationAction(_prev: DecisionState, formData: F
 
   const { app, trainerId, trainerName, token } = result;
   // Push only reaches a client who turned notifications on earlier (e.g. a renewal request).
-  await notifyClient({ trainerId, clientId: app.clientId }, { title: "Başvurun onaylandı 🎉", body: `${trainerName}, ${app.packageName} başvurunu onayladı.`, hash: "#paketler" });
+  await notifyClient({ trainerId, clientId: app.clientId }, "package", { title: "Başvurun onaylandı 🎉", body: `${trainerName}, ${app.packageName} başvurunu onayladı.`, hash: "#paketler" });
+  // The approval e-mail always goes out: it carries the client's personal link.
   let emailed = false;
   if (app.clientEmail) {
     const { html, text } = layout({

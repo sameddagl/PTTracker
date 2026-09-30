@@ -2,16 +2,13 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { authUsers } from "drizzle-orm/supabase";
 import { z } from "zod";
 import { adminDb, type Tx } from "@/db";
 import { requestPackage } from "@/db/applications";
 import { MAX_RECEIPT_BYTES, RECEIPT_TYPES, recordClientPayment } from "@/db/payments";
 import { clients } from "@/db/schema";
-import { siteUrl } from "@/lib/config";
 import { formatTRY, todayISO } from "@/lib/format";
-import { layout, sendMail } from "@/lib/mail";
-import { pushTrainer } from "@/lib/notify";
+import { notifyTrainer } from "@/lib/notify";
 import { resolvePortalToken } from "@/lib/portal";
 
 export type ReportState = { errors?: Record<string, string>; savedAt?: number };
@@ -62,22 +59,15 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
   const label = result.of > 1 ? `${result.seq}. taksit (${formatTRY(result.amount)})` : formatTRY(result.amount);
 
   // Tell the trainer (best effort).
-  const [who] = await adminDb
-    .select({ name: clients.fullName, trainerEmail: authUsers.email })
-    .from(clients)
-    .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
-    .where(eq(clients.id, link.clientId));
-  if (who) await pushTrainer(link.trainerId, `Ödeme bildirimi: ${who.name}`, `${label} için havale yaptığını bildirdi.`, "/odemeler");
-  if (who?.trainerEmail) {
-    const { html, text } = layout({
-      heading: "Ödeme bildirimi",
-      lines: [
-        `${who.name}, ${label} için havale yaptığını bildirdi${receipt ? " ve dekont ekledi" : ""}.`,
-        "Hesabını kontrol edip onaylayabilirsin.",
-      ],
-      cta: { label: "Ödemeleri aç", url: `${siteUrl()}/odemeler` },
+  const [who] = await adminDb.select({ name: clients.fullName }).from(clients).where(eq(clients.id, link.clientId));
+  if (who) {
+    const line = `${who.name}, ${label} için havale yaptığını bildirdi${receipt ? " ve dekont ekledi" : ""}.`;
+    await notifyTrainer(link.trainerId, "payment", {
+      title: `Ödeme bildirimi: ${who.name}`,
+      body: `${label} için havale yaptığını bildirdi.`,
+      path: "/odemeler",
+      email: { subject: `Ödeme bildirimi: ${who.name}`, heading: "Ödeme bildirimi", lines: [line, "Hesabını kontrol edip onaylayabilirsin."], cta: "Ödemeleri aç" },
     });
-    await sendMail({ to: who.trainerEmail, subject: `Ödeme bildirimi: ${who.name}`, html, text });
   }
 
   revalidatePath(`/p/${token}`);
@@ -107,19 +97,19 @@ export async function requestPackageAction(
     };
   }
 
-  const [who] = await adminDb
-    .select({ name: clients.fullName, trainerEmail: authUsers.email })
-    .from(clients)
-    .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
-    .where(eq(clients.id, link.clientId));
-  if (who) await pushTrainer(link.trainerId, `Paket talebi: ${who.name}`, `${result.packageName} paketini almak istiyor.`, "/danisanlar/basvurular");
-  if (who?.trainerEmail) {
-    const { html, text } = layout({
-      heading: "Yeni paket talebi",
-      lines: [`${who.name}, ${result.packageName} paketini almak istiyor.`, "Başvurular ekranından onaylayabilirsin."],
-      cta: { label: "Başvuruyu gör", url: `${siteUrl()}/danisanlar/basvurular` },
+  const [who] = await adminDb.select({ name: clients.fullName }).from(clients).where(eq(clients.id, link.clientId));
+  if (who) {
+    await notifyTrainer(link.trainerId, "application", {
+      title: `Paket talebi: ${who.name}`,
+      body: `${result.packageName} paketini almak istiyor.`,
+      path: "/danisanlar/basvurular",
+      email: {
+        subject: `Paket talebi: ${who.name}`,
+        heading: "Yeni paket talebi",
+        lines: [`${who.name}, ${result.packageName} paketini almak istiyor.`, "Başvurular ekranından onaylayabilirsin."],
+        cta: "Başvuruyu gör",
+      },
     });
-    await sendMail({ to: who.trainerEmail, subject: `Paket talebi: ${who.name}`, html, text });
   }
   revalidatePath(`/p/${token}`);
   return { ok: true };

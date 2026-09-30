@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Check, CheckCircle2, Hourglass, Lock, MessageCircle, Minus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { NotifyPrefsForm } from "@/components/notify-prefs-form";
 import { PushToggle } from "@/components/push-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/format";
 import { formatIban, paymentCode } from "@/lib/iban";
 import { installmentPlan, installmentStates } from "@/lib/installments";
+import { prefsView } from "@/lib/notify-prefs";
 import { getPortalData, portalUrl } from "@/lib/portal";
 import { applicationOption, optionLabel } from "@/lib/pricing";
 import { UpcomingLessons } from "./booking-panel";
@@ -22,7 +24,7 @@ import { LessonPicker } from "./lesson-picker";
 import { PackageShop } from "./package-shop";
 import { MessageThread } from "./message-thread";
 import { PaymentPanel } from "./payment-panel";
-import { subscribeClientAction, unsubscribeClientAction } from "./push-actions";
+import { saveClientPrefsAction, subscribeClientAction, unsubscribeClientAction } from "./push-actions";
 import { RenewalOffer } from "./renewal-offer";
 import { cn } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -300,11 +302,18 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
 
         <MessageThread token={token} initial={messages} trainerName={trainerName} timeZone={tz} />
 
-        <PushToggle
-          subscribe={subscribeClientAction.bind(null, token)}
-          unsubscribe={unsubscribeClientAction.bind(null, token)}
-          description="Ders hatırlatması, onaylar ve eğitmeninin mesajları telefonuna gelsin."
-        />
+        <section aria-labelledby="notify-heading" className="flex flex-col gap-3">
+          <h2 id="notify-heading" className="text-base font-semibold">
+            Bildirim ayarları
+          </h2>
+          <PushToggle
+            subscribe={subscribeClientAction.bind(null, token)}
+            unsubscribe={unsubscribeClientAction.bind(null, token)}
+            description="Ders hatırlatması, onaylar ve eğitmeninin mesajları telefonuna gelsin."
+          />
+          <NotifyPrefsForm rows={prefsView("client", client.notifyPrefs)} save={saveClientPrefsAction.bind(null, token)} />
+          <p className="text-xs text-muted-foreground">Başvurunun alındığı ve onaylandığı e-postalar, içinde bu sayfanın linki olduğu için her zaman gelir.</p>
+        </section>
 
         <footer className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-center text-xs text-muted-foreground">
           <Lock className="size-3.5 shrink-0" aria-hidden />

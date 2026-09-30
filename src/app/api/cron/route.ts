@@ -12,8 +12,8 @@ import {
 } from "@/db/engagement";
 import { ensureGroupOccurrences } from "@/db/groups";
 import { SESSION_TYPE_LABELS, formatTRY } from "@/lib/format";
-import { layout, sendMail } from "@/lib/mail";
-import { appUrl, notifyClient, pushTrainer, trainerEmail } from "@/lib/notify";
+import { APP_NAME } from "@/lib/config";
+import { notifyClient, notifyTrainer } from "@/lib/notify";
 import { whenPhrase } from "@/lib/when";
 
 // Scheduled work, called every 15 minutes by the host's cron:
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
     const what = r.title ?? `${SESSION_TYPE_LABELS[r.sessionType as keyof typeof SESSION_TYPE_LABELS]} ders`;
     await notifyClient(
       { trainerId: r.trainerId, clientId: r.clientId },
+      "reminder",
       {
         title: `${when} dersin var`,
         body: `${what} · ${r.trainerName}. Geliyor musun? Dokun, tek tuşla onayla.`,
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
     const why = p.remaining <= 0 ? "Paketindeki dersler bitti." : p.remaining <= 2 ? `Paketinde ${p.remaining} ders kaldı.` : "Paketinin süresi bitmek üzere.";
     await notifyClient(
       { trainerId: p.trainerId, clientId: p.clientId },
+      "package",
       {
         title: `${p.packageName}`,
         body: `${why} Aynı paketi sayfandan tek dokunuşla yenileyebilirsin.`,
@@ -99,12 +101,13 @@ export async function GET(req: NextRequest) {
         ? `Bir süredir gelmeyenler: ${s.lost.map((l) => l.name).join(", ")}.`
         : "Uzun süredir gelmeyen danışanın yok.",
     ];
-    await pushTrainer(s.trainerId, "Haftalık özetin hazır", lines.slice(0, 2).join(" "), "/bugun", `weekly-${s.week}`);
-    const email = await trainerEmail(s.trainerId);
-    if (email) {
-      const { html, text } = layout({ heading: "Haftalık özet", lines, cta: { label: "Bugün'e git", url: appUrl("/bugun") } });
-      await sendMail({ to: email, subject: "Stüdyom · Haftalık özetin", html, text });
-    }
+    await notifyTrainer(s.trainerId, "weekly", {
+      title: "Haftalık özetin hazır",
+      body: lines.slice(0, 2).join(" "),
+      path: "/bugun",
+      tag: `weekly-${s.week}`,
+      email: { subject: `${APP_NAME} · Haftalık özetin`, heading: "Haftalık özet", lines, cta: "Bugün'e git" },
+    });
     await markWeeklySent(tx, s.trainerId, s.week);
     report.summaries++;
   }

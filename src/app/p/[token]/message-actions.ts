@@ -1,15 +1,12 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { authUsers } from "drizzle-orm/supabase";
 import { after } from "next/server";
 import { adminDb, type Tx } from "@/db";
 import { type Message, getClientThread, markReadByClient, sendClientMessage } from "@/db/messages";
 import { clients } from "@/db/schema";
-import { siteUrl } from "@/lib/config";
-import { layout, sendMail } from "@/lib/mail";
+import { notifyTrainer } from "@/lib/notify";
 import { resolvePortalToken } from "@/lib/portal";
-import { sendPush } from "@/lib/push";
 
 // The client's side of the chat. Every call re-resolves the token and scopes
 // by the ids bound to it (adminDb, no RLS).
@@ -30,28 +27,17 @@ export async function sendClientMessageAction(token: string, body: string): Prom
   const result = await adminDb.transaction((tx) => sendClientMessage(tx as unknown as Tx, who, body));
   if (!result.ok) return { ok: false, error: ERRORS[result.reason] };
 
-  const { message, firstUnread } = result;
+  const { message } = result;
+  // Messages never go by e-mail, only as a push when the trainer wants them.
   after(async () => {
-    const [info] = await adminDb
-      .select({ name: clients.fullName, email: authUsers.email })
-      .from(clients)
-      .innerJoin(authUsers, eq(authUsers.id, clients.trainerId))
-      .where(eq(clients.id, who.clientId));
+    const [info] = await adminDb.select({ name: clients.fullName }).from(clients).where(eq(clients.id, who.clientId));
     if (!info) return;
-    const path = `/mesajlar/${who.clientId}`;
-    const pushed = await sendPush(
-      { trainerId: who.trainerId, clientId: null },
-      { title: info.name, body: preview(message.body), url: path, tag: `message-${who.clientId}` },
-    );
-    // Email only when no device got it, and once per burst of unread messages.
-    if (pushed === 0 && firstUnread && info.email) {
-      const { html, text } = layout({
-        heading: `${info.name} sana mesaj gönderdi`,
-        lines: [preview(message.body)],
-        cta: { label: "Mesajı aç", url: `${siteUrl()}${path}` },
-      });
-      await sendMail({ to: info.email, subject: `Yeni mesaj: ${info.name}`, html, text });
-    }
+    await notifyTrainer(who.trainerId, "message", {
+      title: info.name,
+      body: preview(message.body),
+      path: `/mesajlar/${who.clientId}`,
+      tag: `message-${who.clientId}`,
+    });
   });
   return { ok: true, message };
 }

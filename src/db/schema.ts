@@ -7,6 +7,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgPolicy,
@@ -18,6 +19,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { NotifyPrefs } from "../lib/notify-prefs";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 // Multi-tenancy: every row belongs to a trainer (trainer_id = auth.uid()).
@@ -121,6 +123,8 @@ export const trainers = pgTable(
     bioLinkAddedAt: timestamp("bio_link_added_at", { withTimezone: true }),
     // Monday of the last week a weekly summary was sent for (the cron job is idempotent per week).
     weeklySummaryWeek: date("weekly_summary_week"),
+    /** Per-kind push/e-mail choices; missing keys fall back to NOTIFY defaults (src/lib/notify-prefs.ts). */
+    notifyPrefs: jsonb("notify_prefs").$type<NotifyPrefs>().notNull().default({}),
     ...timestamps,
   },
   (t) => [
@@ -151,6 +155,7 @@ export const clients = pgTable(
     notes: text("notes"),
     // Special-category data under KVKK: only stored with explicit consent (see consents).
     healthNotes: text("health_notes"),
+    notifyPrefs: jsonb("notify_prefs").$type<NotifyPrefs>().notNull().default({}),
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     status: clientStatusEnum("status").notNull().default("active"),
     source: clientSourceEnum("source").notNull().default("manual"),
