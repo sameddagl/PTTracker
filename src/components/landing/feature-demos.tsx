@@ -1,4 +1,4 @@
-import { Check, CheckCheck, FileText, Lock, UserPlus } from "lucide-react";
+import { Activity, ArrowDown, Check, CheckCheck, FileSpreadsheet, FileText, Lock, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { APP_DOMAIN } from "@/lib/config";
 import { cn } from "@/lib/utils";
@@ -210,3 +210,108 @@ export function PaymentDemo() {
     </div>
   );
 }
+
+/** A lock-screen style notification, as it lands on the phone. */
+function Notification({ title, body, time }: { title: string; body: string; time: string }) {
+  return (
+    <div className={cn(panel, "flex items-start gap-3 rounded-[1.1rem] p-3")}>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-[0.7rem] bg-lime text-lime-foreground">
+        <Activity className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-baseline justify-between gap-2 text-sm font-medium">
+          <span className="truncate">{title}</span>
+          <span className="shrink-0 text-xs font-normal text-muted-foreground">{time}</span>
+        </p>
+        <p className="text-xs text-muted-foreground">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+export function ConfirmDemo() {
+  return (
+    <div className="flex w-full flex-col gap-3">
+      <Notification title="Yarın 10:00 dersin var" body="Özel Reformer · Elif Ö. Geliyor musun?" time="şimdi" />
+      <div className={cn(panel, "p-3")}>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-foreground">Yarın gelecekler</span>
+          <span className="text-muted-foreground tabular-nums">3/4 onayladı</span>
+        </div>
+        <div className="mt-3 flex flex-col gap-2">
+          {[
+            ["Zeynep K.", "10:00", true],
+            ["Mert A.", "18:00", false],
+          ].map(([name, time, ok]) => (
+            <div key={name as string} className="flex items-center gap-2">
+              <Avatar name={name as string} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-sm">{name}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">{time}</span>
+              {ok ? (
+                <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-1 text-xs font-medium text-success-strong">
+                  <Check className="size-3" strokeWidth={3} />
+                  Geliyor
+                </span>
+              ) : (
+                <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">Bekleniyor</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function MessagesDemo() {
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <Notification title="Zeynep K." body="Yarınki dersi 11:00'e alabilir miyiz?" time="09:12" />
+      <div className="flex flex-col gap-1.5 px-1 pt-1">
+        <span className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-card px-3 py-2 text-sm shadow-card">
+          Yarınki dersi 11:00&apos;e alabilir miyiz?
+        </span>
+        <span className="max-w-[80%] self-end rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground">
+          Olur, 11:00&apos;e aldım 🙂
+        </span>
+        <span className="self-end pr-1 text-xs text-muted-foreground">Görüldü</span>
+      </div>
+    </div>
+  );
+}
+
+export function ImportDemo() {
+  const rows = [
+    ["Zeynep Kaya", "0532 …", "6"],
+    ["Mert Aksoy", "0541 …", "2"],
+    ["Ayşe Demir", "0555 …", "10"],
+  ];
+  return (
+    <div className="flex w-full flex-col items-center gap-2">
+      <div className={cn(panel, "w-full overflow-hidden")}>
+        <div className="flex items-center gap-2 border-b bg-muted/60 px-3 py-2 text-xs font-medium">
+          <FileSpreadsheet className="size-3.5 text-success-strong" />
+          danisanlar.xlsx
+        </div>
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-3 py-2 text-xs">
+          {["Ad soyad", "Telefon", "Kalan"].map((h) => (
+            <span key={h} className="pb-1 text-muted-foreground">
+              {h}
+            </span>
+          ))}
+          {rows.flat().map((c, i) => (
+            <span key={i} className={cn("py-0.5 tabular-nums", i % 3 === 0 && "truncate font-medium")}>
+              {c}
+            </span>
+          ))}
+        </div>
+      </div>
+      <ArrowDown className="size-4 text-muted-foreground" />
+      <div className="flex items-center gap-2 rounded-full bg-lime px-3 py-1.5 text-xs font-semibold text-lime-foreground">
+        <Check className="size-3.5" strokeWidth={3} />
+        24 danışan ve paketleri eklendi
+      </div>
+    </div>
+  );
+}
+

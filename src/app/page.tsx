@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Activity, ArrowRight, Check, Plus, UserPlus, FileText } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  CalendarCheck,
+  Check,
+  ClipboardCheck,
+  Plus,
+  Smartphone,
+  UserPlus,
+  UserRoundSearch,
+} from "lucide-react";
 import {
   AttendanceDemo,
   BookingDemo,
+  ConfirmDemo,
   GroupDemo,
+  ImportDemo,
+  MessagesDemo,
   PaymentDemo,
   PricingDemo,
   PublicPageDemo,
@@ -16,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 const TITLE = `${APP_NAME} · Pilates ve PT için Danışan ve Seans Takibi`;
 const DESCRIPTION =
-  "Pilates ve PT eğitmenleri için danışan takip programı: seans paketi, yoklama, randevu ve ödemeler tek yerde. Excel ve WhatsApp karmaşasına son. Beta ücretsiz.";
+  "Pilates ve PT eğitmenleri için danışan takip programı: seans paketi, yoklama, randevu, ders hatırlatması, mesajlaşma ve ödemeler tek yerde. Excel ve WhatsApp karmaşasına son. Beta ücretsiz.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -31,6 +44,8 @@ export const metadata: Metadata = {
     "pilates randevu sistemi",
     "reformer pilates",
     "grup dersi kontenjan",
+    "ders hatırlatma",
+    "deneme dersi",
   ],
   openGraph: { title: TITLE, description: DESCRIPTION, url: "/", type: "website", siteName: APP_NAME, locale: "tr_TR" },
 };
@@ -43,6 +58,12 @@ const FEATURES = [
     Demo: AttendanceDemo,
   },
   {
+    title: "Dersten önce “Geliyor musun?”",
+    text: "Danışanınıza dersinden bir gün önce hatırlatma gider; tek dokunuşla onaylar ya da iptal eder. Yarın kimin geleceğini sabahtan bilirsiniz.",
+    chips: ["Ders hatırlatması", "Katılım onayı", "Boş kalan saat"],
+    Demo: ConfirmDemo,
+  },
+  {
     title: "Instagram'a koyacağınız kendi sayfanız",
     text: "Paketleriniz, fiyatlarınız ve tanıtımınız tek linkte. Bio'nuza ekleyin; danışan paketini seçip kayıt formunu doldursun, siz onaylayın.",
     chips: ["Kişisel sayfa", "Online kayıt", "Başvuru onayı", "Açık rıza"],
@@ -50,8 +71,8 @@ const FEATURES = [
   },
   {
     title: "Seans paketleri: indirimli, peşin ya da taksitli",
-    text: "Özel, düet ve grup paketleri oluşturun. İndirimli fiyatı ve taksit seçeneğini siz belirleyin, danışan ödeme şeklini kendisi seçsin.",
-    chips: ["Seans paketi", "İndirim", "Peşin fiyat", "Taksit"],
+    text: "Özel, düet ve grup paketleri oluşturun. İndirimli fiyatı ve taksit seçeneğini siz belirleyin; paketi biten danışana yenileme teklifi kendiliğinden gitsin.",
+    chips: ["Seans paketi", "İndirim", "Taksit", "Deneme dersi", "Yenileme"],
     Demo: PricingDemo,
   },
   {
@@ -67,16 +88,35 @@ const FEATURES = [
     Demo: BookingDemo,
   },
   {
+    title: "Danışanlarınızla uygulama içinden yazışın",
+    text: "Ders değişikliği, soru, hatırlatma… Mesajlar kişisel numaranıza değil uygulamaya gelir; ikiniz de telefonunuza bildirim alırsınız.",
+    chips: ["Mesajlaşma", "Anlık bildirim", "Görüldü"],
+    Demo: MessagesDemo,
+  },
+  {
     title: "Havale bildirimi, dekont ve WhatsApp hatırlatması",
     text: "Danışan IBAN'ınıza ödeyip dekontunu yükler, siz onaylarsınız. Paketi bitmek üzere olanlara hazır mesajla hatırlatın.",
     chips: ["IBAN", "Dekont", "WhatsApp", "Hatırlatma"],
     Demo: PaymentDemo,
   },
+  {
+    title: "Excel'deki listeniz birkaç dakikada içeride",
+    text: "Mevcut danışan listenizi Excel ya da CSV olarak yükleyin; kalan seanslar ve borçlarla birlikte aktarılsın. Verilerinizi istediğiniz an Excel olarak indirin.",
+    chips: ["Excel'den aktar", "Kalan seans", "Dışa aktar"],
+    Demo: ImportDemo,
+  },
+];
+
+const MORE = [
+  { icon: CalendarCheck, title: "Pazartesi haftalık özet", text: "Geçen haftanın dersleri, katılım ve tahsilatı tek bildirimde." },
+  { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanlar listelenir; tek dokunuşla yazın." },
+  { icon: ClipboardCheck, title: "Yoklama ekranı", text: "Unuttuğunuz yoklamalar bir yerde toplanır; grup derslerinde “Hepsi geldi”." },
+  { icon: Smartphone, title: "Telefona uygulama gibi", text: "Mağazadan indirmeden ana ekrana eklenir, bildirimleri alır. Size ve danışanlarınıza." },
 ];
 
 const STATS = [
   { value: "₺0", label: "Beta süresince ücret yok" },
-  { value: "0", label: "Danışanınızın indirmesi gereken uygulama" },
+  { value: "0", label: "Mağazadan indirilmesi gereken uygulama" },
   { value: "4 hafta", label: "Grup dersleri bu kadar ileriye kendiliğinden planlanır" },
 ];
 
@@ -99,7 +139,7 @@ const REASONS = [
   },
   {
     title: "Danışanınız uygulama indirmez",
-    text: "Her danışanın kişisel bir linki olur. Tarayıcıda açılır; ne şifre ne indirme gerekir.",
+    text: "Her danışanın kişisel bir linki olur. Tarayıcıda açılır; isteyen ana ekranına ekleyip bildirim alır. Ne şifre ne mağaza gerekir.",
   },
   {
     title: "Paranız doğrudan IBAN'ınıza gelir",
@@ -114,7 +154,11 @@ const REASONS = [
 const FAQ = [
   {
     q: "Danışanlarımın bir uygulama indirmesi gerekiyor mu?",
-    a: "Hayır. Her danışanın kişisel bir linki olur; bu linki WhatsApp'tan ya da e-postayla gönderirsiniz, tarayıcıda açılır. Şifre ya da hesap gerekmez.",
+    a: "Hayır. Her danışanın kişisel bir linki olur; bu linki WhatsApp'tan ya da e-postayla gönderirsiniz, tarayıcıda açılır. Şifre ya da hesap gerekmez. İsteyen sayfayı telefonunun ana ekranına ekleyip ders hatırlatmalarını ve mesajları bildirim olarak alır.",
+  },
+  {
+    q: "Bildirimler nasıl geliyor?",
+    a: `${APP_NAME}'u telefonunuzun ana ekranına eklediğinizde yeni başvuru, randevu, iptal, ödeme bildirimi ve mesajlar anında bildirim olarak gelir. Hangi bildirimleri ve e-postaları alacağınızı ayarlardan siz seçersiniz. iPhone'da iOS 16.4 ve üstü gerekir.`,
   },
   {
     q: `Ödemeler ${APP_NAME} üzerinden mi geçiyor?`,
@@ -130,7 +174,7 @@ const FAQ = [
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",
-    a: "Excel'den toplu aktarım yakında geliyor. O zamana kadar danışanlarınızı birkaç dokunuşla elle ekleyebilirsiniz.",
+    a: "Evet. Danışan listenizi Excel ya da CSV olarak yükleyin; sütunları eşleştirir, önizlemeyi görür ve aktarırsınız. Kalan seanslar ve borçlar da aktarılır; aynı telefon numarası iki kez eklenmez.",
   },
   {
     q: `${APP_NAME} ücretli mi?`,
@@ -307,11 +351,11 @@ export default function Home() {
             <div aria-hidden className="absolute right-0 bottom-40 hidden w-60 lg:block">
               <div className={cn(card, "flex items-center gap-3 rounded-2xl p-3 shadow-float")}>
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <FileText className="size-4" />
+                  <Check className="size-4 text-success-strong" strokeWidth={3} />
                 </span>
                 <span className="min-w-0 text-left">
-                  <span className="block text-sm font-medium">Dekont geldi</span>
-                  <span className="block text-xs text-muted-foreground tabular-nums">Zeynep K. · ₺1.333</span>
+                  <span className="block text-sm font-medium">Zeynep K. geliyor</span>
+                  <span className="block text-xs text-muted-foreground tabular-nums">Yarın 10:00 · onayladı</span>
                 </span>
               </div>
             </div>
@@ -338,6 +382,19 @@ export default function Home() {
                   <div className="mt-auto pt-2">
                     <Chips items={chips} />
                   </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <ul className="mx-auto mt-4 grid max-w-6xl gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+            {MORE.map(({ icon: Icon, title, text }) => (
+              <li key={title} className={cn(card, "flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                  <Icon className="size-5" />
+                </span>
+                <div className="flex min-w-0 flex-col gap-1 sm:gap-3">
+                  <h3 className="text-base font-semibold tracking-[-0.02em]">{title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
                 </div>
               </li>
             ))}
