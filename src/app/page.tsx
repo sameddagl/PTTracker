@@ -61,7 +61,7 @@ const FEATURES = [
   },
   {
     title: "Dersten önce “Geliyor musun?”",
-    text: "Dersten bir gün önce danışana hatırlatma gider, o da tek dokunuşla onaylar ya da iptal eder. Yarın kimin geleceğini bugünden bilirsiniz.",
+    text: "Dersten 36 saat önce danışana hatırlatma gider; “Geliyorum” ya da “Gelemiyorum” diye cevap verir. Yarın kimin geleceğini bugünden bilirsiniz.",
     chips: ["Ders hatırlatması", "Katılım onayı", "Boş kalan saat"],
     Demo: ConfirmDemo,
   },
@@ -111,15 +111,15 @@ const FEATURES = [
 
 const MORE = [
   { icon: CalendarCheck, title: "Her pazartesi haftalık özet", text: "Geçen hafta kaç ders verdiniz, kimler geldi, ne kadar tahsil ettiniz; tek bildirimde." },
-  { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanları bir listede görün, tek dokunuşla yazın." },
+  { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanları bir listede görün, WhatsApp'tan hemen yazın." },
   { icon: ClipboardCheck, title: "Yoklama ekranı", text: "Almayı unuttuğunuz yoklamalar burada birikir. Grup dersinde “Hepsi geldi” deyip geçin." },
   { icon: Smartphone, title: "Mağazadan indirmeden ana ekranda", text: "Siz de danışanlarınız da ana ekrana ekleyin; hatırlatmalar ve mesajlar telefona bildirim olarak gelsin." },
 ];
 
 const STATS = [
-  { value: "₺0", label: "Beta boyunca ücret yok" },
-  { value: "0", label: "İndirmeniz gereken uygulama" },
-  { value: "4 hafta", label: "Grup dersleri takvimde hep bu kadar ileriye hazır" },
+  { value: "₺0", label: "Beta boyunca ücret" },
+  { value: "%0", label: "Ödemelerden komisyon; para doğrudan IBAN'ınıza gelir" },
+  { value: "36 saat", label: "Kala danışana “Geliyor musun?” hatırlatması gider" },
 ];
 
 const STEPS = [
@@ -158,6 +158,18 @@ const REASONS = [
 
 const FAQ = [
   {
+    q: `${APP_NAME} nedir?`,
+    a: `${APP_NAME}, Türkiye'de kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer'lar için web tabanlı bir danışan ve seans takip programı. Seans paketlerini, yoklamayı, randevuları, ders hatırlatmalarını ve IBAN'a gelen ödemeleri tek hesapta tutar. Danışanlar uygulama indirmez; kendilerine gönderilen linki tarayıcıda açar.`,
+  },
+  {
+    q: "Stüdyomda birden fazla eğitmen var, kullanabilir miyiz?",
+    a: `${APP_NAME} şimdilik tek başına çalışan eğitmenler için. Stüdyonuzda birkaç eğitmen varsa her biri kendi hesabını açar ve yalnızca kendi danışanlarını görür; eğitmenlerin ortak kullandığı bir takvim şu an yok.`,
+  },
+  {
+    q: "Geç iptal ve telafi hakkı nasıl işliyor?",
+    a: "Ücretsiz iptal süresini siz belirlersiniz (0 ile 48 saat arası). Danışan bu süre geçtikten sonra iptal ederse ders paketinden düşer. Paketinde telafi hakkı varsa önce o kullanılır, ders yanmaz.",
+  },
+  {
     q: "Danışanlarımın bir uygulama indirmesi gerekiyor mu?",
     a: "Hayır. Her danışanın kendine ait bir linki olur. Linki WhatsApp'tan ya da e-postayla gönderirsiniz, danışan tarayıcıda açar. Şifre ya da hesap gerekmez. İsteyen sayfayı ana ekranına ekler; ders hatırlatmaları ve mesajlar telefonuna bildirim olarak gelir.",
   },
@@ -183,7 +195,15 @@ const FAQ = [
   },
   {
     q: `${APP_NAME} ücretli mi?`,
-    a: "Beta süresince eğitmenler için ücretsiz. Kart bilgisi de istemiyoruz.",
+    a: "Beta süresince eğitmenler için ücretsiz, kart bilgisi de istemiyoruz. Ücretli plana geçmeden en az 30 gün önce haber veririz; beta kullanıcılarına ilk yıl indirim yapacağız. Devam edip etmemek size kalır, verilerinizi istediğiniz an Excel olarak indirebilirsiniz.",
+  },
+  {
+    q: "Verilerim nerede saklanıyor?",
+    a: "Veriler Almanya'daki (Frankfurt) bir veri merkezinde tutulur. Satılmaz, reklam için kullanılmaz. Hesabınızı sildiğinizde danışan kayıtlarınız da kalıcı olarak silinir. Ayrıntılar KVKK Aydınlatma Metni'nde.",
+  },
+  {
+    q: `${APP_NAME}'u kim yapıyor?`,
+    a: `${APP_NAME}'u ${LEGAL.controller} geliştiriyor. Sorunuz, öneriniz ya da takıldığınız bir yer varsa ${LEGAL.email} adresine yazabilirsiniz.`,
   },
 ];
 
@@ -354,11 +374,11 @@ export default function Home() {
               className="text-[2.5rem] leading-[1.04] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.5rem]"
             >
               <span className="block text-foreground">Defteri bırakın.</span>{" "}
-              <span className="block text-muted-foreground">Danışan ve seans takibini {APP_NAME} yapsın.</span>
+              <span className="block text-muted-foreground">Pilates ve PT danışan takibini {APP_NAME} yapsın.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-              Pilates eğitmenleri ve personal trainer&apos;lar için. Yoklamayı tek dokunuşla alın, kalan seans otomatik düşsün; kimin
-              ne kadar borcu olduğunu her an görün.
+              Kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer&apos;lar için seans paketi, yoklama, randevu ve
+              ödeme takibi. Yoklamayı aldığınızda kalan seans paketten düşer, kimin ne kadar borcu olduğunu her an görürsünüz.
             </p>
             <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
               <Button asChild size="lg">
@@ -419,7 +439,7 @@ export default function Home() {
           <SectionHeading
             id="features-heading"
             eyebrow="Özellikler"
-            lead="Derslerden ödemelere her şey tek yerde."
+            lead="Seans paketinden ödemeye her şey tek yerde."
             rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
           />
           <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -457,7 +477,7 @@ export default function Home() {
         <section aria-labelledby="stats-heading" className="px-4 pt-24 sm:px-6 sm:pt-32">
           <div className="mx-auto max-w-6xl rounded-[1.75rem] bg-[#1d1d1f] px-6 py-12 text-white sm:px-12 sm:py-16 dark:border dark:bg-card">
             <h2 id="stats-heading" className="max-w-xl text-2xl leading-tight font-semibold tracking-[-0.03em] sm:text-3xl">
-              Başlamak için <span className="text-white/60">kart bilgisi ya da kurulum gerekmez.</span>
+              Başlamak için <span className="text-white/60">kart bilgisi ya da uygulama indirmek gerekmez.</span>
             </h2>
             <ul className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
               {STATS.map((s) => (
@@ -569,6 +589,12 @@ export default function Home() {
           <div className="flex flex-col gap-1">
             <Logo />
             <p className="text-sm text-muted-foreground">Pilates ve PT eğitmenleri için danışan, seans ve ödeme takibi.</p>
+            <p className="text-sm text-muted-foreground">
+              {LEGAL.controller} ·{" "}
+              <a href={`mailto:${LEGAL.email}`} className="underline-offset-2 hover:text-foreground hover:underline">
+                {LEGAL.email}
+              </a>
+            </p>
           </div>
           <nav aria-label="Alt bilgi" className="flex flex-wrap gap-x-6 text-sm text-muted-foreground">
             {[
