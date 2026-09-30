@@ -104,7 +104,7 @@ Her görev bir kez işaretlendiği için kaçan ya da iki kez çalışan tetikle
 - **Yedek:**
   - Pro plana kadar haftada bir `pg_dump` yedeği (bunu bir komutla kurabilirim).
   - Pro'da günlük yedek otomatik.
-- **Güvenlik başlıkları:** Yanıtlara standart güvenlik başlıklarını eklerim (tıklama hırsızlığı koruması, referrer politikası vb.), yarım saatlik iş.
+- **Güvenlik başlıkları:** Yapıldı (`next.config.ts`): HSTS, tıklama hırsızlığına karşı çerçeve yasağı, `nosniff`, referrer politikası, kamera/mikrofon/konum izinleri kapalı, form hedefi ve `<base>` kısıtı. Script kısıtlayan tam CSP yok; her istekte nonce ve tamamen dinamik sayfa gerektiriyor.
 - **Analitik:** Çerezsiz bir çözüm (Vercel Analytics veya Plausible) seçilirse çerez onayı gerekmez; KVKK metnine bir satır eklenir.
 - **Bilinen teknik borç:** Tekrarlayan ders serisi silinirse (şu an arayüzde yok) veritabanı bağlantısında bir sorun çıkabilir. Seri silme eklenmeden önce düzeltilecek.
 

@@ -3,7 +3,22 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 
 const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : undefined;
 
+// Security headers on every response. The CSP only covers what can't break
+// the app (framing, <base>, form targets, plugins); a script-src policy
+// would need per-request nonces and fully dynamic rendering.
+const SECURITY_HEADERS = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  headers: async () => [{ source: "/:path*", headers: SECURITY_HEADERS }],
   // The dev badge covers the mobile nav or header actions wherever it sits.
   devIndicators: false,
   // Dev only: open the app from a phone on the same Wi-Fi (http://192.168.x.x:3000).
