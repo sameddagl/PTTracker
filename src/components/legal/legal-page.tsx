@@ -72,8 +72,12 @@ export function ControllerCard() {
     <dl className="grid gap-x-6 gap-y-2 rounded-2xl bg-muted p-4 text-sm sm:grid-cols-[auto_1fr]">
       <dt className="text-muted-foreground">Veri sorumlusu</dt>
       <dd className="font-medium text-foreground">{LEGAL.controller}</dd>
-      <dt className="text-muted-foreground">Adres</dt>
-      <dd className="text-foreground">{LEGAL.address}</dd>
+      {LEGAL.address && (
+        <>
+          <dt className="text-muted-foreground">Adres</dt>
+          <dd className="text-foreground">{LEGAL.address}</dd>
+        </>
+      )}
       <dt className="text-muted-foreground">E-posta</dt>
       <dd className="text-foreground">{LEGAL.email}</dd>
     </dl>

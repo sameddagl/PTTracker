@@ -147,8 +147,8 @@ export default function KvkkPage() {
         </ul>
         <p>haklarına sahipsiniz.</p>
         <p>
-          Başvurularınızı <strong>{LEGAL.email}</strong> adresine e-posta ile ya da yukarıdaki adrese yazılı olarak
-          iletebilirsiniz. Danışansanız başvurunuzu eğitmeninize de yapabilirsiniz. Başvurular en geç 30 gün içinde ücretsiz
+          Başvurularınızı <strong>{LEGAL.email}</strong> adresine e-posta ile
+          {LEGAL.address ? " ya da yukarıdaki adrese yazılı olarak" : ""} iletebilirsiniz. Danışansanız başvurunuzu eğitmeninize de yapabilirsiniz. Başvurular en geç 30 gün içinde ücretsiz
           olarak sonuçlandırılır.
         </p>
       </Section>

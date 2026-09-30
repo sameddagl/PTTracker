@@ -1,17 +1,17 @@
 // Who is responsible for the platform's data processing (KVKK "veri sorumlusu").
-// There is no company yet: until there is, this is the founder as a real
-// person. Fill these in before the public beta; the legal pages show a draft
-// notice while READY is false.
+// There is no company yet, so this is the founder as a real person. Add the
+// company name and a postal address once the company exists (`address: null`
+// hides the address row). The legal pages show a draft notice while READY is false.
 export const LEGAL = {
-  READY: false,
-  controller: "[Ad Soyad veya şirket unvanı]",
-  address: "[Tebligat adresi]",
-  email: "[kvkk@alanadi]",
+  READY: true,
+  controller: "Abdulsamed Dağlı",
+  address: null as string | null,
+  email: "info@studyomapp.com",
   /** Version stamps stored with each consent (see consents.text_version); bump when a text changes. */
-  noticeVersion: "aydinlatma-2026-09-29",
+  noticeVersion: "aydinlatma-2026-09-30",
   healthConsentVersion: "saglik-rizasi-2026-09-29",
-  termsVersion: "kosullar-2026-09-29",
-  updatedOn: "29 Eylül 2026",
+  termsVersion: "kosullar-2026-09-30",
+  updatedOn: "30 Eylül 2026",
 } as const;
 
 /** Processors we pass data to, listed in the notice. */
@@ -27,7 +27,6 @@ export const SUBPROCESSORS = [
     location: "ABD ve Google'ın küresel veri merkezleri",
   },
   {
-    // Confirm the company name and data centre chosen in hPanel before READY: true.
     name: "Hostinger",
     purpose: "Uygulamanın çalıştığı sunucu",
     location: "Avrupa veri merkezi; şirket Litvanya merkezli",
