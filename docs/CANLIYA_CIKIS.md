@@ -20,9 +20,9 @@
 
 ## 1. Alan adı
 
-- **Öneri:** `studyom.app`. Kısa, `.app` her zaman HTTPS ister (güven verir), yıllık ~15 $. Alternatif `studyom.com` (alınmış olabilir) veya `studyom.com.tr` (TRABIS üzerinden, kimlikle alınabiliyor).
-- Aldıktan sonra kodda tek satır değişir: `src/lib/config.ts` → `APP_DOMAIN`.
-- Alan adı alınınca e-posta için **Resend** (ayda 3.000, günde 100 ücretsiz) veya **Brevo** (günde 300 ücretsiz) açılabilir; gönderen `giris@studyom.app` gibi görünür, spam'e daha az düşer. Beta başlangıcında Gmail yeterli (günde 500 alıcı sınırı var).
+- **Alındı:** `studyomapp.com` (Hostinger, ilk yıl ücretsiz). `studyom.com` ve `studyom.net` başkasında; `studyom.com.tr` boş görünüyordu, ileride yönlendirme için alınabilir.
+- Kodda: `src/lib/config.ts` → `APP_DOMAIN`.
+- Alan adı alınınca e-posta için **Resend** (ayda 3.000, günde 100 ücretsiz) veya **Brevo** (günde 300 ücretsiz) açılabilir; gönderen `giris@studyomapp.com` gibi görünür, spam'e daha az düşer. Beta başlangıcında Gmail yeterli (günde 500 alıcı sınırı var).
 
 ## 2. Veritabanı (Supabase)
 
@@ -61,7 +61,7 @@
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yeni projenin publishable anahtarı | |
 | `DATABASE_URL` | yeni projenin pooler adresi (6543) | |
 | `DATABASE_URL_DIRECT` | 5432 adresi | sadece migration |
-| `NEXT_PUBLIC_SITE_URL` | `https://studyom.app` | canonical, OG ve danışan linkleri bununla oluşur |
+| `NEXT_PUBLIC_SITE_URL` | `https://studyomapp.com` | canonical, OG ve danışan linkleri bununla oluşur |
 | `PORTAL_SECRET` | **yeni, rastgele, uzun** bir değer | Geliştirmedekiyle aynı olmasın. Sonradan değiştirilirse danışanlara gönderilmiş bütün linkler bozulur |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | Gmail (şimdilik) | `MAIL_FROM="Stüdyom <adres@gmail.com>"` |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | **canlı için yeni** anahtar çifti | Bildirimler için. `npx web-push generate-vapid-keys` ile üretilir; `VAPID_SUBJECT=mailto:destek@alanadi`. Sonradan değişirse herkesin bildirim aboneliği düşer, yeniden açmaları gerekir |
@@ -72,14 +72,14 @@
 Ders hatırlatması ("Geliyor musun?"), paket yenileme teklifi, pazartesi haftalık özeti ve grup derslerinin önceden oluşturulması `/api/cron` adresinden çalışır. hPanel → **Gelişmiş → Cron Jobs** bölümünde **15 dakikada bir** şu komut eklenir:
 
 ```
-curl -fsS -H "Authorization: Bearer CRON_SECRET_DEĞERİ" https://studyom.app/api/cron
+curl -fsS -H "Authorization: Bearer CRON_SECRET_DEĞERİ" https://studyomapp.com/api/cron
 ```
 
 Her görev bir kez işaretlendiği için kaçan ya da iki kez çalışan tetikleme sorun yaratmaz. Hostinger cron'u yoksa ücretsiz cron-job.org aynı işi görür.
 
 ## 5. Supabase Auth ayarları (canlı projede)
 
-- **URL Configuration:** Site URL = `https://studyom.app`; Redirect URLs'e `https://studyom.app/**` ekle.
+- **URL Configuration:** Site URL = `https://studyomapp.com`; Redirect URLs'e `https://studyomapp.com/**` ekle.
 - **SMTP:** Custom SMTP'yi aç (Gmail + uygulama şifresi). Supabase'in kendi e-postası saatte birkaç e-postayla sınırlı, canlıda yetmez.
 - **Şablonlar:** `supabase/templates/` içindeki dört şablonu yapıştır (README'de tablo var).
 - **Email OTP Expiration:** 3600 saniye.

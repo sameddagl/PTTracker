@@ -12,7 +12,7 @@ export type PushPayload = { title: string; body: string; url: string; tag?: stri
 
 const { NEXT_PUBLIC_VAPID_PUBLIC_KEY: publicKey, VAPID_PRIVATE_KEY: privateKey, VAPID_SUBJECT: subject } = process.env;
 const configured = Boolean(publicKey && privateKey);
-if (configured) webpush.setVapidDetails(subject ?? "mailto:destek@studyom.app", publicKey!, privateKey!);
+if (configured) webpush.setVapidDetails(subject ?? "https://studyomapp.com", publicKey!, privateKey!);
 
 /** A trainer's own devices (`clientId` null) or one client's devices. */
 export type PushTarget = { trainerId: string; clientId: string | null };
