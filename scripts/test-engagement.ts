@@ -19,6 +19,7 @@ import {
   renewalCandidates,
   tomorrowAttendees,
 } from "../src/db/engagement";
+import { activation, overview, trainerList, weekly } from "../src/db/admin-metrics";
 import { createTemplate } from "../src/db/packages";
 import { cleanPrefs, clientWants, notifyPrefsSchema, trainerWants } from "../src/lib/notify-prefs";
 import { recordSignup } from "../src/lib/signup-core";
@@ -239,7 +240,26 @@ async function main() {
   await db.update(schema.clients).set({ notifyPrefs: { reminder: { push: false } } }).where(eq(schema.clients.id, zeynep.id));
   const [after] = await db.select({ p: schema.clients.notifyPrefs }).from(schema.clients).where(eq(schema.clients.id, zeynep.id));
   assert.equal(clientWants(after.p, "reminder", "push"), false);
-  console.log("notification choices ok\n\nall engagement checks passed");
+  console.log("notification choices ok");
+
+  // ---- Owner metrics (/yonetim) ----
+  const o = await owner((tx) => overview(tx));
+  assert.equal(o.trainers, 2);
+  assert.equal(o.onboarded, 1);
+  assert.ok(o.clients >= 3);
+  assert.equal(o.active_trainers_7, 0, "attendance marked on lessons in the last week counts; the 30-day-old ones don't");
+  const act = await owner((tx) => activation(tx));
+  assert.equal(act.package, 1);
+  assert.equal(act.attendance, 1);
+  const weeks = await owner((tx) => weekly(tx, 8));
+  assert.equal(weeks.length, 8);
+  assert.ok(weeks.every((w) => /^\d{4}-\d{2}-\d{2}$/.test(w.week)));
+  assert.equal(weeks.at(-1)!.newTrainers, 2, "both test trainers signed up this week");
+  const trainersSeen = await owner((tx) => trainerList(tx));
+  assert.equal(trainersSeen.length, 2);
+  assert.ok(trainersSeen.find((t) => t.id === A)?.onboarded);
+  assert.ok(trainersSeen.every((t) => !("phone" in t)), "no client contact details");
+  console.log("owner metrics ok\n\nall engagement checks passed");
 }
 
 main().catch((e) => {
