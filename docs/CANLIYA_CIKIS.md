@@ -45,7 +45,9 @@
   - Kaynak: GitHub deposu (her push'ta otomatik yayın).
   - Framework: Next.js; paket yöneticisi pnpm.
   - Node: 22. `package.json` → `engines.node >= 22`; Supabase kütüphanesi Node 20'yi artık önermiyor.
-  - Build komutu `build`, çıktı dizini `.next`.
+  - Build komutu `pnpm run build`, çıktı dizini `.next`.
+  - `build` betiği `next build --webpack` çalıştırır: Turbopack CSS için ayrı bir Node işlemi başlatıyor, Hostinger'ın paylaşımlı ortamı buna izin vermiyor (derleme `globals.css` hatasıyla düşüyordu). Yerelde `pnpm dev` Turbopack'le çalışmaya devam eder.
+  - pnpm 10 kullanılır (`packageManager`); Hostinger pnpm 12'yi indiremiyor.
   - Veri merkezi: **Avrupa** (Almanya ya da Hollanda). Veritabanı Frankfurt'ta.
 - **Sınırlar:** Kurulum ve build için ayrı ayrı 15 dakika süre sınırı var (bizim build 1–2 dakika). RAM ve CPU plana bağlı; build bellek yetmezse bir üst plana geçilir.
 - **Dikkat:** `next.config.ts` bir nesne olarak dışa aktarılmalı (öyle); fonksiyon biçimli config Hostinger'da sessizce yok sayılıyor.
