@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Archive, ChevronRight, FileSpreadsheet, UserPlus, Users } from "lucide-react";
+import { Archive, ChevronRight, FileSpreadsheet, Inbox, UserPlus, Users } from "lucide-react";
+import { ActionTiles } from "@/components/action-tiles";
 import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,23 +27,18 @@ export default async function ClientsPage() {
       <PageHeader
         title="Danışanlar"
         description={clients.length > 0 ? `${clients.length} aktif danışan` : undefined}
-        action={
-          <>
-            <Button asChild variant="outline">
-              <Link href="/danisanlar/ice-aktar">
-                <FileSpreadsheet />
-                <span className="max-sm:sr-only">Excel&apos;den aktar</span>
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/danisanlar/yeni">
-                <UserPlus />
-                <span className="max-sm:sr-only">Yeni danışan</span>
-              </Link>
-            </Button>
-          </>
-        }
       />
+      {/* The empty state below has its own buttons for these. */}
+      {clients.length > 0 && (
+        <ActionTiles
+          className="mb-6"
+          items={[
+            { href: "/danisanlar/yeni", icon: <UserPlus />, title: "Yeni danışan", primary: true },
+            { href: "/danisanlar/ice-aktar", icon: <FileSpreadsheet />, title: "Excel'den aktar" },
+            { href: "/danisanlar/basvurular", icon: <Inbox />, title: pending > 0 ? `Başvurular (${pending})` : "Başvurular" },
+          ]}
+        />
+      )}
 
       <ApplicationsBanner count={pending} />
 

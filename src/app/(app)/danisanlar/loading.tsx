@@ -3,7 +3,7 @@ import { HeaderSkeleton, ListSkeleton, LoadingScreen } from "@/components/skelet
 export default function Loading() {
   return (
     <LoadingScreen>
-      <HeaderSkeleton title="Danışanlar" />
+      <HeaderSkeleton title="Danışanlar" action={false} />
       <ListSkeleton rows={7} />
     </LoadingScreen>
   );
