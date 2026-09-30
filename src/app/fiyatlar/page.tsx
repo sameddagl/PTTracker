@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, Download, Percent, ShieldCheck } from "lucide-react";
 import { Analytics } from "@/components/analytics";
+import { Reveal } from "@/components/landing/reveal";
+import { stagger } from "@/lib/motion";
 import { Breadcrumbs, CtaBand, FaqSection, JsonLd, SiteFooter, SiteHeader, card, pageJsonLd, type Faq } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
 import { APP_NAME, siteUrl } from "@/lib/config";
@@ -89,16 +91,17 @@ export default function PricingPage() {
   } as never);
 
   return (
-    <div className="min-h-dvh overflow-x-clip bg-canvas">
+    <div data-marketing className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
+      <Reveal />
       <JsonLd data={ld} />
       <SiteHeader page="fiyat" />
       <Breadcrumbs items={[{ href: PATH, label: "Fiyatlar" }]} />
 
       <main>
         <section aria-labelledby="hero-heading" className="px-4 pt-8 text-center sm:px-6 sm:pt-14">
-          <p className="eyebrow mb-4">Fiyatlar</p>
-          <h1 id="hero-heading" className="mx-auto max-w-3xl text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
+          <p className="anim-rise eyebrow mb-4">Fiyatlar</p>
+          <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise mx-auto max-w-3xl text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
             {APP_NAME} beta süresince ücretsiz
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
@@ -107,7 +110,7 @@ export default function PricingPage() {
         </section>
 
         <section aria-labelledby="plan-heading" className="px-4 pt-12 sm:px-6">
-          <div className={cn(card, "mx-auto flex max-w-xl flex-col gap-6 p-6 ring-2 ring-lime sm:p-8")}>
+          <div style={{ "--delay": "160ms" } as React.CSSProperties} className={cn(card, "anim-rise mx-auto flex max-w-xl flex-col gap-6 p-6 ring-2 ring-lime sm:p-8")}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="plan-heading" className="text-xl font-semibold tracking-[-0.02em]">
@@ -144,8 +147,8 @@ export default function PricingPage() {
             Beta bitince ne olacak?
           </h2>
           <ul className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
-            {PROMISES.map(({ icon: Icon, title, text }) => (
-              <li key={title} className={cn(card, "flex flex-col gap-3 p-6")}>
+            {PROMISES.map(({ icon: Icon, title, text }, i) => (
+              <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col gap-3 p-6")}>
                 <span className="flex size-10 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                   <Icon className="size-5" />
                 </span>

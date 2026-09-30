@@ -35,7 +35,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={`${poppins.variable} ${inconsolata.variable} h-full antialiased`}>
+    <html lang="tr" data-scroll-behavior="smooth" className={`${poppins.variable} ${inconsolata.variable} h-full antialiased`}>
       <body className="min-h-full">
         {children}
         <Toaster position="top-center" richColors />

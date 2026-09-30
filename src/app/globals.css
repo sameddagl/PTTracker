@@ -234,3 +234,66 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- Marketing pages: smooth in-page scrolling and gentle motion ----
+   Everything is off for people who ask for reduced motion. Reveal hides an
+   element only when scripting is on, so crawlers and no-JS readers always see
+   the content; <Reveal /> adds .is-revealed as it scrolls into view. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has([data-marketing]) {
+    scroll-behavior: smooth;
+  }
+
+  .anim-rise {
+    animation: rise-in 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+  .anim-float {
+    animation: float-y 6s ease-in-out infinite;
+    animation-delay: var(--delay, 0ms);
+  }
+  /* Uses `translate`, not `transform`, so it doesn't fight the reveal transition on the same element. */
+  .hover-lift {
+    transition: translate 0.25s ease;
+  }
+  .hover-lift:hover {
+    translate: 0 -4px;
+  }
+}
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+      transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+      translate 0.25s ease;
+    transition-delay: var(--delay, 0ms), var(--delay, 0ms), 0ms;
+  }
+  [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

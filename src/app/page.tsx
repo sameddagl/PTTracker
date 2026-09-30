@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  Activity,
   ArrowRight,
+  Dumbbell,
   CalendarCheck,
   Check,
   ClipboardCheck,
@@ -22,6 +24,8 @@ import {
 } from "@/components/landing/feature-demos";
 import { Analytics } from "@/components/analytics";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
+import { Reveal } from "@/components/landing/reveal";
+import { stagger } from "@/lib/motion";
 import { Chips, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
 import { APP_DESCRIPTION, APP_DOMAIN, APP_NAME, siteUrl } from "@/lib/config";
@@ -210,9 +214,25 @@ const HERO_CHECKS = ["Kredi kartı gerekmez", "Danışanlarınız uygulama indir
 
 const NAV = [
   { href: "#ozellikler", label: "Özellikler" },
-  { href: "#nasil-calisir", label: "Nasıl çalışıyor" },
+  { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri" },
+  { href: "/personal-trainer", label: "Personal trainer" },
   { href: "/fiyatlar", label: "Fiyatlar" },
   { href: "#sss", label: "SSS" },
+];
+
+const AUDIENCES = [
+  {
+    href: "/pilates-egitmenleri",
+    icon: Activity,
+    title: "Pilates eğitmenleri",
+    text: "Reformer ve mat; özel, düet ve grup paketleri, telafi hakkı, reformer kontenjanı.",
+  },
+  {
+    href: "/personal-trainer",
+    icon: Dumbbell,
+    title: "Personal trainer'lar",
+    text: "Salonda ders veren serbest PT'ler; PT paketleri, taksit, randevu ve tahsilat.",
+  },
 ];
 
 // Structured data: what the product is (no ratings or reviews: there are none yet) and the FAQ.
@@ -283,8 +303,9 @@ const JSON_LD = {
 
 export default function Home() {
   return (
-    <div className="min-h-dvh overflow-x-clip bg-canvas">
+    <div data-marketing className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
+      <Reveal />
       <JsonLd data={JSON_LD} />
       <SiteHeader nav={NAV} page="landing" />
 
@@ -292,22 +313,29 @@ export default function Home() {
         {/* Hero */}
         <section aria-labelledby="hero-heading" className="relative px-4 pt-14 sm:px-6 sm:pt-20 lg:pt-24">
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
-            <p className="mb-7 inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pr-3.5 pl-2 text-xs font-medium shadow-card sm:text-sm">
+            <p className="anim-rise mb-7 inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pr-3.5 pl-2 text-xs font-medium shadow-card sm:text-sm">
               <span className="rounded-full bg-lime px-2 py-0.5 text-lime-foreground">Beta</span>
               Eğitmenlere ücretsiz
             </p>
             <h1
               id="hero-heading"
-              className="text-[2.5rem] leading-[1.04] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.5rem]"
+              style={{ "--delay": "80ms" } as React.CSSProperties}
+              className="anim-rise text-[2.5rem] leading-[1.04] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.5rem]"
             >
               <span className="block text-foreground">Defteri bırakın.</span>{" "}
               <span className="block text-muted-foreground">Pilates ve PT danışan takibini {APP_NAME} yapsın.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
+            <p
+              style={{ "--delay": "180ms" } as React.CSSProperties}
+              className="anim-rise mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg"
+            >
               Kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer&apos;lar için seans paketi, yoklama, randevu ve
               ödeme takibi. Yoklamayı aldığınızda kalan seans paketten düşer, kimin ne kadar borcu olduğunu her an görürsünüz.
             </p>
-            <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <div
+              style={{ "--delay": "280ms" } as React.CSSProperties}
+              className="anim-rise mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center"
+            >
               <Button asChild size="lg">
                 <Link href="/giris" data-umami-event="landing-basla" data-umami-event-yer="hero">
                   Ücretsiz başlayın
@@ -318,7 +346,10 @@ export default function Home() {
                 <a href="#nasil-calisir">Nasıl çalışıyor?</a>
               </Button>
             </div>
-            <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <ul
+              style={{ "--delay": "360ms" } as React.CSSProperties}
+              className="anim-rise mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"
+            >
               {HERO_CHECKS.map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <span className="flex size-4 items-center justify-center rounded-full bg-success/15 text-success-strong">
@@ -330,14 +361,14 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="relative mx-auto mt-14 max-w-4xl sm:mt-16">
+          <div style={{ "--delay": "450ms" } as React.CSSProperties} className="anim-rise relative mx-auto mt-14 max-w-4xl sm:mt-16">
             {/* Soft lime glow behind the device */}
             <div aria-hidden className="absolute top-1/4 left-1/2 -z-0 h-80 w-80 -translate-x-1/2 rounded-full bg-lime/30 blur-[90px] dark:bg-lime/10" />
             <PhoneMockup className="relative" />
 
             {/* What arrives while the trainer is teaching. */}
             <div aria-hidden className="absolute top-28 left-0 hidden w-60 lg:block">
-              <div className={cn(card, "flex items-center gap-3 rounded-2xl p-3 shadow-float")}>
+              <div className={cn(card, "anim-float flex items-center gap-3 rounded-2xl p-3 shadow-float")}>
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground">
                   <UserPlus className="size-4" />
                 </span>
@@ -348,7 +379,10 @@ export default function Home() {
               </div>
             </div>
             <div aria-hidden className="absolute right-0 bottom-40 hidden w-60 lg:block">
-              <div className={cn(card, "flex items-center gap-3 rounded-2xl p-3 shadow-float")}>
+              <div
+                style={{ "--delay": "-3s" } as React.CSSProperties}
+                className={cn(card, "anim-float flex items-center gap-3 rounded-2xl p-3 shadow-float")}
+              >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
                   <Check className="size-4 text-success-strong" strokeWidth={3} />
                 </span>
@@ -361,6 +395,31 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Who it's for: the way into the audience pages (also on phones, where the header has no menu). */}
+        <section aria-labelledby="audience-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
+          <h2 id="audience-heading" data-reveal className="eyebrow mb-5 text-center">
+            Kimin için?
+          </h2>
+          <ul className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2">
+            {AUDIENCES.map(({ href, icon: Icon, title, text }, i) => (
+              <li key={href} data-reveal style={stagger(i, 2)}>
+                <Link href={href} className={cn(card, "hover-lift group flex h-full items-start gap-4 p-5 sm:p-6")}>
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2 text-lg font-semibold tracking-[-0.02em]">
+                      {title}
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
+                    </span>
+                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{text}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {/* Features */}
         <section id="ozellikler" aria-labelledby="features-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
           <SectionHeading
@@ -370,8 +429,8 @@ export default function Home() {
             rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
           />
           <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ title, text, chips, Demo }) => (
-              <li key={title} className={cn(card, "flex flex-col p-2")}>
+            {FEATURES.map(({ title, text, chips, Demo }, i) => (
+              <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col p-2")}>
                 <div aria-hidden className="flex min-h-56 items-center justify-center rounded-[1.35rem] bg-canvas p-4 sm:p-5">
                   <Demo />
                 </div>
@@ -386,8 +445,8 @@ export default function Home() {
             ))}
           </ul>
           <ul className="mx-auto mt-4 grid max-w-6xl gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
-            {MORE.map(({ icon: Icon, title, text }) => (
-              <li key={title} className={cn(card, "flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
+            {MORE.map(({ icon: Icon, title, text }, i) => (
+              <li key={title} data-reveal style={stagger(i, 4)} className={cn(card, "hover-lift flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                   <Icon className="size-5" />
                 </span>
@@ -402,13 +461,13 @@ export default function Home() {
 
         {/* Big numbers */}
         <section aria-labelledby="stats-heading" className="px-4 pt-24 sm:px-6 sm:pt-32">
-          <div className="mx-auto max-w-6xl rounded-[1.75rem] bg-[#1d1d1f] px-6 py-12 text-white sm:px-12 sm:py-16 dark:border dark:bg-card">
+          <div data-reveal className="mx-auto max-w-6xl rounded-[1.75rem] bg-[#1d1d1f] px-6 py-12 text-white sm:px-12 sm:py-16 dark:border dark:bg-card">
             <h2 id="stats-heading" className="max-w-xl text-2xl leading-tight font-semibold tracking-[-0.03em] sm:text-3xl">
               Başlamak için <span className="text-white/60">kart bilgisi ya da uygulama indirmek gerekmez.</span>
             </h2>
             <ul className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
-              {STATS.map((s) => (
-                <li key={s.value} className="border-t border-white/15 pt-5">
+              {STATS.map((s, i) => (
+                <li key={s.value} data-reveal style={stagger(i, 3, 140)} className="border-t border-white/15 pt-5">
                   <p className="text-[2.75rem] leading-none font-semibold tracking-[-0.04em] text-lime tabular-nums sm:text-5xl">{s.value}</p>
                   <p className="mt-3 text-sm text-white/70">{s.label}</p>
                 </li>
@@ -422,7 +481,7 @@ export default function Home() {
           <SectionHeading id="how-heading" eyebrow="Nasıl çalışıyor" lead="Üç adımda hazırsınız." rest="Akşam kurun, ertesi gün kullanın." />
           <ol className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-3">
             {STEPS.map((s, i) => (
-              <li key={s.title} className={cn(card, "flex flex-col gap-3 p-7")}>
+              <li key={s.title} data-reveal style={stagger(i, 3, 120)} className={cn(card, "flex flex-col gap-3 p-7")}>
                 <span className="mb-3 flex items-center gap-3 md:mb-6">
                   <span
                     className={cn(
@@ -444,14 +503,14 @@ export default function Home() {
         {/* Why */}
         <section aria-labelledby="why-heading" className="px-4 pt-24 sm:px-6 sm:pt-32">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
-            <div className="lg:sticky lg:top-28 lg:self-start">
+            <div data-reveal className="lg:sticky lg:top-28 lg:self-start">
               <p className="eyebrow mb-4">Neden {APP_NAME}?</p>
               <h2 id="why-heading" className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
                 <span className="text-foreground">Türkiye&apos;deki eğitmenlerin çalışma düzenine göre hazırlandı.</span>{" "}
                 <span className="text-muted-foreground">Yabancı bir programın çevirisi değil.</span>
               </h2>
             </div>
-            <ol className={cn(card, "divide-y px-6 sm:px-8")}>
+            <ol data-reveal className={cn(card, "divide-y px-6 sm:px-8")}>
               {REASONS.map((r, i) => (
                 <li key={r.title} className="grid grid-cols-[2.5rem_1fr] gap-x-4 py-7 sm:grid-cols-[3.5rem_1fr]">
                   <span className="text-sm font-semibold text-muted-foreground tabular-nums sm:text-base" aria-hidden>

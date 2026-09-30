@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarClock, MessagesSquare, Package, Smartphone, Wallet, X } from "lucide-react";
 import { Analytics } from "@/components/analytics";
+import { Reveal } from "@/components/landing/reveal";
+import { stagger } from "@/lib/motion";
 import { MessagesDemo, PaymentDemo } from "@/components/landing/feature-demos";
 import { Breadcrumbs, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card, pageJsonLd, type Faq } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
@@ -75,8 +77,9 @@ const FAQ: Faq[] = [
 
 export default function PersonalTrainerPage() {
   return (
-    <div className="min-h-dvh overflow-x-clip bg-canvas">
+    <div data-marketing className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
+      <Reveal />
       <JsonLd data={pageJsonLd({ path: PATH, title: TITLE, description: DESCRIPTION, crumbs: [{ href: PATH, label: "Personal trainer" }], faq: FAQ })} />
       <SiteHeader page="pt" />
       <Breadcrumbs items={[{ href: PATH, label: "Personal trainer" }]} />
@@ -85,8 +88,8 @@ export default function PersonalTrainerPage() {
         <section aria-labelledby="hero-heading" className="px-4 pt-8 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="eyebrow mb-4">Personal trainer&apos;lar için</p>
-              <h1 id="hero-heading" className="text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
+              <p className="anim-rise eyebrow mb-4">Personal trainer&apos;lar için</p>
+              <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
                 Personal trainer&apos;lar için danışan, PT paketi ve ödeme takibi
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
@@ -113,7 +116,7 @@ export default function PersonalTrainerPage() {
         </section>
 
         <section aria-labelledby="scenario-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
-          <div className={cn(card, "mx-auto max-w-5xl p-6 sm:p-10")}>
+          <div data-reveal className={cn(card, "mx-auto max-w-5xl p-6 sm:p-10")}>
             <h2 id="scenario-heading" className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
               Salonda ders veren serbest PT&apos;nin günü
             </h2>
@@ -128,8 +131,8 @@ export default function PersonalTrainerPage() {
         <section aria-labelledby="features-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
           <SectionHeading id="features-heading" eyebrow="Neler var" lead="Satıştan tahsilata PT işiniz tek yerde." />
           <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
-              <li key={title} className={cn(card, "flex flex-col gap-3 p-6")}>
+            {FEATURES.map(({ icon: Icon, title, text }, i) => (
+              <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col gap-3 p-6")}>
                 <span className="flex size-10 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                   <Icon className="size-5" />
                 </span>
@@ -142,7 +145,7 @@ export default function PersonalTrainerPage() {
 
         <section aria-labelledby="not-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
           <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
-            <div className={cn(card, "p-6 sm:p-8")}>
+            <div data-reveal className={cn(card, "p-6 sm:p-8")}>
               <h2 id="not-heading" className="text-xl font-semibold tracking-[-0.02em]">
                 {APP_NAME} ne yapmaz?
               </h2>
@@ -158,7 +161,7 @@ export default function PersonalTrainerPage() {
                 ))}
               </ul>
             </div>
-            <div className={cn(card, "p-6 sm:p-8")}>
+            <div data-reveal className={cn(card, "p-6 sm:p-8")}>
               <span className="flex size-10 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                 <Smartphone className="size-5" />
               </span>

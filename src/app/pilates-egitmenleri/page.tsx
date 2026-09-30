@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BellRing, CalendarClock, Check, Gift, Minus, Package, RotateCcw, UsersRound } from "lucide-react";
 import { Analytics } from "@/components/analytics";
+import { Reveal } from "@/components/landing/reveal";
+import { stagger } from "@/lib/motion";
 import { AttendanceDemo, GroupDemo } from "@/components/landing/feature-demos";
 import { Breadcrumbs, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card, pageJsonLd, type Faq } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
@@ -97,8 +99,9 @@ const FAQ: Faq[] = [
 
 export default function PilatesPage() {
   return (
-    <div className="min-h-dvh overflow-x-clip bg-canvas">
+    <div data-marketing className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
+      <Reveal />
       <JsonLd data={pageJsonLd({ path: PATH, title: TITLE, description: DESCRIPTION, crumbs: [{ href: PATH, label: "Pilates eğitmenleri" }], faq: FAQ })} />
       <SiteHeader page="pilates" />
       <Breadcrumbs items={[{ href: PATH, label: "Pilates eğitmenleri" }]} />
@@ -107,8 +110,8 @@ export default function PilatesPage() {
         <section aria-labelledby="hero-heading" className="px-4 pt-8 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="eyebrow mb-4">Pilates eğitmenleri için</p>
-              <h1 id="hero-heading" className="text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
+              <p className="anim-rise eyebrow mb-4">Pilates eğitmenleri için</p>
+              <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
                 Pilates eğitmenleri için seans paketi, yoklama ve randevu takibi
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
@@ -135,7 +138,7 @@ export default function PilatesPage() {
         </section>
 
         <section aria-labelledby="who-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
-          <div className={cn(card, "mx-auto max-w-5xl p-6 sm:p-10")}>
+          <div data-reveal className={cn(card, "mx-auto max-w-5xl p-6 sm:p-10")}>
             <h2 id="who-heading" className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
               Kimler için?
             </h2>
@@ -155,8 +158,8 @@ export default function PilatesPage() {
             rest="Paket, telafi, iptal kuralı ve reformer kontenjanı hazır."
           />
           <ul className="mx-auto mt-12 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
-              <li key={title} className={cn(card, "flex flex-col gap-3 p-6")}>
+            {FEATURES.map(({ icon: Icon, title, text }, i) => (
+              <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col gap-3 p-6")}>
                 <span className="flex size-10 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                   <Icon className="size-5" />
                 </span>
@@ -174,7 +177,7 @@ export default function PilatesPage() {
             lead="Bir pilates programında bakmanız gerekenler."
             rest="Olmayanları da yazdık."
           />
-          <div className={cn(card, "mx-auto mt-12 max-w-4xl overflow-hidden")}>
+          <div data-reveal className={cn(card, "mx-auto mt-12 max-w-4xl overflow-hidden")}>
             <table className="w-full text-left text-sm">
               <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
                 <tr>
@@ -214,7 +217,7 @@ export default function PilatesPage() {
 
         <section aria-labelledby="why-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
           <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
-            <div className={cn(card, "p-6 sm:p-8")}>
+            <div data-reveal className={cn(card, "p-6 sm:p-8")}>
               <h2 id="why-heading" className="text-xl font-semibold tracking-[-0.02em]">
                 Genel bir randevu programı neden yetmez?
               </h2>
@@ -224,7 +227,7 @@ export default function PilatesPage() {
                 bağlar; hangi danışanın kaç dersi ve ne kadar borcu kaldığını tek ekranda görürsünüz.
               </p>
             </div>
-            <div className={cn(card, "p-6 sm:p-8")}>
+            <div data-reveal className={cn(card, "p-6 sm:p-8")}>
               <h2 className="text-xl font-semibold tracking-[-0.02em]">Excel ya da defterden geçiş</h2>
               <ol className="mt-3 flex list-decimal flex-col gap-2 pl-5 text-sm leading-relaxed text-muted-foreground">
                 <li>Danışan listenizi Excel ya da CSV olarak yükleyin.</li>

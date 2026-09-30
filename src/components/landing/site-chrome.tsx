@@ -32,11 +32,13 @@ export function Logo() {
 }
 
 export function SiteHeader({ nav = MARKETING_PAGES, page = "landing" }: { nav?: NavLink[]; page?: string }) {
+  // Longer menus only fit next to the logo and buttons from lg up.
+  const navShow = nav.length > 3 ? "lg:flex" : "md:flex";
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-canvas/80 backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
         <Logo />
-        <nav aria-label="Sayfa" className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
+        <nav aria-label="Sayfa" className={cn("hidden items-center gap-1 text-sm text-muted-foreground", navShow)}>
           {nav.map((n) => (
             <Link key={n.href} href={n.href} className="flex min-h-11 items-center rounded-full px-3 transition-colors hover:text-foreground">
               {n.label}
@@ -117,7 +119,7 @@ export function SectionHeading({
   className?: string;
 }) {
   return (
-    <div className={cn("mx-auto max-w-4xl text-center", className)}>
+    <div data-reveal className={cn("mx-auto max-w-4xl text-center", className)}>
       <p className="eyebrow mb-4">{eyebrow}</p>
       <h2 id={id} className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
         <span className="text-foreground">{lead}</span>
@@ -145,7 +147,7 @@ export function FaqSection({ items, id = "sss" }: { items: Faq[]; id?: string })
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
       <SectionHeading id={`${id}-heading`} eyebrow="SSS" lead="Sık sorulan sorular" />
-      <div className={cn(card, "mx-auto mt-12 max-w-3xl divide-y")}>
+      <div data-reveal className={cn(card, "mx-auto mt-12 max-w-3xl divide-y")}>
         {items.map(({ q, a }) => (
           <details key={q} className="group px-5 sm:px-7 [&_summary::-webkit-details-marker]:hidden">
             <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 py-4 text-base font-medium outline-none focus-visible:underline">
@@ -168,7 +170,10 @@ export function FaqSection({ items, id = "sss" }: { items: Faq[]; id?: string })
 export function CtaBand({ title, text, page }: { title: string; text: string; page: string }) {
   return (
     <section aria-labelledby="cta-heading" className="px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-24">
-      <div className="relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden rounded-[1.75rem] bg-lime px-6 py-16 text-center text-lime-foreground sm:py-20">
+      <div
+        data-reveal
+        className="relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden rounded-[1.75rem] bg-lime px-6 py-16 text-center text-lime-foreground sm:py-20"
+      >
         <span aria-hidden className="mb-6 flex size-12 items-center justify-center rounded-2xl bg-lime-foreground text-lime">
           <Activity className="size-6" strokeWidth={2.5} />
         </span>
