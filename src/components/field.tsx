@@ -32,14 +32,14 @@ export function Field({
 }
 
 /** Native <select> styled like Input; opens the platform picker on phones. */
+/** `className` sizes the whole control (e.g. `max-w-72`, `flex-1`), so the chevron stays inside the box. */
 export function NativeSelect({ className, children, ...props }: ComponentProps<"select">) {
   return (
-    <div className="relative">
+    <div className={cn("relative w-full", className)}>
       <select
         className={cn(
           "h-12 w-full appearance-none surface border-input bg-card py-1 pr-10 pl-4 text-base outline-none transition-colors md:h-11 md:text-sm",
           "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
-          className,
         )}
         {...props}
       >
