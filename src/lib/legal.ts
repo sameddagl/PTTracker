@@ -26,4 +26,20 @@ export const SUBPROCESSORS = [
     purpose: "Giriş kodu ve bilgilendirme e-postalarının gönderilmesi",
     location: "ABD ve Google'ın küresel veri merkezleri",
   },
+  {
+    // Confirm the company name and data centre chosen in hPanel before READY: true.
+    name: "Hostinger",
+    purpose: "Uygulamanın çalıştığı sunucu",
+    location: "Avrupa veri merkezi; şirket Litvanya merkezli",
+  },
+  {
+    name: "Functional Software Inc. (Sentry)",
+    purpose: "Hata kayıtları; ad, e-posta, form içeriği ve sağlık bilgisi gönderilmez",
+    location: "Almanya (Frankfurt, AB) veri merkezi; şirket ABD merkezli",
+  },
+  {
+    name: "Apple, Google ve Mozilla bildirim servisleri",
+    purpose: "Bildirimi açan cihazlara anlık bildirim iletilmesi",
+    location: "ABD ve küresel veri merkezleri",
+  },
 ] as const;

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : undefined;
 
@@ -24,4 +25,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Uploads source maps only when SENTRY_AUTH_TOKEN is set (Hostinger env), so
+// stack traces point at our own code. Events go through /monitoring on our own
+// domain, which ad-blockers don't block.
+export default withSentryConfig(nextConfig, {
+  org: "studyom",
+  project: "javascript-nextjs",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN, deleteSourcemapsAfterUpload: true },
+  silent: !process.env.CI,
+  telemetry: false,
+  tunnelRoute: "/monitoring",
+});
