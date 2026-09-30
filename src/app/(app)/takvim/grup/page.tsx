@@ -26,7 +26,7 @@ export default async function GroupClassesPage() {
       </Link>
       <PageHeader
         title="Grup dersleri"
-        description="Her hafta tekrarlayan, kapasiteli dersler. Takvimde doluluklarıyla görünür."
+        description="Her hafta aynı gün ve saatte yapılan, kişi sınırı olan dersler. Takvimde kaç yerin dolu olduğunu görürsün."
         action={
           <Button asChild>
             <Link href="/takvim/grup/yeni">

@@ -70,7 +70,7 @@ export function LessonPicker({
     setBusy(s.lessonId);
     start(async () => {
       const res = await joinGroupAction(token, s.lessonId);
-      if (res.ok) toast.success(`${dayLong(s.date)} ${s.start} ${s.title} dersine yerin ayrıldı`);
+      if (res.ok) toast.success(`${dayLong(s.date)} ${s.start} ${s.title} dersine yerini ayırdık`);
       else toast.error(res.error);
     });
   }
@@ -235,7 +235,7 @@ export function LessonPicker({
             )}
 
             {groupDay.length === 0 && !privDay && (
-              <p className="rounded-xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">Bu gün uygun ders yok.</p>
+              <p className="rounded-xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">Bu gün için uygun ders yok.</p>
             )}
           </>
         )}

@@ -32,7 +32,7 @@ export async function approveApplicationAction(_prev: DecisionState, formData: F
     const link = (await getActivePortalLink(tx, approved.clientId)) ?? (await createPortalLink(tx, trainerId, approved.clientId));
     return { app: app!, trainerId, trainerName: trainer.businessName || trainer.fullName, token: link.token };
   });
-  if (!result) return { error: "Başvuru bulunamadı ya da zaten karara bağlanmış." };
+  if (!result) return { error: "Başvuru bulunamadı ya da daha önce onaylanmış veya reddedilmiş." };
 
   const { app, trainerId, trainerName, token } = result;
   // Push only reaches a client who turned notifications on earlier (e.g. a renewal request).
@@ -44,7 +44,7 @@ export async function approveApplicationAction(_prev: DecisionState, formData: F
       heading: "Başvurun onaylandı 🎉",
       lines: [
         `${trainerName}, ${app.packageName} başvurunu onayladı.`,
-        "Paket bilgilerini, ödeme adımlarını ve derslerini kişisel sayfandan takip edebilirsin.",
+        "Paketini, ödemelerini ve derslerini kendi sayfandan takip edebilirsin.",
       ],
       cta: { label: "Sayfamı aç", url: portalUrl(token) },
       footer: trainerName,

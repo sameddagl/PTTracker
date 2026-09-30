@@ -17,7 +17,7 @@ export function DeletePaymentButton({ id, label }: { id: string; label: string }
       loading={pending}
       aria-label={`${label} ödemesini sil`}
       onClick={() => {
-        if (!window.confirm(`${label} ödemesi silinsin mi? Bu işlem geri alınamaz.`)) return;
+        if (!window.confirm(`${label} ödemesi silinsin mi? Bunu geri alamazsın.`)) return;
         startTransition(async () => {
           const res = await deletePaymentAction(id);
           if (res.ok) toast.success("Ödeme silindi");

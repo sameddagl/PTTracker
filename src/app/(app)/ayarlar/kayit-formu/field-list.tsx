@@ -69,7 +69,7 @@ export function FieldList({ fields }: { fields: Row[] }) {
 
       {items.length > 0 && (
         <>
-          <p className="text-sm text-muted-foreground">Sorular formda bu sırayla görünür. Sıralamak için tutamaktan sürükle.</p>
+          <p className="text-sm text-muted-foreground">Sorular formda bu sırayla görünür. Sırasını değiştirmek için soruyu soldaki noktalardan tutup sürükle.</p>
           <DndContext
             id={dndId}
             sensors={sensors}
@@ -146,7 +146,7 @@ function SortableField({ field: f, onEdit }: { field: Row; onEdit: () => void })
           {!f.isActive && <Badge variant="secondary">Gizli</Badge>}
         </p>
       </div>
-      <Button type="button" size="icon" variant="ghost" aria-label={`${f.label} düzenle`} onClick={onEdit}>
+      <Button type="button" size="icon" variant="ghost" aria-label={`${f.label} sorusunu düzenle`} onClick={onEdit}>
         <Pencil />
       </Button>
       <Button
@@ -154,7 +154,7 @@ function SortableField({ field: f, onEdit }: { field: Row; onEdit: () => void })
         size="icon"
         variant="ghost"
         loading={deleting}
-        aria-label={`${f.label} sil`}
+        aria-label={`${f.label} sorusunu sil`}
         onClick={() => {
           if (!window.confirm(`"${f.label}" sorusu silinsin mi? Önceki cevaplar danışan kayıtlarında kalır.`)) return;
           startDelete(() => deleteIntakeFieldAction(f.id));

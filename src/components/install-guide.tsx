@@ -107,7 +107,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
   if (standalone) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">Uygulama ana ekranında. Son adım: bildirimleri aç.</p>
+        <p className="text-sm text-muted-foreground">Ana ekrana eklemişsin. Son adım: bildirimleri aç.</p>
         <PushToggle {...push} />
       </div>
     );
@@ -119,7 +119,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
         steps={[
           {
             title: "Safari'de aç",
-            text: "Instagram gibi uygulamaların içindeki tarayıcıdan ana ekrana eklenemiyor. Sağ üstteki ••• menüsüne dokun, “Tarayıcıda aç”ı seç.",
+            text: "Instagram gibi uygulamaların içinde açılan sayfa ana ekrana eklenmiyor. Sağ üstteki ••• simgesine dokun, sayfayı tarayıcıda aç.",
             tile: (
               <Tile>
                 <Dim>
@@ -148,7 +148,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
         steps={[
           {
             title: "Paylaş simgesine dokun",
-            text: chromeIos ? "Chrome'da adres çubuğunun sağındaki paylaş simgesi." : "Safari'de ekranın altındaki (iPad'de üstteki) kare ve ok simgesi.",
+            text: chromeIos ? "Chrome'da adres çubuğunun sağındaki paylaş simgesi." : "Safari'de ekranın altında (iPad'de üstte), içinden ok çıkan kare.",
             tile: (
               // Safari's bottom bar: back, forward, share, bookmarks, tabs.
               <Tile className="justify-around">
@@ -184,7 +184,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
           },
           {
             title: `Ana ekrandaki ${appName} simgesinden aç`,
-            text: "Artık uygulama gibi tam ekran açılır; her seferinde link aramana gerek kalmaz.",
+            text: "Sayfa tarayıcı çubukları olmadan, tam ekran açılır. Linki her seferinde aramazsın.",
             tile: (
               <Tile className="h-20 justify-center">
                 <AppIcon name={appName} />
@@ -193,7 +193,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
           },
           {
             title: "Bildirimleri aç",
-            text: `Uygulamayı ana ekrandan açtıktan sonra ${notifyWhere} “Aç”a dokun ve izin ver. iPhone bildirimleri yalnızca ana ekrandan açılan uygulamaya gönderir.`,
+            text: `Simgeden açınca ${notifyWhere} “Aç”a dokun, gelen soruda “İzin Ver” de. iPhone'da bildirim yalnızca ana ekrandaki simgeden açınca geliyor.`,
             tile: (
               <Tile className="justify-between">
                 <span className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
             }}
           >
             <SquarePlus />
-            {appName}&apos;u telefonuna yükle
+            Ana ekrana ekle
           </Button>
         ) : (
           <Steps
@@ -242,7 +242,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
               },
               {
                 title: "“Ana ekrana ekle” ya da “Uygulamayı yükle”",
-                text: `Onayla; ${appName} simgesi ana ekranına gelir.`,
+                text: `Onayla, ${appName} simgesi ana ekranına gelir.`,
                 tile: (
                   <Tile className="h-20">
                     <AppIcon name={appName} />
@@ -266,7 +266,7 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <p>
             <span className="font-semibold">Telefonunda da kullan.</span>{" "}
-            <span className="text-muted-foreground">Bu linki telefonunda aç, ana ekrana ekle ve bildirimleri orada da aç.</span>
+            <span className="text-muted-foreground">Linki telefonunda aç, ana ekrana ekle, bildirimleri orada da aç.</span>
           </p>
           <CopyButton text={url} variant="outline" size="sm" className="self-start" />
         </div>

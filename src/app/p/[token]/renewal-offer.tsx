@@ -23,7 +23,7 @@ export function RenewalOffer({
   function renew() {
     start(async () => {
       const res = await requestPackageAction(token, templateId, installments);
-      if (res.ok) toast.success("Yenileme isteğin eğitmenine iletildi");
+      if (res.ok) toast.success("Yenileme isteğini eğitmenine ilettik");
       else toast.error(res.error);
     });
   }

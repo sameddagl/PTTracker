@@ -37,13 +37,13 @@ function guides(lateCancelHours: number): HelpGuide[] {
       id: "paket",
       icon: <Package />,
       title: "Paket nasıl satılır, taksit nasıl işler?",
-      summary: "Paketi bir kez tanımla, danışana tek dokunuşla sat.",
+      summary: "Paketi bir kez gir, danışana tek dokunuşla sat.",
       steps: [
-        "Paketler'de sattığın paketleri bir kez tanımla: ders sayısı, geçerlilik süresi ve peşin fiyat. İstersen üstü çizili indirimsiz fiyat ve taksitli fiyat da ekle.",
-        "Danışanın sayfasında Paket sat'a dokun, paketi seç ve başlangıç tarihini gir. Son kullanım tarihi buna göre hesaplanır.",
-        "Taksitli satışta toplam tutar 30 gün arayla eşit taksitlere bölünür. Vadesi gelen taksit Bugün ve Ödemeler'de bekleyen alacak olarak görünür.",
-        "Ödeme aldıkça Ödemeler'den kaydet; kalan borç kendiliğinden düşer.",
-        "Paketi sonradan değiştirmen, daha önce satılmış paketleri etkilemez.",
+        "Paketler'de sattığın paketleri bir kez gir: ders sayısı, geçerlilik süresi ve peşin fiyat. İstersen üstü çizili indirimsiz fiyatı ve taksitli fiyatı da ekle.",
+        "Danışanı aç, Paket sat'a dokun, paketi seç ve başlangıç tarihini gir. Paketin son tarihi buna göre belirlenir.",
+        "Taksitli satışta toplam tutar 30 gün arayla eşit taksitlere bölünür. Vadesi gelen taksit Bugün'de ve Ödemeler'de bekleyen alacak olarak görünür.",
+        "Ödeme aldıkça Ödemeler'den gir; kalan borç kendiliğinden azalır.",
+        "Paketi sonradan değiştirirsen daha önce sattığın paketler etkilenmez.",
       ],
       links: [
         { href: "/paketler", label: "Paketler" },
@@ -56,14 +56,14 @@ function guides(lateCancelHours: number): HelpGuide[] {
       title: lateCancelHours > 0 ? `Yoklama, telafi hakkı ve ${lateCancelHours} saat kuralı` : "Yoklama ve telafi hakkı",
       summary: "Hangi durumda ders paketten düşer, hangisinde düşmez.",
       steps: [
-        "Bugün'de her dersin altında danışan başına Geldi, Gelmedi, Geç iptal ve İptal düğmeleri var. Yanlış dokunduysan aynı düğmeye tekrar dokun, geri alınır.",
-        "Geldi ve Gelmedi paketten bir ders düşer. Zamanında yapılan İptal ders düşürmez.",
+        "Bugün sayfasında her dersin altında, her danışan için Geldi, Gelmedi, Geç iptal ve İptal düğmeleri var. Yanlışlıkla dokunduysan aynı düğmeye bir daha dokun; işaret kalkar.",
+        "Geldi ve Gelmedi paketten bir ders düşer. Zamanında yapılan iptal ders düşürmez.",
         lateCancelHours > 0
           ? `Dersten ${lateCancelHours} saatten az önce yapılan iptal Geç iptal sayılır ve ders yanar.`
           : "Şu an geç iptal kuralın yok: danışan ne zaman iptal ederse etsin ders yanmaz. Yine de yoklamada Geç iptal'i elle işaretleyebilirsin.",
         "Paketin telafi hakkı varsa geç iptalde önce bu hak kullanılır ve ders paketten düşmez. Hak bitince geç iptaller paketten düşer.",
-        "Danışan kendi sayfasından iptal ederse aynı kural otomatik uygulanır; geç iptalse ona önceden söylenir.",
-        "Süreyi Ayarlar'daki Geç iptal kuralı sayfasından değiştirebilirsin; kural koymak istemezsen iptali her zaman ücretsiz yapabilirsin.",
+        "Danışan kendi sayfasından iptal ederse de aynı kural geçerli; iptal geç sayılacaksa bunu önceden görür.",
+        "Süreyi Ayarlar > Geç iptal kuralı'ndan değiştirirsin. Kural istemiyorsan “Kural yok”u seç; iptal her zaman ücretsiz olur.",
       ],
       links: [
         { href: "/bugun", label: "Bugün" },
@@ -73,14 +73,14 @@ function guides(lateCancelHours: number): HelpGuide[] {
     {
       id: "danisan-sayfasi",
       icon: <Link2 />,
-      title: "Danışanın kişisel sayfası",
+      title: "Danışan sayfası",
       summary: "Danışan uygulama indirmeden paketini ve derslerini görür.",
       steps: [
-        "Danışanın sayfasını aç ve Danışan sayfası kartında Link oluştur'a dokun.",
-        "WhatsApp'ta gönder ile linki doğrudan danışana yolla ya da kopyalayıp paylaş. Giriş yapmasına gerek yok.",
-        "Danışan bu linkte kalan dersini, sıradaki derslerini ve ödeme ya da taksit durumunu görür. Randevu açıksa ders alıp iptal edebilir, havale bildirebilir, yeni paket isteyebilir.",
-        "Önizle ile danışanın gördüğünü sen de görürsün. Kartta linkin en son ne zaman açıldığı yazar.",
-        "Link başkasına geçtiyse Yenile ile yenisini oluştur; eskisi çalışmaz. Kapat ile tamamen kapatabilirsin.",
+        "Danışanlar'dan danışanı aç, Danışan sayfası kartında Link oluştur'a dokun.",
+        "WhatsApp'ta gönder'e dokunup linki danışana yolla ya da kopyalayıp paylaş. Danışanın giriş yapması gerekmez.",
+        "Danışan bu linkte kalan ve sıradaki derslerini, ödeme ve taksitlerini görür. Randevu açıksa buradan ders alıp iptal edebilir; havale bildirebilir, yeni paket isteyebilir, sana yazabilir.",
+        "Önizle'ye dokunup danışanın gördüğü sayfayı açabilirsin. Linkin en son ne zaman açıldığı kartta yazar.",
+        "Link başkasının eline geçtiyse Yenile'ye dokun; eski link çalışmaz olur. Kapat ile linki tamamen kapatırsın.",
       ],
       links: [{ href: "/danisanlar", label: "Danışanlar" }],
     },
@@ -90,14 +90,14 @@ function guides(lateCancelHours: number): HelpGuide[] {
       title: "Instagram sayfan ve online kayıt",
       summary: "Bio'daki linkten gelen başvuruları onayla.",
       steps: [
-        "Ayarlar > Profil ve sayfam'da fotoğrafını, tanıtımını ve sayfa adresini gir, Sayfam yayında'yı aç.",
-        "Sayfanın linkini kopyalayıp Instagram bio'na koy. Sayfanda herkese açık paketlerin görünür.",
+        "Ayarlar > Profil ve sayfan'da fotoğrafını, tanıtımını ve sayfa adresini gir, Sayfayı yayınla'yı aç.",
+        "Sayfanın linkini kopyalayıp Instagram bio'na koy. Sayfada göstermeyi seçtiğin paketler orada görünür.",
         "Takipçin bir paket seçip kayıt formunu doldurur. Formdaki soruları Kayıt formu'ndan değiştirebilirsin.",
-        "Başvuru Danışanlar > Başvurular'a düşer ve Bugün'de bildirim çıkar. Cevaplara bakıp paket başlangıç tarihini seç ve Onayla.",
-        "Onaylayınca paket danışana tanımlanır ve kişisel sayfasında görünür. Onay ekranından danışana WhatsApp'tan haber ver.",
+        "Başvuru Danışanlar > Başvurular'a düşer, Bugün'de de görünür. Cevaplara bak, paketin başlangıç tarihini seç ve Onayla'ya dokun.",
+        "Onaylayınca paket danışana tanımlanır ve kendi sayfasında görünür. Onay ekranından danışana WhatsApp'tan haber verebilirsin.",
       ],
       links: [
-        { href: "/ayarlar/profil", label: "Profil ve sayfam" },
+        { href: "/ayarlar/profil", label: "Profil ve sayfan" },
         { href: "/danisanlar/basvurular", label: "Başvurular" },
       ],
     },
@@ -107,11 +107,11 @@ function guides(lateCancelHours: number): HelpGuide[] {
       title: "Havale bildirimi ve dekont onayı",
       summary: "Danışan havale yapar, sen hesabına geçince onaylarsın.",
       steps: [
-        "Profil ve sayfam'daki Ödeme bilgileri'ne IBAN'ını ve alıcı adını gir. Para doğrudan senin hesabına gelir.",
+        "Profil ve sayfan'daki Ödeme bilgileri bölümüne IBAN'ını ve hesap sahibinin adını gir. Para doğrudan senin hesabına gelir.",
         "Onayladığın danışan kendi sayfasında IBAN'ı ve açıklamaya yazacağı ödeme kodunu görür.",
-        "Danışan havaleyi yapınca Ödemeyi yaptım'a dokunur; istersen dekontunu da ekler.",
+        "Danışan havaleyi yapınca Ödemeyi yaptım'a dokunur; isterse dekontunu da ekler.",
         "Bildirim Ödemeler'de onay bekleyen ödemeler arasında görünür. Dekontu aç, para hesabına geçtiyse onayla.",
-        "Onaylanana kadar borç düşmez. Onaylamazsan nedenini yazabilirsin; danışan görür.",
+        "Sen onaylayana kadar borç düşmez. Onaylamazsan nedenini yazabilirsin, danışan bu notu görür.",
       ],
       links: [
         { href: "/odemeler", label: "Ödemeler" },
@@ -122,26 +122,26 @@ function guides(lateCancelHours: number): HelpGuide[] {
       id: "grup",
       icon: <UsersRound />,
       title: "Grup dersleri",
-      summary: "Kapasiteli, her hafta tekrarlayan dersler.",
+      summary: "Her hafta aynı saatte, kişi sınırıyla yapılan dersler.",
       steps: [
         "Takvim > Grup dersleri'nde dersi bir kez oluştur: günler, saat, süre ve kapasite.",
-        "Katılım şeklini seç: sabit yer (üyenin yeri her hafta ayrılır), tek tek katılım (grup paketi olan danışan istediği derse yer ayırır) ya da ikisi birden.",
-        "Dersler 4 hafta ileriye kadar takvimine eklenir, sonrası kendiliğinden devam eder. Doluluk takvimde görünür.",
-        "Grup dersleri sadece grup paketlerinden düşer; danışana grup paketi sat.",
-        "Sabit üyenin gelemeyeceği haftada yeri iptal edilir; tek tek katılım açıksa o yere başkası katılabilir.",
+        "Katılım şeklini seç: sabit yer (üyenin yeri her hafta ayrılır), tek tek katılım (grup paketi olan danışan istediği derse yazılır) ya da ikisi birden.",
+        "Takviminde her zaman önündeki 4 haftanın dersleri görünür; kaç yerin dolu olduğunu da oradan görürsün.",
+        "Grup dersleri yalnızca grup paketinden düşer; bu yüzden danışana grup paketi sat.",
+        "Sabit üye gelemeyeceği haftayı iptal eder; tek tek katılım açıksa o yere başkası yazılabilir.",
       ],
       links: [{ href: "/takvim/grup", label: "Grup dersleri" }],
     },
     {
       id: "randevu",
       icon: <CalendarClock />,
-      title: "Randevu (müsaitlik) ayarları",
-      summary: "Danışanlar boş saatlerinden kendileri ders alsın.",
+      title: "Online randevu ve çalışma saatleri",
+      summary: "Danışanların boş saatlerine kendileri randevu alsın.",
       steps: [
-        "Ayarlar > Müsaitlik ve randevu'da haftalık çalışma saatlerini gir. Bir günü Hafta içine ile diğer günlere kopyalayabilirsin.",
-        "Ders süresini, en az kaç saat önceden ve kaç gün ileriye randevu alınabileceğini seç.",
-        "Danışanlar randevu alabilsin'i aç. Birebir paketi olan danışanlar kendi sayfalarından boş saatleri görür.",
-        "Zaten dersin olan saatler otomatik kapanır. Tatil ya da izin günlerini aynı sayfadan ekle.",
+        "Takvim > Müsaitlik ve randevu'da haftalık çalışma saatlerini gir. Bir günün saatlerini Hafta içine ile diğer günlere kopyalayabilirsin.",
+        "Ders süresini, randevunun en az kaç saat önceden alınacağını ve kaç gün ileriye açık olacağını seç.",
+        "Danışanlar randevu alabilsin'i aç. Özel ders paketi olan danışanlar boş saatleri kendi sayfalarında görür.",
+        "Dersin olan saatler kendiliğinden kapanır. Tatil ve izin günlerini aynı sayfadan ekle.",
       ],
       links: [{ href: "/ayarlar/musaitlik", label: "Müsaitlik ve randevu" }],
     },
@@ -149,11 +149,11 @@ function guides(lateCancelHours: number): HelpGuide[] {
       id: "arsiv",
       icon: <ShieldCheck />,
       title: "Danışan arşivleme, silme ve KVKK",
-      summary: "Artık gelmeyen danışanı arşivle; gerekirse kalıcı sil.",
+      summary: "Gelmeyi bırakan danışanı arşive al, gerekirse kalıcı olarak sil.",
       steps: [
-        "Danışanın sayfasında düzenle'ye gir ve Arşivle'ye dokun. Listelerden kalkar, sıradaki dersleri iptal edilir, kişisel sayfa linki kapanır.",
-        "Geçmiş dersler ve ödemeler saklanır. Danışanlar > Arşiv'den istediğin zaman geri alabilirsin.",
-        "Danışan verilerinin silinmesini isterse önce arşivle, sonra Kalıcı olarak sil. Paketleri, dersleri, ödemeleri, dekontları ve form cevapları birlikte silinir; geri alınamaz.",
+        "Danışanı aç, kalem simgesine dokun ve en alttaki Arşivle'ye bas. Danışan listelerden kalkar, sıradaki dersleri iptal olur, danışan sayfası kapanır.",
+        "Geçmiş dersler ve ödemeler silinmez. Danışanlar sayfasının altındaki Arşivdeki danışanlar'dan danışanı açıp Arşivden çıkar'a dokunabilirsin.",
+        "Danışan verilerinin silinmesini isterse önce arşive al, sonra Kalıcı olarak sil'e dokun. Paketleri, dersleri, ödemeleri, dekontları ve form cevapları birlikte silinir; bunu geri alamazsın.",
         "Sağlık bilgileri KVKK'da özel nitelikli veridir: kayıt formunda yalnızca danışan açık rıza verirse sorulur. Rızası olmadan sağlık notu tutma.",
       ],
       links: [
@@ -174,7 +174,7 @@ export default async function HelpPage() {
         <ChevronLeft className="size-4" aria-hidden />
         Ayarlar
       </Link>
-      <PageHeader title="Yardım" description="Uygulamanın ana akışları, kısa adımlarla." />
+      <PageHeader title="Yardım" description="En sık yapılan işler, kısa adımlarla." />
 
       {trainer.guideDismissedAt && (
         <section aria-label="Başlangıç rehberi" className="mb-6 flex flex-wrap items-center justify-between gap-3 surface px-4 py-3">

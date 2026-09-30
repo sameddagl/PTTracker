@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 const TITLE = `${APP_NAME} · Pilates ve PT için Danışan ve Seans Takibi`;
 const DESCRIPTION =
-  "Pilates ve PT eğitmenleri için danışan takip programı: seans paketi, yoklama, randevu, ders hatırlatması, mesajlaşma ve ödemeler tek yerde. Excel ve WhatsApp karmaşasına son. Beta ücretsiz.";
+  "Pilates ve PT eğitmenleri için danışan takip programı. Seans paketi, yoklama, randevu, ders hatırlatma, mesaj ve ödeme takibi tek yerde. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -52,133 +52,136 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   {
-    title: "Yoklama tek dokunuş, paket kendiliğinden düşer",
-    text: "Geldi, gelmedi, geç iptal… Kalan seans sayısı anında güncellenir. Telafi hakkı varsa ders yanmaz.",
+    title: "Yoklamayı alın, seans paketten otomatik düşsün",
+    text: "Geldi mi, gelmedi mi, son anda mı iptal etti? Tek dokunuşla işaretleyin, kalan seans hemen güncellensin. Telafi hakkı varsa ders yanmaz.",
     chips: ["Yoklama", "Telafi hakkı", "24 saat kuralı", "Kalan seans"],
     Demo: AttendanceDemo,
   },
   {
     title: "Dersten önce “Geliyor musun?”",
-    text: "Danışanınıza dersinden bir gün önce hatırlatma gider; tek dokunuşla onaylar ya da iptal eder. Yarın kimin geleceğini sabahtan bilirsiniz.",
+    text: "Dersten bir gün önce danışana hatırlatma gider, o da tek dokunuşla onaylar ya da iptal eder. Yarın kimin geleceğini bugünden bilirsiniz.",
     chips: ["Ders hatırlatması", "Katılım onayı", "Boş kalan saat"],
     Demo: ConfirmDemo,
   },
   {
-    title: "Instagram'a koyacağınız kendi sayfanız",
-    text: "Paketleriniz, fiyatlarınız ve tanıtımınız tek linkte. Bio'nuza ekleyin; danışan paketini seçip kayıt formunu doldursun, siz onaylayın.",
+    title: "Instagram bio'nuza koyacağınız sayfa",
+    text: "Tanıtımınız, paketleriniz ve fiyatlarınız tek linkte. Danışan paketini seçip formu doldursun, siz onaylayın.",
     chips: ["Kişisel sayfa", "Online kayıt", "Başvuru onayı", "Açık rıza"],
     Demo: PublicPageDemo,
   },
   {
     title: "Seans paketleri: indirimli, peşin ya da taksitli",
-    text: "Özel, düet ve grup paketleri oluşturun. İndirimli fiyatı ve taksit seçeneğini siz belirleyin; paketi biten danışana yenileme teklifi kendiliğinden gitsin.",
+    text: "Özel, düet ve grup paketlerinizi tanımlayın; indirimi ve taksit sayısını siz belirleyin. Paketi biten danışana yenileme teklifi otomatik gider.",
     chips: ["Seans paketi", "İndirim", "Taksit", "Deneme dersi", "Yenileme"],
     Demo: PricingDemo,
   },
   {
     title: "Grup derslerinde kontenjan ve sabit yer",
-    text: "Kapasiteyi belirleyin, düzenli gelenlere sabit yer ayırın. Boş kalan yerlere danışanlar kendisi katılsın.",
-    chips: ["Kontenjan", "Sabit yer", "Derse katılım"],
+    text: "Kontenjanı belirleyin, düzenli gelenlerin yerini sabitleyin. Boş kalan yerlere danışanlar kendileri yazılsın.",
+    chips: ["Kontenjan", "Sabit yer", "Derse yazılma"],
     Demo: GroupDemo,
   },
   {
     title: "Danışan randevusunu kendisi alır",
-    text: "Çalışma saatlerinizi girin; danışan boş saatlerden birini seçsin. Çakışma olmaz, iptal kuralınız geçerli olur.",
+    text: "Çalışma saatlerinizi girin, danışan boş bir saat seçsin. Çakışma olmaz; iptalde sizin kuralınız geçerli.",
     chips: ["Online randevu", "Çalışma saatleri", "İptal kuralı"],
     Demo: BookingDemo,
   },
   {
-    title: "Danışanlarınızla uygulama içinden yazışın",
-    text: "Ders değişikliği, soru, hatırlatma… Mesajlar kişisel numaranıza değil uygulamaya gelir; ikiniz de telefonunuza bildirim alırsınız.",
+    title: "Danışanlarınızla uygulamadan yazışın",
+    text: "Saat değişikliği, soru, hatırlatma… Mesajlar kişisel numaranıza değil uygulamaya gelir. Yeni mesajda ikinizin de telefonuna bildirim düşer.",
     chips: ["Mesajlaşma", "Anlık bildirim", "Görüldü"],
     Demo: MessagesDemo,
   },
   {
-    title: "Havale bildirimi, dekont ve WhatsApp hatırlatması",
-    text: "Danışan IBAN'ınıza ödeyip dekontunu yükler, siz onaylarsınız. Paketi bitmek üzere olanlara hazır mesajla hatırlatın.",
+    title: "Havale, dekont ve ödeme hatırlatması",
+    text: "Danışan IBAN'ınıza havale yapıp dekontu yükler, siz onaylarsınız. Paketi bitmek üzere olanlara WhatsApp'tan hazır mesajla hatırlatın.",
     chips: ["IBAN", "Dekont", "WhatsApp", "Hatırlatma"],
     Demo: PaymentDemo,
   },
   {
-    title: "Excel'deki listeniz birkaç dakikada içeride",
-    text: "Mevcut danışan listenizi Excel ya da CSV olarak yükleyin; kalan seanslar ve borçlarla birlikte aktarılsın. Verilerinizi istediğiniz an Excel olarak indirin.",
-    chips: ["Excel'den aktar", "Kalan seans", "Dışa aktar"],
+    title: "Excel'deki listenizi birkaç dakikada aktarın",
+    text: "Danışan listenizi Excel ya da CSV olarak yükleyin; kalan seanslar ve borçlar da gelsin. Verilerinizi istediğiniz zaman Excel olarak indirebilirsiniz.",
+    chips: ["Excel'den aktar", "Kalan seans", "Excel'e aktar"],
     Demo: ImportDemo,
   },
 ];
 
 const MORE = [
-  { icon: CalendarCheck, title: "Pazartesi haftalık özet", text: "Geçen haftanın dersleri, katılım ve tahsilatı tek bildirimde." },
-  { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanlar listelenir; tek dokunuşla yazın." },
-  { icon: ClipboardCheck, title: "Yoklama ekranı", text: "Unuttuğunuz yoklamalar bir yerde toplanır; grup derslerinde “Hepsi geldi”." },
-  { icon: Smartphone, title: "Telefona uygulama gibi", text: "Mağazadan indirmeden ana ekrana eklenir, bildirimleri alır. Size ve danışanlarınıza." },
+  { icon: CalendarCheck, title: "Her pazartesi haftalık özet", text: "Geçen hafta kaç ders verdiniz, kimler geldi, ne kadar tahsil ettiniz; tek bildirimde." },
+  { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanları bir listede görün, tek dokunuşla yazın." },
+  { icon: ClipboardCheck, title: "Yoklama ekranı", text: "Almayı unuttuğunuz yoklamalar burada birikir. Grup dersinde “Hepsi geldi” deyip geçin." },
+  { icon: Smartphone, title: "Mağazadan indirmeden ana ekranda", text: "Siz de danışanlarınız da ana ekrana ekleyin; hatırlatmalar ve mesajlar telefona bildirim olarak gelsin." },
 ];
 
 const STATS = [
-  { value: "₺0", label: "Beta süresince ücret yok" },
-  { value: "0", label: "Mağazadan indirilmesi gereken uygulama" },
-  { value: "4 hafta", label: "Grup dersleri bu kadar ileriye kendiliğinden planlanır" },
+  { value: "₺0", label: "Beta boyunca ücret yok" },
+  { value: "0", label: "İndirmeniz gereken uygulama" },
+  { value: "4 hafta", label: "Grup dersleri takvimde hep bu kadar ileriye hazır" },
 ];
 
 const STEPS = [
   {
     title: "Paketlerinizi ve sayfanızı hazırlayın",
-    text: "Seans paketlerinizi, fiyatlarınızı, çalışma saatlerinizi ve kayıt formunuzu birkaç dakikada oluşturun.",
+    text: "Seans paketlerini, fiyatları, çalışma saatlerinizi ve kayıt formunu girin. Birkaç dakikanızı alır.",
   },
   {
     title: "Linkinizi Instagram'da paylaşın",
-    text: "Danışan sayfanızdan paketini seçer, formu doldurur ve başvurur. Hesap açması gerekmez.",
+    text: "Danışan sayfanıza girip paketini seçer, formu doldurur. Hesap açması, şifre belirlemesi gerekmez.",
   },
-  { title: "Onaylayın, gerisini takip edin", text: "Başvuruyu onaylayın; seanslar, yoklama, ödemeler ve hatırlatmalar tek ekranda." },
+  {
+    title: "Başvuruyu onaylayın",
+    text: "Onayladığınız danışan listenize eklenir. Seanslarını, yoklamasını ve ödemelerini buradan takip edersiniz.",
+  },
 ];
 
 const REASONS = [
   {
-    title: "Buradaki paket düzenine göre",
-    text: "Telafi hakkı, 24 saat iptal kuralı, taksit ve TL fiyatlar. Stüdyolarda iş nasıl yürüyorsa öyle.",
+    title: "Alıştığınız paket düzeni",
+    text: "Telafi hakkı, 24 saat iptal kuralı, taksit, TL fiyat. Stüdyolarda iş nasıl dönüyorsa program da öyle çalışır.",
   },
   {
     title: "Danışanınız uygulama indirmez",
-    text: "Her danışanın kişisel bir linki olur. Tarayıcıda açılır; isteyen ana ekranına ekleyip bildirim alır. Ne şifre ne mağaza gerekir.",
+    text: "Her danışanın kendine ait bir linki olur, tarayıcıda açılır. İsteyen ana ekranına ekler, bildirimleri telefonunda görür. Şifre de mağaza da yok.",
   },
   {
     title: "Paranız doğrudan IBAN'ınıza gelir",
-    text: "Ödemeler bizim üzerimizden geçmez, komisyon kesilmez. Danışan havale yapar, dekontu yükler, siz onaylarsınız.",
+    text: "Ödemeler bizden geçmez, komisyon almayız. Danışan havale yapar, dekontu yükler, siz onaylarsınız.",
   },
   {
-    title: "Danışan bilgileri özenle korunur",
-    text: "Sağlık bilgisi yalnızca danışanın açık rızasıyla alınır. Her eğitmen yalnızca kendi danışanlarını görür.",
+    title: "Sağlık bilgisi rıza olmadan alınmaz",
+    text: "Sağlık soruları yalnızca danışan açık rıza verirse sorulur. Her eğitmen sadece kendi danışanlarını görür.",
   },
 ];
 
 const FAQ = [
   {
     q: "Danışanlarımın bir uygulama indirmesi gerekiyor mu?",
-    a: "Hayır. Her danışanın kişisel bir linki olur; bu linki WhatsApp'tan ya da e-postayla gönderirsiniz, tarayıcıda açılır. Şifre ya da hesap gerekmez. İsteyen sayfayı telefonunun ana ekranına ekleyip ders hatırlatmalarını ve mesajları bildirim olarak alır.",
+    a: "Hayır. Her danışanın kendine ait bir linki olur. Linki WhatsApp'tan ya da e-postayla gönderirsiniz, danışan tarayıcıda açar. Şifre ya da hesap gerekmez. İsteyen sayfayı ana ekranına ekler; ders hatırlatmaları ve mesajlar telefonuna bildirim olarak gelir.",
   },
   {
     q: "Bildirimler nasıl geliyor?",
-    a: `${APP_NAME}'u telefonunuzun ana ekranına eklediğinizde yeni başvuru, randevu, iptal, ödeme bildirimi ve mesajlar anında bildirim olarak gelir. Hangi bildirimleri ve e-postaları alacağınızı ayarlardan siz seçersiniz. iPhone'da iOS 16.4 ve üstü gerekir.`,
+    a: `${APP_NAME}'u telefonunuzun ana ekranına ekleyin; yeni başvuru, randevu, iptal, havale ya da mesaj geldiğinde telefonunuza bildirim düşer. Hangi bildirimleri ve e-postaları almak istediğinizi ayarlardan seçersiniz. iPhone'da iOS 16.4 ya da üstü gerekir.`,
   },
   {
     q: `Ödemeler ${APP_NAME} üzerinden mi geçiyor?`,
-    a: "Hayır. Danışan doğrudan sizin IBAN'ınıza havale yapar ve dekontuyla bildirir, siz onaylarsınız. Nakit ya da kartla aldığınız ödemeleri de kendiniz girebilirsiniz.",
+    a: "Hayır. Danışan parayı doğrudan sizin IBAN'ınıza gönderir, dekontu yükler, siz onaylarsınız. Nakit ya da kartla aldığınız ödemeleri de kendiniz girersiniz.",
   },
   {
     q: "Yalnızca pilates eğitmenleri için mi?",
-    a: "Hayır. Reformer ve mat pilates eğitmenleri kadar personal trainer'lar ve grup dersi verenler için de uygun. Özel, düet ve grup seanslarını birlikte yönetebilirsiniz.",
+    a: "Hayır. Reformer ve mat pilates eğitmenleri de, personal trainer'lar ve grup dersi verenler de kullanabilir. Özel, düet ve grup derslerini aynı yerden takip edersiniz.",
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
-    a: "Sağlık bilgileri yalnızca danışan açık rıza verirse istenir ve saklanır. Her eğitmen yalnızca kendi danışanlarını görebilir; bu kural doğrudan veritabanında uygulanır.",
+    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her eğitmen sadece kendi danışanlarını görür; bu ayrım doğrudan veritabanında yapılır.",
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",
-    a: "Evet. Danışan listenizi Excel ya da CSV olarak yükleyin; sütunları eşleştirir, önizlemeyi görür ve aktarırsınız. Kalan seanslar ve borçlar da aktarılır; aynı telefon numarası iki kez eklenmez.",
+    a: "Evet. Listenizi Excel ya da CSV olarak yükleyin, sütunları eşleştirin, önizlemeye bakıp aktarın. Kalan seanslar ve borçlar da gelir. Aynı telefon numarası iki kez eklenmez.",
   },
   {
     q: `${APP_NAME} ücretli mi?`,
-    a: "Beta süresince eğitmenler için tamamen ücretsiz. Kredi kartı bilgisi istemiyoruz.",
+    a: "Beta süresince eğitmenler için ücretsiz. Kart bilgisi de istemiyoruz.",
   },
 ];
 
@@ -305,8 +308,8 @@ export default function Home() {
               <span className="block text-muted-foreground">Danışan ve seans takibini {APP_NAME} yapsın.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-              Pilates ve personal trainer eğitmenleri için hazırlandı. Yoklamayı tek dokunuşla alın; kalan seanslar kendiliğinden
-              düşsün, kimin ne kadar ödeyeceği hep önünüzde olsun.
+              Pilates eğitmenleri ve personal trainer&apos;lar için. Yoklamayı tek dokunuşla alın, kalan seans otomatik düşsün; kimin
+              ne kadar borcu olduğunu her an görün.
             </p>
             <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
               <Button asChild size="lg">
@@ -367,7 +370,7 @@ export default function Home() {
           <SectionHeading
             id="features-heading"
             eyebrow="Özellikler"
-            lead="İşinizin her adımı tek yerde."
+            lead="Derslerden ödemelere her şey tek yerde."
             rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
           />
           <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -448,7 +451,7 @@ export default function Home() {
             <div className="lg:sticky lg:top-28 lg:self-start">
               <p className="eyebrow mb-4">Neden {APP_NAME}?</p>
               <h2 id="why-heading" className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
-                <span className="text-foreground">Türkiye&apos;deki eğitmenlerin çalışma şekline göre tasarlandı.</span>{" "}
+                <span className="text-foreground">Türkiye&apos;deki eğitmenlerin çalışma düzenine göre hazırlandı.</span>{" "}
                 <span className="text-muted-foreground">Yabancı bir programın çevirisi değil.</span>
               </h2>
             </div>
@@ -496,7 +499,7 @@ export default function Home() {
               <Activity className="size-6" strokeWidth={2.5} />
             </span>
             <h2 id="cta-heading" className="max-w-2xl text-[2rem] leading-[1.08] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-              Defteri bu akşam kapatın. Yarınki seansı tek dokunuşla işleyin.
+              Defteri bu akşam kapatın. Yarınki yoklamayı telefondan alın.
             </h2>
             <p className="mt-4 max-w-md text-base">Beta döneminde ücretsiz. Kurulum birkaç dakika sürer.</p>
             <Link

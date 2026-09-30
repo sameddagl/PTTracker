@@ -77,7 +77,7 @@ export default async function PaymentsPage() {
             tone={summary.overdue > 0 ? "lime" : "default"}
             label="Bekleyen alacak"
             value={formatTRY(summary.outstanding)}
-            hint={`${summary.overdue > 0 ? `${formatTRY(summary.overdue)} vadesi gelmiş · ` : ""}${debtors.length} danışan`}
+            hint={`${summary.overdue > 0 ? `${formatTRY(summary.overdue)} vadesi geldi · ` : ""}${debtors.length} danışan`}
             icon={<Wallet />}
           />
         </div>
@@ -124,7 +124,7 @@ export default async function PaymentsPage() {
               </Button>
             }
           >
-            Paket satarken ya da buradan kaydettiğin ödemeler burada listelenir; danışanın havale bildirimleri de onayına düşer.
+            Paket satarken ya da buradan girdiğin ödemeler burada görünür. Danışanların havale bildirimleri de onay için buraya gelir.
           </EmptyState>
         ) : (
           <ul className="divide-y overflow-hidden surface">
@@ -169,7 +169,7 @@ function DebtorRow({ debtor: d, portalToken }: { debtor: Debtor; portalToken?: s
             {d.fullName}
           </Link>
           <p className="line-clamp-2 text-xs text-muted-foreground">
-            {d.overdue > 0 && <span className="font-medium text-destructive-strong">{formatTRY(d.overdue)} vadesi gelmiş · </span>}
+            {d.overdue > 0 && <span className="font-medium text-destructive-strong">{formatTRY(d.overdue)} vadesi geldi · </span>}
             {d.packages.map((p) => p.name).join(", ")}
           </p>
         </div>

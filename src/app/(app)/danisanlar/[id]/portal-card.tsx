@@ -28,7 +28,7 @@ export function PortalCard({
   const [busy, setBusy] = useState<"create" | "renew" | "revoke" | null>(null);
 
   function create(kind: "create" | "renew") {
-    if (kind === "renew" && !window.confirm("Yeni link oluşturulursa danışandaki eski link çalışmaz. Devam edilsin mi?")) return;
+    if (kind === "renew" && !window.confirm("Yeni link oluşturursan danışanın elindeki eski link çalışmaz. Devam edelim mi?")) return;
     setBusy(kind);
     startTransition(async () => {
       const res = await createPortalLinkAction(clientId);
@@ -39,7 +39,7 @@ export function PortalCard({
   }
 
   function revoke() {
-    if (!window.confirm("Link kapatılsın mı? Danışan sayfasını artık açamaz.")) return;
+    if (!window.confirm("Link kapatılsın mı? Danışan bu linkle sayfasını açamaz.")) return;
     setBusy("revoke");
     startTransition(async () => {
       const res = await revokePortalLinkAction(clientId);
@@ -69,8 +69,8 @@ export function PortalCard({
           Danışan sayfası
         </CardTitle>
         <CardDescription>
-          Kalan dersini, randevularını ve ödeme durumunu görebileceği kişisel link. Uygulama indirmesine ya da giriş
-          yapmasına gerek yok.
+          Danışan bu linkten kalan derslerini, randevularını ve ödemelerini görür. Uygulama indirmesi ya da giriş yapması
+          gerekmez.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -99,7 +99,7 @@ export function PortalCard({
               </Button>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span>{lastOpened ? `Son açılma: ${lastOpened}` : "Danışan henüz açmadı"}</span>
+              <span>{lastOpened ? `Son açılış: ${lastOpened}` : "Danışan henüz açmadı"}</span>
               <span className="flex gap-1">
                 <Button type="button" size="sm" variant="ghost" disabled={pending} loading={pending && busy === "renew"} onClick={() => create("renew")}>
                   <RefreshCw />

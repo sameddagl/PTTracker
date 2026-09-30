@@ -174,7 +174,7 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         </h2>
         {packages.length === 0 ? (
           <EmptyState icon={<Package />} title="Paket yok">
-            Ders sayısını takip etmek için bir paket sat.
+            Paket sattığında kalan dersleri burada görürsün.
           </EmptyState>
         ) : (
           <ul className="flex flex-col gap-3">

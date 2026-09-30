@@ -28,7 +28,7 @@ export function PackageShop({ token, offers, pendingIds, hasPackage }: { token: 
     setBusy(`${o.id}:${installments}`);
     start(async () => {
       const res = await requestPackageAction(token, o.id, installments);
-      if (res.ok) toast.success(`${o.name} için başvurun eğitmenine iletildi`);
+      if (res.ok) toast.success(`${o.name} isteğini eğitmenine ilettik`);
       else toast.error(res.error);
     });
   }
@@ -50,7 +50,7 @@ export function PackageShop({ token, offers, pendingIds, hasPackage }: { token: 
       {open && (
         <>
           <p className="-mt-1 text-sm text-muted-foreground">
-            Seçtiğin paket eğitmeninin onayına gider; onaylanınca buraya eklenir. Mevcut paketlerin aynen devam eder.
+            Seçtiğin paket, eğitmenin onaylayınca burada görünür. Şu anki paketlerin olduğu gibi devam eder.
           </p>
           <ul className="flex flex-col gap-3">
             {offers.map((o) => {

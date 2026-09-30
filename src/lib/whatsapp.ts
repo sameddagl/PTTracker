@@ -22,7 +22,7 @@ export function formatPhone(raw: string | null | undefined): string | null {
 
 /** Appends the client's portal link to a message, when they have one. */
 export const withPortal = (text: string, url: string | null | undefined) =>
-  url ? `${text}\n\nDerslerin ve ödemen: ${url}` : text;
+  url ? `${text}\n\nDerslerini ve ödemelerini buradan görebilirsin: ${url}` : text;
 
 export function whatsappLink(phone: string | null | undefined, text: string): string | null {
   const n = normalizePhone(phone);
@@ -37,14 +37,14 @@ export const messages = {
       ? `Merhaba ${firstName(name)}, paketinde ${remaining} ders kaldı. Yenilemek istersen haber ver 🙂`
       : `Merhaba ${firstName(name)}, paketindeki dersler bitti. Yeni paket için haber ver 🙂`,
   expiring: (name: string, date: string) =>
-    `Merhaba ${firstName(name)}, paketinin son kullanım tarihi ${date}. Kalan derslerini planlayalım mı?`,
+    `Merhaba ${firstName(name)}, paketin ${date} tarihinde bitiyor. Kalan derslerini planlayalım mı?`,
   paymentDue: (name: string, amount: string) =>
-    `Merhaba ${firstName(name)}, paket ödemesinden kalan ${amount} tutarı hatırlatmak istedim. Teşekkürler!`,
+    `Merhaba ${firstName(name)}, paket ödemenden ${amount} kaldı, hatırlatmak istedim. Teşekkürler!`,
   portalInvite: (name: string, url: string) =>
     `Merhaba ${firstName(name)}, kalan derslerini, randevularını ve ödeme durumunu buradan görebilirsin: ${url}`,
-  reminder: (name: string, when: string) => `Merhaba ${firstName(name)}, ${when} dersimizi hatırlatırım. Görüşmek üzere!`,
+  reminder: (name: string, when: string) => `Merhaba ${firstName(name)}, ${when} dersimiz var, hatırlatmak istedim. Görüşmek üzere!`,
   confirmAsk: (name: string, when: string) =>
-    `Merhaba ${firstName(name)}, ${when} dersin var. Gelebilecek misin? Sayfandan tek dokunuşla onaylayabilirsin.`,
+    `Merhaba ${firstName(name)}, ${when} dersin var. Geliyor musun? Sayfandan tek dokunuşla haber verebilirsin.`,
   missYou: (name: string) =>
     `Merhaba ${firstName(name)}, bir süredir görüşemedik. Bu hafta bir ders planlayalım mı? 🙂`,
 };

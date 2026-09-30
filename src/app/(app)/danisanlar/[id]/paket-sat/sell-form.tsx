@@ -85,7 +85,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
 
       {templates.length > 0 ? (
         <fieldset>
-          <legend className="mb-2 text-sm font-medium">Şablon</legend>
+          <legend className="mb-2 text-sm font-medium">Paketlerin</legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {templates.map((t) => (
               <button
@@ -126,9 +126,9 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
         <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
           Sık sattığın paketleri{" "}
           <Link href="/paketler" className="font-medium text-foreground underline underline-offset-2">
-            şablon olarak kaydedersen
+            Paketler
           </Link>{" "}
-          burada tek dokunuşla seçebilirsin.
+          sayfasına eklersen burada tek dokunuşla seçersin.
         </p>
       )}
 
@@ -211,7 +211,7 @@ export function SellForm({ clientId, templates, today }: { clientId: string; tem
         <p className="text-sm text-muted-foreground">
           {expiry ? (
             <>
-              Son kullanım: <span className="font-medium text-foreground">{expiry}</span>
+              Son tarih: <span className="font-medium text-foreground">{expiry}</span>
             </>
           ) : (
             "Süresiz paket"

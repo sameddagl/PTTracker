@@ -35,7 +35,7 @@ export async function readImportFileAction(_prev: ReadFileState, formData: FormD
   if (!(file instanceof File) || file.size === 0) return { error: "Bir dosya seç." };
   if (file.size > MAX_IMPORT_BYTES) return { error: "Dosya en fazla 2 MB olabilir." };
   const kind = uploadKind(file.name, file.type);
-  if (!kind) return { error: "Sadece .xlsx veya .csv dosyası yükleyebilirsin. Eski .xls dosyalarını Excel'de .xlsx olarak kaydet." };
+  if (!kind) return { error: ".xlsx ya da .csv dosyası yükle. Eski bir .xls dosyasıysa Excel'de .xlsx olarak kaydedip tekrar dene." };
 
   let sheet;
   try {
@@ -44,7 +44,7 @@ export async function readImportFileAction(_prev: ReadFileState, formData: FormD
     if (e instanceof SpreadsheetError) return { error: e.message };
     throw e;
   }
-  if (sheet.rows.length === 0) return { error: "Başlık satırının altında danışan bulunamadı." };
+  if (sheet.rows.length === 0) return { error: "Başlık satırının altında danışan yok." };
   if (sheet.rows.length > MAX_IMPORT_ROWS) {
     return { error: `Dosyada ${sheet.rows.length} satır var. Bir seferde en fazla ${MAX_IMPORT_ROWS} danışan aktarabilirsin; dosyayı bölüp tekrar dene.` };
   }
@@ -81,7 +81,7 @@ export type ImportState = { error?: string; result?: ImportResult };
 /** Step 2: creates the clients and packages, all or nothing. */
 export async function importClientsAction(input: ImportInput): Promise<ImportState> {
   const parsed = importSchema.safeParse(input);
-  if (!parsed.success) return { error: "Dosya okunamadı, baştan yükleyip tekrar dene." };
+  if (!parsed.success) return { error: "Dosya okunamadı. Dosyayı yeniden yükle." };
   const { rows, lines, headers, mapping } = parsed.data;
   if (mapping.fullName === null && mapping.firstName === null) return { error: "Ad soyad sütununu seç." };
 

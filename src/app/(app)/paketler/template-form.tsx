@@ -78,7 +78,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
   return (
     <form ref={formRef} onSubmit={submitWithoutReset(action)} className="flex flex-col gap-6" noValidate>
       {id && <input type="hidden" name="id" value={id} />}
-      <FormError message={Object.keys(e).length > 0 ? "Formda eksik ya da hatalı alanlar var." : undefined} />
+      <FormError message={Object.keys(e).length > 0 ? "Bazı alanları kontrol et." : undefined} />
       {!id && (
         <div className="flex flex-wrap gap-2" aria-label="Hazır paketler">
           {PRESETS.map((p) => (
@@ -121,7 +121,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
             <Input id="makeupAllowance" name="makeupAllowance" type="number" inputMode="numeric" min={0} defaultValue={val("makeupAllowance")} />
           </Field>
         </div>
-        <p className="text-sm text-muted-foreground">Telafi hakkı: geç iptal edildiğinde paketten düşmeyen ders sayısı.</p>
+        <p className="text-sm text-muted-foreground">Telafi hakkı: geç iptalde paketten düşmeyen ders sayısı.</p>
       </div>
 
       <fieldset className="flex flex-col gap-4 surface p-4">
@@ -155,7 +155,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
             onChange={(ev) => setHasPlan(ev.target.checked)}
             className="size-4 accent-[var(--primary)]"
           />
-          Taksitli ödeme seçeneği de sun
+          Taksit seçeneği de ekle
         </label>
         <input type="hidden" name="installments" value={hasPlan ? count : "1"} />
         {hasPlan ? (
@@ -184,7 +184,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
             {planTotal !== null && (
               <p className="text-sm text-muted-foreground tabular-nums">
                 30 gün arayla {count} × {formatTRY(Math.floor(planTotal / Number(count)))} ≈ {formatTRY(planTotal)}
-                {cash !== null && planTotal > cash && ` · peşine göre ${formatTRY(planTotal - cash)} fazla`}
+                {cash !== null && planTotal > cash && ` · peşin fiyattan ${formatTRY(planTotal - cash)} fazla`}
               </p>
             )}
           </>
@@ -202,7 +202,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
             defaultChecked={v.isPublic !== undefined ? v.isPublic === "on" : initial.isPublic}
             className="size-4 accent-[var(--primary)]"
           />
-          Herkese açık sayfamda göster
+          Sayfanda göster
         </label>
         <label className="flex min-h-11 items-start gap-3 text-sm">
           <input
@@ -214,7 +214,7 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
           <span>
             Deneme dersi
             <span className="block text-xs text-muted-foreground">
-              Sayfanda en üstte öne çıkar. Her kişi yalnızca bir kez alabilir; mevcut danışanlara gösterilmez.
+              Sayfanda en üstte durur. Herkes bir kez alabilir; şu anki danışanların görmez.
             </span>
           </span>
         </label>

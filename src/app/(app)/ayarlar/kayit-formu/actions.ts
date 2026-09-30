@@ -17,17 +17,17 @@ const optionalNumber = z
 
 const fieldSchema = z
   .object({
-    label: z.string().trim().min(1, "Soruyu yaz.").max(80, "En fazla 80 karakter."),
-    type: z.enum(INTAKE_TYPES, { error: "Tip seç." }),
+    label: z.string().trim().min(1, "Soruyu yaz.").max(80, "En fazla 80 karakter olabilir."),
+    type: z.enum(INTAKE_TYPES, { error: "Cevap tipini seç." }),
     helpText: z
       .string()
       .trim()
-      .max(200, "En fazla 200 karakter.")
+      .max(200, "En fazla 200 karakter olabilir.")
       .transform((v) => v || null),
     unit: z
       .string()
       .trim()
-      .max(12, "En fazla 12 karakter.")
+      .max(12, "En fazla 12 karakter olabilir.")
       .transform((v) => v || null),
     min: optionalNumber,
     max: optionalNumber,
@@ -39,10 +39,10 @@ const fieldSchema = z
   .superRefine((v, ctx) => {
     const choice = v.type === "single_choice" || v.type === "multi_choice";
     if (choice && v.options.length < 2) ctx.addIssue({ code: "custom", path: ["options"], message: "En az 2 seçenek yaz." });
-    if (choice && v.options.length > 20) ctx.addIssue({ code: "custom", path: ["options"], message: "En fazla 20 seçenek." });
-    if (v.options.some((o) => o.length > 60)) ctx.addIssue({ code: "custom", path: ["options"], message: "Her seçenek en fazla 60 karakter." });
+    if (choice && v.options.length > 20) ctx.addIssue({ code: "custom", path: ["options"], message: "En fazla 20 seçenek olabilir." });
+    if (v.options.some((o) => o.length > 60)) ctx.addIssue({ code: "custom", path: ["options"], message: "Her seçenek en fazla 60 karakter olabilir." });
     if (v.type === "number" && v.min !== null && v.max !== null && v.min > v.max)
-      ctx.addIssue({ code: "custom", path: ["max"], message: "En çok, en azdan küçük olamaz." });
+      ctx.addIssue({ code: "custom", path: ["max"], message: "En çok değeri en az değerinden küçük olamaz." });
   })
   // Settings that don't apply to the chosen type are dropped, not stored.
   .transform((v) => ({

@@ -8,7 +8,7 @@ import { setAttendance } from "@/db/lessons";
 /** "Hepsi geldi": marks every attendee still waiting for attendance as attended. */
 export async function markAllAttendedAction(attendeeIds: string[]): Promise<{ ok: true; marked: number } | { ok: false; error: string }> {
   const parsed = z.array(z.uuid()).min(1).max(50).safeParse(attendeeIds);
-  if (!parsed.success) return { ok: false, error: "Geçersiz istek." };
+  if (!parsed.success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
   const marked = await withTrainer(async (tx, trainerId) => {
     let n = 0;
     // Sequential on purpose: a transaction runs on one connection.

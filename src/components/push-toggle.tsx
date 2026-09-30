@@ -85,7 +85,7 @@ export function PushToggle({
         await sub.unsubscribe();
       }
       setEndpoint(null);
-      toast("Bu cihazda bildirimler kapatıldı");
+      toast("Bu cihazda bildirimleri kapattın");
     });
   }
 
@@ -93,9 +93,9 @@ export function PushToggle({
   const note = {
     ok: description,
     "ios-install": null,
-    insecure: "Bildirimler yalnızca güvenli (https) adreste çalışır. Bu adreste açılamıyor.",
-    denied: "Bildirim izni kapalı. Telefonun Ayarlar → Bildirimler bölümünden bu uygulamaya izin ver, sonra tekrar dene.",
-    unsupported: "Bu tarayıcı bildirimleri desteklemiyor. iPhone'da iOS 16.4 ve üstü gerekir.",
+    insecure: "Bildirimler yalnızca https adreslerde çalışıyor, bu adreste açılamaz.",
+    denied: "Bildirim izni kapalı. Telefonunun (ya da tarayıcının) ayarlarından izni aç, sonra sayfayı yenile.",
+    unsupported: "Bu tarayıcıda bildirim çalışmıyor. iPhone'da iOS 16.4 ya da üstü gerekiyor.",
   }[support];
 
   return (
@@ -109,7 +109,7 @@ export function PushToggle({
           {support === "ios-install" ? (
             <>
               iPhone&apos;da bildirim için önce bu sayfayı ana ekrana ekle: <Share className="inline size-3.5 align-[-2px]" aria-label="Paylaş" />{" "}
-              → Ana Ekrana Ekle, sonra oradan aç.
+              → Ana Ekrana Ekle, sonra ana ekrandaki simgeden aç.
             </>
           ) : (
             note

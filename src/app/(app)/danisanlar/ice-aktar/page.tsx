@@ -18,7 +18,7 @@ export default function ImportClientsPage() {
       </Link>
       <PageHeader
         title="Excel'den aktar"
-        description="Danışan listeni Excel veya CSV dosyasından tek seferde ekle. Kalan dersleri ve borçları paket olarak açılır."
+        description="Danışan listeni Excel ya da CSV dosyasından tek seferde ekle. Kalan ders ve borçlar paket olarak açılır."
       />
       <ImportWizard />
     </>

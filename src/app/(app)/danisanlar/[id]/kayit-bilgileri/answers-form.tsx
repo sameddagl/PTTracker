@@ -21,7 +21,7 @@ export function AnswersForm({ clientId, fields, hasConsent }: { clientId: string
 
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-6" noValidate>
-      <FormError message={e.form ?? (Object.keys(e).length > 0 ? "Formda hatalı alanlar var." : undefined)} />
+      <FormError message={e.form ?? (Object.keys(e).length > 0 ? "Bazı alanları kontrol et." : undefined)} />
 
       {general.length > 0 && (
         <section className="flex flex-col gap-5 surface p-5">

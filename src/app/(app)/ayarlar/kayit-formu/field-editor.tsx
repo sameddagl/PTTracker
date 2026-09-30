@@ -107,7 +107,7 @@ export function FieldEditor({ initial, onDone }: { initial: EditableField; onDon
           <span>
             Sağlık bilgisi
             <span className="block text-xs text-muted-foreground">
-              KVKK gereği yalnızca danışan açık rıza verirse sorulur. Rıza vermezse zorunlu olsa da boş bırakabilir.
+              KVKK gereği bu soruyu yalnızca açık rıza veren danışan görür. Rıza vermeyen, soru zorunlu olsa da boş geçebilir.
             </span>
           </span>
         </label>

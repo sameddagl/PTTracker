@@ -35,7 +35,7 @@ export default async function ApplicationsPage() {
         <ChevronLeft className="size-4" aria-hidden />
         Danışanlar
       </Link>
-      <PageHeader title="Başvurular" description="Sayfandan paket seçip kayıt olanlar." />
+      <PageHeader title="Başvurular" description="Sayfandan paket seçip başvuranlar." />
 
       <section aria-labelledby="pending-heading" className="mb-8">
         <h2 id="pending-heading" className="mb-3 text-base font-semibold">
@@ -43,7 +43,7 @@ export default async function ApplicationsPage() {
         </h2>
         {pending.length === 0 ? (
           <EmptyState icon={<Inbox />} title="Bekleyen başvuru yok">
-            Sayfanın linkini Instagram bio&apos;na koyduğunda başvurular burada görünür.
+            Sayfanın linkini Instagram bio&apos;na koy; gelen başvurular buraya düşer.
           </EmptyState>
         ) : (
           <ul className="divide-y overflow-hidden surface">
@@ -53,7 +53,7 @@ export default async function ApplicationsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">
                       {a.clientName}
-                      {a.clientStatus === "active" && <span className="ml-2 text-xs font-normal text-muted-foreground">mevcut danışan</span>}
+                      {a.clientStatus === "active" && <span className="ml-2 text-xs font-normal text-muted-foreground">zaten danışanın</span>}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {a.packageName}
@@ -73,7 +73,7 @@ export default async function ApplicationsPage() {
       {decided.length > 0 && (
         <section aria-labelledby="decided-heading">
           <h2 id="decided-heading" className="mb-3 text-base font-semibold">
-            Son kararlar
+            Önceki başvurular
           </h2>
           <ul className="divide-y overflow-hidden surface">
             {decided.map((a) => (

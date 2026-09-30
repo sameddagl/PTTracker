@@ -12,14 +12,14 @@ export type GroupField = "title" | "weekdays" | "startTime" | "durationMinutes" 
 export type GroupFormState = FormState<GroupField>;
 
 const joinMode = z.enum(["drop_in", "fixed", "both"], { error: "Katılım şeklini seç." });
-const capacity = z.coerce.number({ error: "Kapasite 1–100 arası olmalı." }).int().min(1, "Kapasite 1–100 arası olmalı.").max(100, "Kapasite 1–100 arası olmalı.");
+const capacity = z.coerce.number({ error: "Kapasite 1 ile 100 arasında olmalı." }).int().min(1, "Kapasite 1 ile 100 arasında olmalı.").max(100, "Kapasite 1 ile 100 arasında olmalı.");
 const title = z.string().trim().min(2, "Ders adı en az 2 karakter olmalı.").max(60);
 
 const createSchema = z.object({
   title,
   weekdays: z.array(z.coerce.number().int().min(1).max(7)).min(1, "En az bir gün seç."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { error: "Saat seç." }),
-  durationMinutes: z.coerce.number().int().min(15, "Süre 15–240 dakika olmalı.").max(240, "Süre 15–240 dakika olmalı."),
+  durationMinutes: z.coerce.number().int().min(15, "Süre 15 ile 240 dakika arasında olmalı.").max(240, "Süre 15 ile 240 dakika arasında olmalı."),
   capacity,
   joinMode,
   startsOn: z.iso.date({ error: "Başlangıç tarihi seç." }),
@@ -81,7 +81,7 @@ export async function addMemberAction(classId: string, clientId: string, startsO
         full: "Sabit yerler dolu. Kapasiteyi artırabilirsin.",
         already: "Bu danışanın zaten sabit yeri var.",
         not_found: "Grup dersi bulunamadı.",
-        drop_in_only: "Bu ders sadece tek tek katılımla çalışıyor.",
+        drop_in_only: "Bu derste sabit yer yok; danışanlar derslere tek tek yazılıyor.",
       }[res.reason],
     };
   }

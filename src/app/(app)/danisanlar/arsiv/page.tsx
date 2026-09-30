@@ -21,11 +21,11 @@ export default async function ArchivedClientsPage() {
         <ChevronLeft className="size-4" aria-hidden />
         Danışanlar
       </Link>
-      <PageHeader title="Arşiv" description="Arşivlenen danışanların geçmişi burada saklanır." />
+      <PageHeader title="Arşiv" description="Arşive aldığın danışanlar ve geçmişleri burada durur." />
 
       {archived.length === 0 ? (
         <EmptyState icon={<Archive />} title="Arşiv boş">
-          Artık gelmeyen bir danışanı, düzenleme sayfasından arşivleyebilirsin.
+          Gelmeyi bırakan bir danışanı düzenleme sayfasından arşive alabilirsin.
         </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden surface">

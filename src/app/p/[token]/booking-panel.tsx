@@ -27,7 +27,7 @@ export function UpcomingLessons({
     setBusy(`ok:${l.attendeeId}`);
     startTransition(async () => {
       const res = await confirmAttendanceAction(token, l.attendeeId);
-      if (res.ok) toast.success("Harika, eğitmenine iletildi");
+      if (res.ok) toast.success("Eğitmenine haber verdik");
       else toast.error(res.error);
     });
   }
@@ -35,17 +35,17 @@ export function UpcomingLessons({
   function cancel(l: (typeof lessons)[number]) {
     const when = `${formatLongDate(l.startsAt, timezone)} ${formatTime(l.startsAt, timezone)}`;
     const question = l.lateIfCancelledNow
-      ? `Derse ${lateCancelHours} saatten az kaldı. İptal edersen bu ders paketinden düşer (telafi hakkın varsa o kullanılır). ${when} dersini iptal etmek istiyor musun?`
+      ? `Derse ${lateCancelHours} saatten az kaldı. Şimdi iptal edersen telafi hakkın varsa ondan, yoksa paketinden bir ders düşer. ${when} dersini iptal etmek istiyor musun?`
       : `${when} dersini iptal etmek istiyor musun?`;
     if (!window.confirm(question)) return;
     setBusy(l.attendeeId);
     startTransition(async () => {
       const res = await cancelBookingAction(token, l.attendeeId, l.lateIfCancelledNow);
       if (res.ok) {
-        toast(res.late ? (res.makeupUsed ? "İptal edildi; telafi hakkın kullanıldı." : "İptal edildi; ders paketinden düştü.") : "Ders iptal edildi");
+        toast(res.late ? (res.makeupUsed ? "Ders iptal edildi, telafi hakkından düştü." : "Ders iptal edildi, paketinden düştü.") : "Ders iptal edildi");
       } else if (res.needsConfirm) {
         // The notice window started while the page was open; ask again with the right warning.
-        toast.error("Derse az kaldığı için iptal geç iptal sayılır. Tekrar dene.");
+        toast.error("Derse az kaldı, bu iptal geç iptal sayılır. Emin misin? Tekrar dokun.");
       } else toast.error(res.error);
     });
   }
@@ -57,7 +57,7 @@ export function UpcomingLessons({
       </h2>
       {lessons.length === 0 ? (
         <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
-          Planlanmış ders yok.
+          Yaklaşan dersin yok.
         </p>
       ) : (
         <ul className="divide-y overflow-hidden surface">

@@ -12,7 +12,7 @@ import { formatPhone } from "@/lib/whatsapp";
 import { ImageUpload } from "./image-upload";
 import { ProfileForm } from "./profile-form";
 
-export const metadata: Metadata = { title: "Profil ve sayfam" };
+export const metadata: Metadata = { title: "Profil ve sayfan" };
 
 export default async function ProfilePage() {
   const trainer = await withTrainer((tx, id) => getTrainer(tx, id));
@@ -24,8 +24,8 @@ export default async function ProfilePage() {
         Ayarlar
       </Link>
       <PageHeader
-        title="Profil ve sayfam"
-        description="Danışanların Instagram'daki linkinden bu bilgileri ve paketlerini görür."
+        title="Profil ve sayfan"
+        description="Instagram'daki linkine dokunan herkes bu bilgileri ve paketlerini görür."
       />
 
       <Card className="mb-6">

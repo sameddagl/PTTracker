@@ -34,7 +34,7 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
     clientPackageId: formData.get("clientPackageId")?.toString() ?? "",
     note: formData.get("note")?.toString() ?? "",
   });
-  if (!parsed.success) return { errors: { form: "Geçersiz istek." } };
+  if (!parsed.success) return { errors: { form: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." } };
 
   const file = formData.get("receipt");
   let receipt: { mimeType: string; data: Buffer } | null = null;
@@ -51,7 +51,7 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
     const message = {
       package: "Paket bulunamadı.",
       nothing_due: "Bu paket için ödenecek taksit kalmadı.",
-      too_many: "Onay bekleyen bildirimlerin var. Eğitmenin onayladıktan sonra tekrar dene.",
+      too_many: "Onay bekleyen ödeme bildirimlerin var. Eğitmenin onaylayınca tekrar dene.",
       receipt: "Dekont yüklenemedi.",
     }[result.reason];
     return { errors: { [result.reason === "receipt" ? "receipt" : "form"]: message } };
@@ -66,7 +66,7 @@ export async function reportPaymentAction(token: string, _prev: ReportState, for
       title: `Ödeme bildirimi: ${who.name}`,
       body: `${label} için havale yaptığını bildirdi.`,
       path: "/odemeler",
-      email: { subject: `Ödeme bildirimi: ${who.name}`, heading: "Ödeme bildirimi", lines: [line, "Hesabını kontrol edip onaylayabilirsin."], cta: "Ödemeleri aç" },
+      email: { subject: `Ödeme bildirimi: ${who.name}`, heading: "Ödeme bildirimi", lines: [line, "Para hesabına geçtiyse Ödemeler'den onaylayabilirsin."], cta: "Ödemeleri aç" },
     });
   }
 
@@ -81,7 +81,7 @@ export async function requestPackageAction(
   installments: number,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
-  if (!link || !z.uuid().safeParse(templateId).success || !Number.isInteger(installments)) return { ok: false, error: "Geçersiz istek." };
+  if (!link || !z.uuid().safeParse(templateId).success || !Number.isInteger(installments)) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await adminDb.transaction((tx) => requestPackage(tx as unknown as Tx, link, { templateId, installments }));
   if (!result.ok) {
@@ -90,7 +90,7 @@ export async function requestPackageAction(
       error: {
         not_found: "Bu paket artık satışta değil.",
         already: "Bu paket için başvurun zaten onay bekliyor.",
-        limited: "Bugün yeterince başvuru yaptın. Yarın tekrar deneyebilirsin.",
+        limited: "Bugünlük başvuru sınırına geldin. Yarın tekrar dene.",
         trial: "Deneme dersi yalnızca ilk kez gelenler için.",
         option: "Ödeme şeklini seç.",
       }[result.reason],

@@ -42,18 +42,18 @@ const templateSchema = z
       .string()
       .trim()
       .transform((v) => (v === "" ? null : Number(v)))
-      .refine((v) => v === null || (Number.isInteger(v) && v >= 1 && v <= 730), "Geçerlilik 1–730 gün olmalı."),
-    price: money("Fiyat geçersiz."),
-    compareAtPrice: money("İndirimsiz fiyat geçersiz."),
-    installmentPrice: money("Taksitli fiyat geçersiz."),
-    installments: intIn(1, 12, "Taksit sayısı 1–12 olmalı."),
+      .refine((v) => v === null || (Number.isInteger(v) && v >= 1 && v <= 730), "Geçerlilik 1 ile 730 gün arasında olmalı."),
+    price: money("Fiyatı kontrol et."),
+    compareAtPrice: money("İndirimsiz fiyatı kontrol et."),
+    installmentPrice: money("Taksitli fiyatı kontrol et."),
+    installments: intIn(1, 12, "Taksit sayısı 1 ile 12 arasında olmalı."),
     makeupAllowance: intIn(0, 50, "Telafi hakkı 0 ile 50 arasında olmalı."),
     isPublic: z.string().transform((v) => v === "on"),
     isTrial: z.string().transform((v) => v === "on"),
     description: z
       .string()
       .trim()
-      .max(500, "Açıklama en fazla 500 karakter.")
+      .max(500, "Açıklama en fazla 500 karakter olabilir.")
       .transform((v) => v || null),
     // One bullet per line.
     features: z
@@ -64,14 +64,14 @@ const templateSchema = z
           .map((l) => l.replace(/^[-•*]\s*/, "").trim())
           .filter(Boolean),
       )
-      .refine((v) => v.length <= 8, "En fazla 8 madde.")
-      .refine((v) => v.every((l) => l.length <= 80), "Her madde en fazla 80 karakter."),
+      .refine((v) => v.length <= 8, "En fazla 8 madde yazabilirsin.")
+      .refine((v) => v.every((l) => l.length <= 80), "Her madde en fazla 80 karakter olabilir."),
   })
   .superRefine((v, ctx) => {
     if (v.compareAtPrice !== null) {
       if (v.price === null) ctx.addIssue({ code: "custom", path: ["compareAtPrice"], message: "Önce peşin fiyatı gir." });
       else if (v.compareAtPrice <= v.price)
-        ctx.addIssue({ code: "custom", path: ["compareAtPrice"], message: "İndirimsiz fiyat, peşin fiyattan yüksek olmalı." });
+        ctx.addIssue({ code: "custom", path: ["compareAtPrice"], message: "İndirimsiz fiyat peşin fiyattan yüksek olmalı." });
     }
     if (v.installments > 1 && v.installmentPrice === null)
       ctx.addIssue({ code: "custom", path: ["installmentPrice"], message: "Taksitli toplam fiyatı gir." });

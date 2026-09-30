@@ -34,12 +34,12 @@ export default async function NewLessonPage({ searchParams }: PageProps<"/ders/y
         title="Ders planla"
         description={
           <>
-            Danışanına özel ders koy; iki ya da üç kişi seçersen düet/trio olur. Geçmiş bir dersi de buradan kaydedebilirsin. Grup
-            dersleri için{" "}
+            Bir kişi seçersen özel ders, iki ya da üç kişi seçersen düet ya da trio olur. Geçmiş bir dersi de buradan girebilirsin.
+            Grup dersi açmak için{" "}
             <Link href="/takvim/grup" className="font-medium text-foreground underline underline-offset-2">
               Grup dersleri
-            </Link>
-            .
+            </Link>{" "}
+            sayfasına git.
           </>
         }
       />

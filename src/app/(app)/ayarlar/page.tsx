@@ -26,7 +26,7 @@ export default async function SettingsPage() {
     {
       href: "/ayarlar/profil",
       icon: Globe,
-      title: "Profil ve sayfam",
+      title: "Profil ve sayfan",
       hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
     },
     { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
@@ -36,7 +36,7 @@ export default async function SettingsPage() {
       title: "Geç iptal kuralı",
       hint: trainer.lateCancelHours === 0 ? "Kural yok, iptal her zaman ücretsiz" : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz`,
     },
-    { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Danışandan istenen bilgiler" },
+    { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Kayıtta danışana sorulan sorular" },
   ];
 
   return (
@@ -60,7 +60,7 @@ export default async function SettingsPage() {
             </span>
             <CopyButton text={pageUrl} label="" size="icon" variant="ghost" aria-label="Linki kopyala" />
             <Button asChild size="icon" variant="ghost">
-              <a href={pageUrl} target="_blank" rel="noopener noreferrer" aria-label="Sayfamı aç">
+              <a href={pageUrl} target="_blank" rel="noopener noreferrer" aria-label="Sayfanı aç">
                 <ExternalLink />
               </a>
             </Button>
@@ -100,7 +100,7 @@ export default async function SettingsPage() {
                 <RowIcon>
                   <Bell aria-hidden />
                 </RowIcon>
-                <RowText title="Bildirimler" hint="Hangi bildirim ve e-postaların geleceğini seç" />
+                <RowText title="Bildirimler" hint="Hangi bildirim ve e-postaları alacağını seç" />
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
               </Link>
             </li>
@@ -109,7 +109,7 @@ export default async function SettingsPage() {
                 <RowIcon>
                   <CircleHelp aria-hidden />
                 </RowIcon>
-                <RowText title="Yardım" hint="Paket, yoklama, ödeme ve diğer akışlar adım adım" />
+                <RowText title="Yardım" hint="Paket, yoklama, ödeme ve diğer konular adım adım" />
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
               </Link>
             </li>
@@ -119,7 +119,7 @@ export default async function SettingsPage() {
                 <RowIcon>
                   <Download aria-hidden />
                 </RowIcon>
-                <RowText title="Verilerini dışa aktar" hint="Excel: danışanlar, paketler, dersler, ödemeler" />
+                <RowText title="Verilerini indir" hint="Excel: danışanlar, paketler, dersler, ödemeler" />
               </a>
             </li>
           </ul>

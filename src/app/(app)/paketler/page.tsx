@@ -16,7 +16,7 @@ export default async function PackagesPage() {
     <>
       <PageHeader
         title="Paketler"
-        description="Sattığın paketleri bir kez tanımla. Sayfanda ve satarken bu sırayla görünürler."
+        description="Sattığın paketleri bir kez gir. Sayfanda ve satış ekranında bu sırayla görünür."
         action={
           <Button asChild>
             <Link href="/paketler/yeni">
@@ -39,11 +39,11 @@ export default async function PackagesPage() {
             </Button>
           }
         >
-          8 ya da 12 derslik paketlerini bir kez ekle; sayfanda görünür ve danışana satarken tek dokunuşla seçersin.
+          8 ya da 12 derslik paketlerini bir kez ekle; hem sayfanda görünür hem de satarken listeden seçersin.
         </EmptyState>
       ) : (
         <>
-          <p className="mb-3 text-sm text-muted-foreground">Sıralamak için tutamaktan sürükle.</p>
+          <p className="mb-3 text-sm text-muted-foreground">Sırasını değiştirmek için paketi soldaki noktalardan tutup sürükle.</p>
           <TemplateList templates={templates} />
         </>
       )}

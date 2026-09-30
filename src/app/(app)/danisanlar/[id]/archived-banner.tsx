@@ -11,7 +11,7 @@ export function ArchivedBanner({ clientId, name, archivedOn }: { clientId: strin
 
   const erase = () => {
     const answer = window.prompt(
-      `${name} ve tüm kayıtları (paketler, dersler, ödemeler, dekontlar, kayıt formu) kalıcı olarak silinecek. Bu geri alınamaz.\n\nOnaylamak için SİL yaz:`,
+      `${name} ve bütün kayıtları (paketler, dersler, ödemeler, dekontlar, kayıt formu) kalıcı olarak silinir. Bunu geri alamazsın.\n\nOnaylamak için SİL yaz:`,
     );
     if (answer?.trim().toLocaleUpperCase("tr") !== "SİL") return;
     startErase(() => deleteClientAction(clientId));
@@ -21,7 +21,7 @@ export function ArchivedBanner({ clientId, name, archivedOn }: { clientId: strin
     <div role="status" className="mb-8 flex flex-col gap-3 surface bg-muted/50 p-4">
       <p className="text-sm">
         <span className="font-medium">Arşivde</span>
-        <span className="text-muted-foreground"> · {archivedOn} tarihinde arşivlendi. Listelerde görünmez, portal linki kapalı.</span>
+        <span className="text-muted-foreground"> · {archivedOn} tarihinde arşive alındı. Listelerde görünmez, danışan sayfası kapalı.</span>
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="button" loading={restoring} disabled={erasing} onClick={() => startRestore(() => restoreClientAction(clientId))}>

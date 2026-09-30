@@ -47,18 +47,19 @@ export async function GET(req: NextRequest) {
   for (const r of reminders) {
     const when = whenPhrase(r.startsAt, r.timezone);
     const what = r.title ?? `${SESSION_TYPE_LABELS[r.sessionType as keyof typeof SESSION_TYPE_LABELS]} ders`;
+    const When = `${when[0].toLocaleUpperCase("tr")}${when.slice(1)}`;
     await notifyClient(
       { trainerId: r.trainerId, clientId: r.clientId },
       "reminder",
       {
-        title: `${when} dersin var`,
-        body: `${what} · ${r.trainerName}. Geliyor musun? Dokun, tek tuşla onayla.`,
+        title: `${When} dersin var`,
+        body: `${what}, ${r.trainerName} ile. Geliyor musun? Dokunup haber ver.`,
         hash: "#dersler",
         tag: `reminder-${r.attendeeId}`,
         email: {
           subject: `${r.trainerName} · ${when} dersin var`,
-          heading: `${when[0].toLocaleUpperCase("tr")}${when.slice(1)} dersin var`,
-          lines: [`${what}, ${r.trainerName} ile.`, "Gelebilecek misin? Sayfandan tek dokunuşla onaylayabilir ya da iptal edebilirsin."],
+          heading: `${When} dersin var`,
+          lines: [`${what}, ${r.trainerName} ile.`, "Geliyor musun? Sayfandan tek dokunuşla haber ver ya da iptal et."],
           cta: "Geliyorum / Gelemiyorum",
         },
       },
@@ -80,8 +81,8 @@ export async function GET(req: NextRequest) {
         hash: "#paketler",
         tag: `renew-${p.clientPackageId}`,
         email: {
-          subject: `${p.trainerName} · Paketin bitmek üzere`,
-          heading: "Paketin bitmek üzere",
+          subject: `${p.trainerName} · ${p.remaining <= 0 ? "Paketin bitti" : "Paketin bitmek üzere"}`,
+          heading: p.remaining <= 0 ? "Paketin bitti" : "Paketin bitmek üzere",
           lines: [`${why}`, `${p.trainerName} ile devam etmek istersen aynı paketi sayfandan yenileyebilirsin.`],
           cta: "Paketimi yenile",
         },
@@ -94,9 +95,9 @@ export async function GET(req: NextRequest) {
   // 4. Monday morning summary for each trainer.
   for (const s of await dueWeeklySummaries(tx)) {
     const lines = [
-      `Geçen hafta ${s.lessons} ders, ${s.attended} katılım${s.missed > 0 ? `, ${s.missed} gelmedi ya da geç iptal` : ""}.`,
+      `Geçen hafta ${s.lessons} ders verdin, ${s.attended} kez katılım oldu${s.missed > 0 ? `; ${s.missed} kez danışan gelmedi ya da son anda iptal etti` : ""}.`,
       `Tahsilat: ${formatTRY(s.income)}${s.newClients > 0 ? ` · ${s.newClients} yeni danışan` : ""}.`,
-      s.endingSoon > 0 ? `${s.endingSoon} paket bitmek üzere; yenileme için danışanlarına bakabilirsin.` : "Bu hafta bitmek üzere olan paket yok.",
+      s.endingSoon > 0 ? `${s.endingSoon} paket bitmek üzere, yenilemek için danışanlarınla konuşabilirsin.` : "Bitmek üzere olan paket yok.",
       s.lost.length > 0
         ? `Bir süredir gelmeyenler: ${s.lost.map((l) => l.name).join(", ")}.`
         : "Uzun süredir gelmeyen danışanın yok.",

@@ -52,7 +52,7 @@ export function validateSignup(form: SignupForm, formData: FormData): { data: Si
   if (!phone) errors.phone = "Geçerli bir telefon numarası gir.";
 
   const email = get("email").toLowerCase() || null;
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = "E-posta geçersiz.";
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = "E-posta adresini kontrol et.";
 
   const templateId = get("templateId");
   const pkg = form.packages.find((p) => p.id === templateId);
@@ -63,7 +63,7 @@ export function validateSignup(form: SignupForm, formData: FormData): { data: Si
   if (pkg && options.length > 0 && !options.some((o) => o.installments === installments)) errors.installments = "Ödeme şeklini seç.";
 
   const message = get("message").slice(0, 1000) || null;
-  if (formData.get("kvkk") !== "on") errors.kvkk = "Devam etmek için aydınlatma metnini onayla.";
+  if (formData.get("kvkk") !== "on") errors.kvkk = "Devam etmek için Aydınlatma Metni'ni okuduğunu onayla.";
   const healthConsent = formData.get("healthConsent") === "on";
 
   const answers: SignupData["answers"] = [];

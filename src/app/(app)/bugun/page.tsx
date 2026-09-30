@@ -82,14 +82,14 @@ export default async function TodayPage() {
         <InstallCard
           storageKey="install-card-trainer"
           title={`${APP_NAME}'u telefonuna ekle`}
-          description="Ana ekranından uygulama gibi açılsın; yeni başvuru, randevu, iptal ve mesajlar anında bildirim olarak gelsin."
+          description="Ana ekrandan tek dokunuşla aç; yeni başvuru, randevu, iptal ve mesajlar bildirim olarak gelsin."
           appName={APP_NAME}
           url={`${siteUrl()}/bugun`}
           notifyWhere="Ayarlar → Bildirimler'de"
           push={{
             subscribe: subscribeTrainerAction,
             unsubscribe: unsubscribeTrainerAction,
-            description: "Yeni başvuru, randevu, iptal, ödeme ve mesajlar bu cihaza gelsin.",
+            description: "Yeni başvuru, randevu, iptal, ödeme ve mesaj bildirimleri bu cihaza gelsin.",
           }}
         />
       </div>
@@ -109,7 +109,7 @@ export default async function TodayPage() {
           tone={money.overdue > 0 ? "lime" : "default"}
           label="Bekleyen alacak"
           value={formatTRY(money.outstanding)}
-          hint={money.overdue > 0 ? `${formatTRY(money.overdue)} vadesi geldi` : `Bu ay ${formatTRY(money.thisMonth)} tahsil edildi`}
+          hint={money.overdue > 0 ? `${formatTRY(money.overdue)} vadesi geldi` : `Bu ay ${formatTRY(money.thisMonth)} tahsilat`}
           icon={<Wallet />}
           href="/odemeler"
         />
@@ -138,7 +138,7 @@ export default async function TodayPage() {
           Bugünün dersleri
         </SectionTitle>
         {lessons.length === 0 ? (
-          <EmptyState icon={<Sunrise />} title="Bugün planlı ders yok">
+          <EmptyState icon={<Sunrise />} title="Bugün ders yok">
             <Button asChild variant="outline" size="sm" className="mt-2">
               <Link href="/ders/yeni?next=/bugun">
                 <CalendarPlus />
@@ -180,7 +180,7 @@ export default async function TodayPage() {
                       )}
                     </Link>
                     {l.attendees.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">{l.groupClassId ? "Henüz katılan yok" : l.title || "Danışan eklenmemiş"}</p>
+                      <p className="text-sm text-muted-foreground">{l.groupClassId ? "Henüz katılan yok" : l.title || "Danışan yok"}</p>
                     ) : (
                       <div className="flex flex-col gap-4">
                         {l.attendees.map((a) => (
@@ -270,7 +270,7 @@ export default async function TodayPage() {
           <h2 id="lost-heading" className="mb-1 text-base font-semibold">
             Bir süredir gelmeyenler
           </h2>
-          <p className="mb-3 text-sm text-muted-foreground">{LOST_AFTER_DAYS} günden uzun süredir dersi olmayan ve randevusu bulunmayan danışanlar.</p>
+          <p className="mb-3 text-sm text-muted-foreground">{LOST_AFTER_DAYS} günden uzun süredir dersi ve randevusu olmayan danışanlar.</p>
           <ul className="divide-y overflow-hidden surface">
             {lost.map((c) => {
               const href = whatsappLink(c.phone, messages.missYou(c.name));

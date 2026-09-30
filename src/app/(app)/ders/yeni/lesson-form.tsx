@@ -205,7 +205,7 @@ export function LessonForm({
             <p className="text-sm text-muted-foreground">
               {occurrences.length > 0
                 ? `${occurrences.length} ders: ${dayShort(occurrences[0])} – ${dayShort(occurrences.at(-1)!)}`
-                : "Seçilen günler bu aralığa denk gelmiyor."}
+                : "Seçtiğin günler bu aralığa denk gelmiyor."}
             </p>
           </>
         )}
@@ -218,7 +218,7 @@ export function LessonForm({
           <input type="checkbox" checked={done} onChange={(ev) => setDone(ev.target.checked)} className="mt-0.5 size-4 accent-[var(--primary)]" />
           <span className="text-sm">
             <span className="block font-medium">Bu ders yapıldı</span>
-            <span className="block text-muted-foreground">Geçmiş tarihli. Danışanları &quot;Geldi&quot; olarak işlenir, dersler paketlerinden düşer.</span>
+            <span className="block text-muted-foreground">Tarih geçmişte. Danışanlar &quot;Geldi&quot; olarak işaretlenir, ders paketlerinden düşer.</span>
           </span>
         </label>
       )}

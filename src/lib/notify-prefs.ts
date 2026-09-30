@@ -7,16 +7,16 @@ import { z } from "zod";
 type KindDef = { label: string; hint: string; push: boolean; email: boolean | null };
 
 export const TRAINER_KINDS = {
-  application: { label: "Başvurular", hint: "Sayfandan yeni başvuru ya da danışanından paket talebi", push: true, email: true },
-  booking: { label: "Randevu ve iptaller", hint: "Danışanın ders aldığında, iptal ettiğinde ya da onayladığında", push: true, email: false },
+  application: { label: "Başvurular", hint: "Sayfandan başvuru geldiğinde ya da danışanın paket istediğinde", push: true, email: true },
+  booking: { label: "Randevu ve iptaller", hint: "Danışanın randevu aldığında, iptal ettiğinde ya da “Geliyorum” dediğinde", push: true, email: false },
   payment: { label: "Ödeme bildirimleri", hint: "Danışanın havale yaptığını bildirdiğinde", push: true, email: false },
-  message: { label: "Mesajlar", hint: "Danışanın sana yazdığında", push: true, email: null },
+  message: { label: "Mesajlar", hint: "Bir danışanın sana yazdığında", push: true, email: null },
   weekly: { label: "Haftalık özet", hint: "Pazartesi sabahı geçen haftanın özeti", push: true, email: true },
 } satisfies Record<string, KindDef>;
 
 export const CLIENT_KINDS = {
-  reminder: { label: "Ders hatırlatması", hint: "Dersinden önce \"Geliyor musun?\"", push: true, email: false },
-  package: { label: "Paket ve ödemeler", hint: "Ödeme onayı, paketin bitmek üzere olduğunda", push: true, email: false },
+  reminder: { label: "Ders hatırlatması", hint: "Dersten önce “Geliyor musun?” sorusu", push: true, email: false },
+  package: { label: "Paket ve ödemeler", hint: "Ödemen onaylandığında, paketin bitmek üzereyken", push: true, email: false },
   message: { label: "Mesajlar", hint: "Eğitmenin sana yazdığında", push: true, email: null },
 } satisfies Record<string, KindDef>;
 

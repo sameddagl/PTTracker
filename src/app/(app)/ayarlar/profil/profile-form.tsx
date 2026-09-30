@@ -68,9 +68,9 @@ export function ProfileForm({ initial, siteUrl }: { initial: ProfileValues; site
           className="mt-0.5 size-4 accent-[var(--primary)]"
         />
         <span className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Sayfam yayında</span>
+          <span className="text-sm font-medium">Sayfayı yayınla</span>
           <span className="text-xs text-muted-foreground">
-            Açıkken linki bilen herkes profilini ve paketlerini görebilir. Instagram bio&apos;na bu linki koy.
+            Açıkken linki bilen herkes profilini ve paketlerini görür. Bu linki Instagram bio&apos;na koy.
           </span>
         </span>
       </label>

@@ -9,8 +9,8 @@ export function ArchiveCard({ clientId, name, upcoming }: { clientId: string; na
   const [pending, startTransition] = useTransition();
 
   const archive = () => {
-    const lessons = upcoming > 0 ? ` Sıradaki ${upcoming} dersi takvimden kaldırılacak.` : "";
-    if (!window.confirm(`${name} arşivlensin mi?${lessons} Geçmiş dersleri ve ödemeleri saklanır, istediğinde geri alabilirsin.`)) return;
+    const lessons = upcoming > 0 ? ` Sıradaki ${upcoming} dersi takvimden kalkar.` : "";
+    if (!window.confirm(`${name} arşive alınsın mı?${lessons} Geçmiş dersleri ve ödemeleri silinmez; istediğin zaman arşivden çıkarabilirsin.`)) return;
     startTransition(() => archiveClientAction(clientId));
   };
 
@@ -20,8 +20,8 @@ export function ArchiveCard({ clientId, name, upcoming }: { clientId: string; na
         Danışanı arşivle
       </h2>
       <p className="text-sm text-muted-foreground">
-        Artık gelmeyen danışanı listelerden kaldırır. Geçmiş dersler ve ödemeler saklanır; portal linki kapanır
-        {upcoming > 0 && `, sıradaki ${upcoming} dersi iptal edilir`}. Arşivden geri alabilir ya da kalıcı olarak silebilirsin.
+        Gelmeyi bırakan danışanı listelerden kaldırır. Geçmiş dersler ve ödemeler silinmez; danışan sayfası kapanır
+        {upcoming > 0 && `, sıradaki ${upcoming} dersi iptal olur`}. Sonra arşivden çıkarabilir ya da kalıcı olarak silebilirsin.
       </p>
       <Button type="button" variant="outline" className="sm:self-start" loading={pending} onClick={archive}>
         <Archive />

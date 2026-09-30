@@ -34,7 +34,7 @@ const optional = (max: number) =>
   z
     .string()
     .trim()
-    .max(max, `En fazla ${max} karakter.`)
+    .max(max, `En fazla ${max} karakter olabilir.`)
     .transform((v) => v || null);
 
 /** "@samed.pilates", "instagram.com/samed.pilates/" → "samed.pilates" */
@@ -64,7 +64,7 @@ const profileSchema = z
     instagram: z
       .string()
       .transform(instagramHandle)
-      .refine((v) => v === "" || /^[A-Za-z0-9._]{1,30}$/.test(v), "Instagram kullanıcı adı geçersiz.")
+      .refine((v) => v === "" || /^[A-Za-z0-9._]{1,30}$/.test(v), "Instagram kullanıcı adını kontrol et.")
       .transform((v) => v || null),
     // Validated before parsing (see saveProfileAction) so the error keeps its message.
     phone: z
@@ -79,7 +79,7 @@ const profileSchema = z
     iban: z
       .string()
       .transform((v) => normalizeIban(v) || null)
-      .refine((v) => v === null || isValidIban(v), "IBAN geçersiz. TR ile başlayan 26 karakteri kontrol et."),
+      .refine((v) => v === null || isValidIban(v), "IBAN'ı kontrol et: TR ile başlar, 26 karakterdir."),
     ibanHolder: optional(120),
   })
   .refine((v) => !v.iban || v.ibanHolder, { path: ["ibanHolder"], message: "Hesap sahibinin adını yaz." })
@@ -87,7 +87,7 @@ const profileSchema = z
 
 export async function saveProfileAction(_prev: FormState<ProfileField>, formData: FormData): Promise<FormState<ProfileField>> {
   const raw = readForm(formData, FIELDS);
-  if (raw.phone && !normalizePhone(raw.phone)) return { errors: { phone: "Telefon numarası geçersiz." }, values: raw };
+  if (raw.phone && !normalizePhone(raw.phone)) return { errors: { phone: "Telefon numarasını kontrol et." }, values: raw };
   const parsed = profileSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
 
@@ -98,7 +98,7 @@ export async function saveProfileAction(_prev: FormState<ProfileField>, formData
       if (parsed.data.publicPageEnabled) await ensureDefaultIntakeFields(tx, trainerId);
     });
   } catch (e) {
-    if (isUniqueViolation(e)) return { errors: { slug: "Bu adres başka biri tarafından alınmış." }, values: raw };
+    if (isUniqueViolation(e)) return { errors: { slug: "Bu adresi başka biri kullanıyor." }, values: raw };
     throw e;
   }
 

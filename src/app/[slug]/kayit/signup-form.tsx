@@ -181,7 +181,7 @@ export function SignupForm({
               aria-invalid={!!e.phone || undefined}
             />
           </Field>
-          <Field id="email" label="E-posta" hint="kişisel linkini buraya da gönderelim" error={e.email}>
+          <Field id="email" label="E-posta" hint="kişisel linkini buraya da göndeririz" error={e.email}>
             <Input
               id="email"
               name="email"
@@ -224,7 +224,7 @@ export function SignupForm({
               health.map((f) => <IntakeInput key={f.id} field={f} error={e[answerName(f.id)]} />)
             ) : (
               <p className="text-xs text-muted-foreground">
-                Rıza vermezsen bu bölümü atlayabilirsin; bilgileri eğitmenine derste de iletebilirsin.
+                İstemezsen bu bölümü boş geç; bu bilgileri eğitmenine derste de söyleyebilirsin.
               </p>
             )}
           </fieldset>

@@ -13,7 +13,7 @@ const input = z.object({
 
 export async function markAttendanceAction(attendeeId: string, status: string): Promise<AttendanceResult | { error: string }> {
   const parsed = input.safeParse({ attendeeId, status });
-  if (!parsed.success) return { error: "Geçersiz istek." };
+  if (!parsed.success) return { error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await withTrainer((tx, trainerId) =>
     setAttendance(tx, trainerId, parsed.data.attendeeId, parsed.data.status),

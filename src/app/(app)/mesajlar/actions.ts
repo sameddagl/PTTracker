@@ -13,7 +13,7 @@ import { notifyClient } from "@/lib/notify";
 type Result = { ok: true; message: Message } | { ok: false; error: string };
 
 const ERRORS = {
-  empty: "Boş mesaj gönderilemez.",
+  empty: "Mesaj boş olamaz.",
   too_long: "Mesaj en fazla 2000 karakter olabilir.",
   not_found: "Danışan bulunamadı.",
   rate_limited: "Çok hızlı mesaj gönderiyorsun. Biraz bekleyip tekrar dene.",
@@ -22,7 +22,7 @@ const ERRORS = {
 const preview = (body: string) => (body.length > 140 ? `${body.slice(0, 139)}…` : body);
 
 export async function sendMessageAction(clientId: string, body: string): Promise<Result> {
-  if (!z.uuid().safeParse(clientId).success || typeof body !== "string") return { ok: false, error: "Geçersiz istek." };
+  if (!z.uuid().safeParse(clientId).success || typeof body !== "string") return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const out = await withTrainer(async (tx, trainerId) => {
     const result = await sendTrainerMessage(tx, trainerId, clientId, body);

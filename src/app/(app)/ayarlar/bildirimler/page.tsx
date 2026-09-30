@@ -21,7 +21,7 @@ export default async function NotificationsPage() {
         <ChevronLeft className="size-4" aria-hidden />
         Ayarlar
       </Link>
-      <PageHeader title="Bildirimler" description="Neyi, nasıl öğrenmek istediğini seç. Değişiklik hemen kaydedilir." />
+      <PageHeader title="Bildirimler" description="Neyi, hangi yolla öğrenmek istediğini seç. Seçimin hemen kaydedilir." />
       <div className="flex flex-col gap-4">
         <section aria-labelledby="install-heading" className="flex flex-col gap-4 surface p-5">
           <div>
@@ -43,7 +43,7 @@ export default async function NotificationsPage() {
         </section>
         <NotifyPrefsForm rows={prefsView("trainer", trainer.notifyPrefs)} save={saveTrainerPrefsAction} />
         <p className="text-sm text-muted-foreground">
-          Mesajlar e-postayla gönderilmez. Giriş kodu e-postaları her zaman gelir.
+          Mesajlar e-postayla gelmez. Giriş kodu e-postası her zaman gelir.
         </p>
       </div>
     </>

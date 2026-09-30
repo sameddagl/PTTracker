@@ -12,9 +12,9 @@ import { resolvePortalToken } from "@/lib/portal";
 // by the ids bound to it (adminDb, no RLS).
 
 const ERRORS = {
-  empty: "Boş mesaj gönderilemez.",
+  empty: "Önce bir şey yaz.",
   too_long: "Mesaj en fazla 2000 karakter olabilir.",
-  not_found: "Bu sayfadan şu an mesaj gönderilemiyor.",
+  not_found: "Şu an buradan mesaj gönderemiyorsun.",
   rate_limited: "Kısa sürede çok mesaj gönderdin. Birkaç dakika sonra tekrar dene.",
 } as const;
 
@@ -22,7 +22,7 @@ const preview = (body: string) => (body.length > 140 ? `${body.slice(0, 139)}…
 
 export async function sendClientMessageAction(token: string, body: string): Promise<{ ok: true; message: Message } | { ok: false; error: string }> {
   const who = await resolvePortalToken(token);
-  if (!who || typeof body !== "string") return { ok: false, error: "Geçersiz istek." };
+  if (!who || typeof body !== "string") return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await adminDb.transaction((tx) => sendClientMessage(tx as unknown as Tx, who, body));
   if (!result.ok) return { ok: false, error: ERRORS[result.reason] };

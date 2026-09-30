@@ -28,7 +28,7 @@ export async function signupAction(slug: string, _prev: SignupState, formData: F
     const { html, text } = layout({
       heading: "Başvurun alındı",
       lines: [
-        `${trainerName} için ${pkg?.name ?? "paket"} başvurun iletildi. Eğitmenin onayladığında sana haber vereceğiz.`,
+        `${pkg?.name ?? "Paket"} başvurunu eğitmenine ilettik. Onaylandığında sana haber vereceğiz.`,
         "Kalan derslerini, randevularını ve ödeme bilgilerini bu linkten takip edebilirsin. Linki kaydet, başkasıyla paylaşma.",
       ],
       cta: { label: "Sayfamı aç", url },

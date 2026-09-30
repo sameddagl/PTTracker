@@ -25,7 +25,7 @@ export default async function IntakeFormPage() {
       </Link>
       <PageHeader
         title="Kayıt formu"
-        description="Sayfandan paket seçen danışanlara soracağın sorular. Cevaplar danışan kaydına düşer."
+        description="Sayfandan paket seçen danışanlara bu soruları sorarsın. Cevaplar danışanın kaydına eklenir."
       />
       {trainer.publicPageEnabled && trainer.slug && (
         <a

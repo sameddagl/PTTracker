@@ -78,8 +78,8 @@ export function PublicPageDemo() {
           <Check className="size-4 text-success-strong" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">KVKK rızası alındı</p>
-          <p className="truncate text-xs text-muted-foreground">Deniz Y. · formu tamamladı</p>
+          <p className="text-sm font-medium">KVKK onayı alındı</p>
+          <p className="truncate text-xs text-muted-foreground">Deniz Y. · formu doldurdu</p>
         </div>
       </div>
     </div>
@@ -235,7 +235,7 @@ export function ConfirmDemo() {
       <Notification title="Yarın 10:00 dersin var" body="Özel Reformer · Elif Ö. Geliyor musun?" time="şimdi" />
       <div className={cn(panel, "p-3")}>
         <div className="flex items-center justify-between text-xs">
-          <span className="font-medium text-foreground">Yarın gelecekler</span>
+          <span className="font-medium text-foreground">Yarınki dersler</span>
           <span className="text-muted-foreground tabular-nums">3/4 onayladı</span>
         </div>
         <div className="mt-3 flex flex-col gap-2">

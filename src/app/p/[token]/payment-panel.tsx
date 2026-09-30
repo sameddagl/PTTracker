@@ -55,7 +55,7 @@ function CopyRow({ label, value, display }: { label: string; value: string; disp
             await navigator.clipboard.writeText(value);
             toast.success(`${label} kopyalandı`);
           } catch {
-            toast.error("Kopyalanamadı; basılı tutup kopyala.");
+            toast.error("Kopyalanamadı. Üstüne basılı tutup kopyala.");
           }
         }}
       >
@@ -88,7 +88,7 @@ export function PaymentPanel({
   const e = state.errors ?? {};
 
   useEffect(() => {
-    if (state.savedAt) toast.success("Bildirimin eğitmenine iletildi");
+    if (state.savedAt) toast.success("Eğitmenine haber verdik");
   }, [state.savedAt]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -101,7 +101,7 @@ export function PaymentPanel({
         const blob = await prepareReceipt(file);
         fd.set("receipt", new File([blob], blob.type === "application/pdf" ? file.name : "dekont.webp", { type: blob.type }));
       } catch {
-        toast.error("Dosya hazırlanamadı. Başka bir fotoğraf dene.");
+        toast.error("Bu dosya açılamadı. Başka bir fotoğraf dene.");
         return;
       } finally {
         setPreparing(false);
@@ -215,7 +215,7 @@ export function PaymentPanel({
         <p key={r.id} className="flex items-start gap-3 rounded-2xl bg-destructive/10 px-4 py-3 text-sm">
           <XCircle className="mt-0.5 size-4 shrink-0 text-destructive-strong" aria-hidden />
           <span>
-            {formatShortDate(r.paidOn)} tarihli {formatTRY(r.amount)} bildirimin onaylanmadı
+            {formatShortDate(r.paidOn)} tarihli {formatTRY(r.amount)} ödemen onaylanmadı
             {r.rejectReason ? `: ${r.rejectReason}` : "."}
           </span>
         </p>

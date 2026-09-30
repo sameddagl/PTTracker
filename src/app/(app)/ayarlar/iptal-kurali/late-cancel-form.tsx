@@ -18,7 +18,7 @@ export function LateCancelForm({ initial }: { initial: number }) {
 
   return (
     <form action={action} className="flex flex-col gap-5">
-      <Field id="lateCancelHours" label="Dersten en geç kaç saat önce ücretsiz iptal edilebilsin?" error={state.errors?.lateCancelHours}>
+      <Field id="lateCancelHours" label="Danışan dersten en geç kaç saat önce ücretsiz iptal edebilsin?" error={state.errors?.lateCancelHours}>
         <NativeSelect
           id="lateCancelHours"
           name="lateCancelHours"

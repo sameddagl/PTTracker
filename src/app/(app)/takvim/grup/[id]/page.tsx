@@ -84,7 +84,7 @@ export default async function GroupClassPage({ params }: PageProps<"/takvim/grup
             Sabit üyeler · {g.members.length}/{g.capacity}
           </h2>
           <p className="mb-3 text-sm text-muted-foreground">
-            Yerleri her hafta otomatik ayrılır ve grup paketlerinden düşer. Gelemeyeceği haftayı kendi sayfasından iptal edebilir.
+            Yerleri her hafta ayrılır, dersleri grup paketlerinden düşer. Gelemeyecekleri haftayı kendi sayfalarından iptal edebilirler.
           </p>
           <MemberList
             classId={g.id}

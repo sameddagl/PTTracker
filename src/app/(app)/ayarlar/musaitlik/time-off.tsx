@@ -49,7 +49,7 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
           <Field id="startsOn" label="Başlangıç" error={e.startsOn}>
             <Input id="startsOn" name="startsOn" type="date" min={today} />
           </Field>
-          <Field id="endsOn" label="Bitiş" hint="tek gün ise boş bırak" error={e.endsOn}>
+          <Field id="endsOn" label="Bitiş" hint="tek günse boş bırak" error={e.endsOn}>
             <Input id="endsOn" name="endsOn" type="date" min={today} />
           </Field>
         </div>

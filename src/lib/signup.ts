@@ -33,7 +33,7 @@ export async function submitSignup(slug: string, formData: FormData): Promise<Si
       errors: {
         form: result.trialUsed
           ? "Deneme dersi yalnızca ilk kez gelenler için. Dilersen başka bir paket seçebilirsin."
-          : "Çok fazla başvuru yapıldı. Lütfen daha sonra tekrar dene.",
+          : "Kısa sürede çok fazla başvuru geldi. Biraz sonra tekrar dene.",
       },
     };
   return { ok: true, token: result.token, email: v.data.email };

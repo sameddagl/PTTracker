@@ -36,7 +36,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
   });
 
   useEffect(() => {
-    if (state.savedAt) toast.success("Müsaitlik kaydedildi");
+    if (state.savedAt) toast.success("Çalışma saatlerin kaydedildi");
   }, [state.savedAt]);
 
   const update = (day: number, fn: (ranges: Range[]) => Range[]) => setWeek((w) => ({ ...w, [day]: fn(w[day]) }));
@@ -66,7 +66,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
         <span className="flex flex-col gap-1">
           <span className="text-sm font-medium">Danışanlar randevu alabilsin</span>
           <span className="text-xs text-muted-foreground">
-            Birebir paketi olan danışanlar kendi sayfalarından aşağıdaki saatlerde boş olan saatleri görüp ders alabilir.
+            Özel ders paketi olan danışanlar, aşağıdaki saatlerdeki boşlukları kendi sayfalarında görüp randevu alır.
           </span>
         </span>
       </label>
@@ -81,7 +81,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
             ))}
           </NativeSelect>
         </Field>
-        <Field id="bookingMinNoticeHours" label="En az önceden" error={e.bookingMinNoticeHours}>
+        <Field id="bookingMinNoticeHours" label="Kaç saat önceden" error={e.bookingMinNoticeHours}>
           <NativeSelect id="bookingMinNoticeHours" name="bookingMinNoticeHours" defaultValue={initial.bookingMinNoticeHours}>
             {[0, 1, 2, 3, 6, 12, 24, 48].map((h) => (
               <option key={h} value={h}>
@@ -90,7 +90,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
             ))}
           </NativeSelect>
         </Field>
-        <Field id="bookingHorizonDays" label="Kaç gün ileri" error={e.bookingHorizonDays}>
+        <Field id="bookingHorizonDays" label="Kaç gün ileriye" error={e.bookingHorizonDays}>
           <NativeSelect id="bookingHorizonDays" name="bookingHorizonDays" defaultValue={initial.bookingHorizonDays}>
             {[7, 14, 21, 30, 60].map((d) => (
               <option key={d} value={d}>
@@ -169,7 +169,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
           })}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Randevular her aralığın başından itibaren ders süresi kadar arka arkaya açılır. Zaten dersin olan saatler otomatik kapanır.
+          Her aralık, başından itibaren ders süresine göre randevulara bölünür. Dersin olan saatler kendiliğinden kapanır.
         </p>
       </fieldset>
 

@@ -161,13 +161,13 @@ function DayAgenda({ lessons, addHref, weekEmpty }: { lessons: CalendarLesson[];
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center">
         <p className="max-w-sm text-sm text-muted-foreground">
           {weekEmpty
-            ? "Bu hafta ders yok. Tekrarlayan bir ders ya da grup dersi planla; takvimin her hafta kendiliğinden dolar."
+            ? "Bu hafta ders yok. Her hafta tekrar eden bir ders ya da grup dersi planlarsan takvim kendiliğinden dolar."
             : "Bu gün ders yok."}
         </p>
         <Button asChild variant={weekEmpty ? "default" : "outline"} size="sm">
           <Link href={addHref}>
             <CalendarPlus />
-            Ders ekle
+            Ders planla
           </Link>
         </Button>
       </div>
@@ -233,7 +233,7 @@ function WeekGrid({
               <Link
                 key={h}
                 href={`/ders/yeni?tarih=${d}&saat=${String(h).padStart(2, "0")}:00&next=${back}`}
-                aria-label={`${dayLong(d)} ${String(h).padStart(2, "0")}:00 ders ekle`}
+                aria-label={`${dayLong(d)} ${String(h).padStart(2, "0")}:00 için ders planla`}
                 style={{ height: HOUR_PX }}
                 className="block border-b border-dashed border-border/60 transition-colors hover:bg-muted/40"
               />

@@ -12,14 +12,14 @@ import { subscriptionSchema } from "@/lib/push-input";
 export async function subscribeClientAction(token: string, input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
   const sub = subscriptionSchema.safeParse(input);
-  if (!link || !sub.success) return { ok: false, error: "Bildirim kaydedilemedi." };
+  if (!link || !sub.success) return { ok: false, error: "Bildirimler açılamadı. Tekrar dene." };
   await saveSubscription(link, sub.data);
   return { ok: true };
 }
 
 export async function unsubscribeClientAction(token: string, endpoint: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
-  if (!link) return { ok: false, error: "Geçersiz link." };
+  if (!link) return { ok: false, error: "Bu link artık geçerli değil." };
   await deleteSubscription(link, endpoint);
   return { ok: true };
 }
@@ -27,7 +27,7 @@ export async function unsubscribeClientAction(token: string, endpoint: string): 
 export async function saveClientPrefsAction(token: string, input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
   const parsed = notifyPrefsSchema.safeParse(input);
-  if (!link || !parsed.success) return { ok: false, error: "Tercihler kaydedilemedi." };
+  if (!link || !parsed.success) return { ok: false, error: "Ayar kaydedilemedi. Tekrar dene." };
   await adminDb
     .update(clients)
     .set({ notifyPrefs: cleanPrefs("client", parsed.data) })

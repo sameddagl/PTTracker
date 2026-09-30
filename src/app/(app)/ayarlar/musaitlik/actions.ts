@@ -14,7 +14,7 @@ const ruleSchema = z
     startMinute: z.number().int().min(0).max(1439),
     endMinute: z.number().int().min(1).max(1440),
   })
-  .refine((r) => r.endMinute > r.startMinute, "Bitiş, başlangıçtan sonra olmalı.");
+  .refine((r) => r.endMinute > r.startMinute, "Bitiş saati başlangıçtan sonra olmalı.");
 
 const settingsSchema = z.object({
   bookingEnabled: z.boolean(),
@@ -50,7 +50,7 @@ export async function saveAvailabilityAction(
   }
   const { rules: ruleList, ...settings } = parsed.data;
   if (settings.bookingEnabled && ruleList.length === 0) {
-    return { errors: { rules: "Randevuyu açmak için en az bir çalışma aralığı ekle." } };
+    return { errors: { rules: "Randevuyu açmak için en az bir saat aralığı ekle." } };
   }
 
   await withTrainer(async (tx, trainerId) => {
@@ -71,7 +71,7 @@ const offSchema = z
       .max(100)
       .transform((v) => v || null),
   })
-  .refine((v) => v.endsOn >= v.startsOn, { path: ["endsOn"], message: "Bitiş, başlangıçtan önce olamaz." });
+  .refine((v) => v.endsOn >= v.startsOn, { path: ["endsOn"], message: "Bitiş tarihi başlangıçtan önce olamaz." });
 
 export async function addTimeOffAction(_prev: FormState<"startsOn" | "endsOn">, formData: FormData): Promise<FormState<"startsOn" | "endsOn">> {
   const parsed = offSchema.safeParse({

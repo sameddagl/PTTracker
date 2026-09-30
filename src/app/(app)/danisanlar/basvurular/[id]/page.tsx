@@ -46,12 +46,11 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
 
   const { app, trainer, answers, hasHealthConsent, token } = data;
   const tz = trainer.timezone;
-  const trainerName = trainer.businessName || trainer.fullName;
   const approvedWa =
     app.status === "approved" && token
       ? whatsappLink(
           app.clientPhone,
-          `Merhaba ${app.clientName.split(" ")[0]}, ${app.packageName} başvurun onaylandı! Paket bilgilerin ve ödeme adımları burada: ${portalUrl(token)}`,
+          `Merhaba ${app.clientName.split(" ")[0]}, ${app.packageName} başvurunu onayladım! Paketini ve ödeme bilgilerini buradan görebilirsin: ${portalUrl(token)}`,
         )
       : null;
 
@@ -89,7 +88,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
                 </Button>
               )}
               <Button asChild size="sm" variant="outline">
-                <Link href={`/danisanlar/${app.clientId}`}>Danışan sayfası</Link>
+                <Link href={`/danisanlar/${app.clientId}`}>Danışana git</Link>
               </Button>
             </div>
           </CardContent>
@@ -141,7 +140,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
                   <dd>
                     Zaten danışanın ·{" "}
                     <Link href={`/danisanlar/${app.clientId}`} className="underline underline-offset-2">
-                      sayfası
+                      bilgilerine git
                     </Link>
                   </dd>
                 </>
@@ -177,7 +176,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
               )}
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="size-3.5" aria-hidden />
-                {hasHealthConsent ? "Sağlık bilgileri için açık rıza verdi." : "Sağlık bilgileri için rıza vermedi; bu sorular atlandı."}
+                {hasHealthConsent ? "Sağlık bilgilerini paylaşmak için açık rıza verdi." : "Sağlık bilgilerini paylaşmaya rıza vermedi; bu sorular sorulmadı."}
               </p>
             </CardContent>
           </Card>
@@ -195,7 +194,7 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
             </SubmitButton>
           </form>
           <p className="text-xs text-muted-foreground">
-            Onaylayınca {app.packageName} paketi {trainerName} adına danışana tanımlanır ve kişisel sayfasında görünür.
+            Onaylarsan {app.packageName} paketi danışana tanımlanır ve kendi sayfasında görünür.
           </p>
         </section>
       ) : (

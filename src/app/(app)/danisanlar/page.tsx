@@ -63,7 +63,7 @@ export default async function ClientsPage() {
             </div>
           }
         >
-          Danışanlarının paketlerini, derslerini ve ödemelerini buradan takip edersin. Sayfandan kayıt olanlar da onaylayınca buraya gelir. Listen Excel&apos;deyse tek seferde aktarabilirsin.
+          Danışanlarının paket, ders ve ödemelerini burada takip edersin. Sayfandan başvuranlar da sen onaylayınca buraya eklenir. Listen Excel&apos;deyse hepsini tek seferde aktar.
         </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden surface">
@@ -112,7 +112,7 @@ export default async function ClientsPage() {
           className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <Archive className="size-4" aria-hidden />
-          Arşivlenen danışanlar ({archived})
+          Arşivdeki danışanlar ({archived})
         </Link>
       )}
     </>

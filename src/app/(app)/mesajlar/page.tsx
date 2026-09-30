@@ -44,7 +44,7 @@ export default async function MessagesPage() {
 
       {threads.length === 0 ? (
         <EmptyState icon={<MessagesSquare />} title="Henüz mesaj yok">
-          Danışanların kişisel sayfalarından sana yazabilir. Sen de “Yeni mesaj” ile bir danışana ilk mesajı gönderebilirsin.
+          Danışanların kendi sayfalarından sana yazabilir. İlk mesajı sen atmak istersen “Yeni mesaj”a dokun.
         </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden surface">

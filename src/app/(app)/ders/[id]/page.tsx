@@ -93,7 +93,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
             )}
           </h2>
           {lesson.attendees.length === 0 ? (
-            <p className="mb-3 text-sm text-muted-foreground">Bu derse danışan eklenmemiş.</p>
+            <p className="mb-3 text-sm text-muted-foreground">Bu derste danışan yok.</p>
           ) : (
             <Card>
               <CardContent className="flex flex-col gap-5">

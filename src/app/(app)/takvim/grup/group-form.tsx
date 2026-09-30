@@ -16,10 +16,10 @@ const MODES = [
   {
     value: "both",
     title: "Sabit yer + boş yerlere katılım",
-    text: "Sabit üyelerin yeri her hafta ayrılır. Kalan ya da boşalan yerlere danışanlar kendi katılır.",
+    text: "Sabit üyelerin yeri her hafta ayrılır. Boş kalan yerlere başka danışanlar da yazılabilir.",
   },
-  { value: "fixed", title: "Sadece sabit yer", text: "Üyeleri sen belirlersin; gelemeyeceği hafta iptal eder. Başkası katılamaz." },
-  { value: "drop_in", title: "Derse tek tek katılım", text: "Sabit üye yok. Grup paketi olan danışan istediği derse yer ayırır." },
+  { value: "fixed", title: "Sabit yer", text: "Üyeleri sen seçersin; gelemeyen o haftayı iptal eder. Başka kimse katılamaz." },
+  { value: "drop_in", title: "Derse tek tek katılım", text: "Sabit üye yok. Grup paketi olan danışan istediği derse yazılır." },
 ] as const;
 
 export type GroupValues = {

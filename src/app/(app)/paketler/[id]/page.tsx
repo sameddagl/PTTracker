@@ -21,7 +21,7 @@ export default async function EditTemplatePage({ params }: PageProps<"/paketler/
         <ChevronLeft className="size-4" aria-hidden />
         Paketler
       </Link>
-      <PageHeader title={t.name} description="Değişiklikler daha önce satılmış paketleri etkilemez." />
+      <PageHeader title={t.name} description="Değişiklikler daha önce sattığın paketleri etkilemez." />
       <TemplateForm
         id={t.id}
         initial={{

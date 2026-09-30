@@ -76,8 +76,8 @@ export function ImportWizard() {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          İlk satır başlık olmalı (Ad Soyad, Telefon, Kalan ders…). Sütun adları farklıysa bir sonraki adımda eşleştirebilirsin; yüklemek
-          henüz hiçbir şey kaydetmez.
+          İlk satırda sütun başlıkları olmalı (Ad Soyad, Telefon, Kalan ders…). Başlıklar farklıysa sonraki adımda eşleştirirsin.
+          Yüklemek bir şey kaydetmez; önce önizlemeyi görürsün.
         </p>
       </form>
     </div>
@@ -224,12 +224,12 @@ function Review({ file, onReset }: { file: ParsedFile; onReset: () => void }) {
         </ul>
         {file.rows.length > PREVIEW_ROWS && (
           <p className="mt-2 text-xs text-muted-foreground">
-            İlk {PREVIEW_ROWS} satır gösteriliyor; kontrol {file.rows.length} satırın hepsine uygulanır.
+            Burada ilk {PREVIEW_ROWS} satır var; kontrol {file.rows.length} satırın hepsinde yapılır.
           </p>
         )}
         {problems.some((p) => p.line > (results[PREVIEW_ROWS - 1]?.line ?? Infinity)) && (
           <details className="mt-4 surface px-4 py-3">
-            <summary className="cursor-pointer text-sm font-medium">Aktarılmayacak satırların hepsi ({problems.length})</summary>
+            <summary className="cursor-pointer text-sm font-medium">Aktarılmayacak satırlar ({problems.length})</summary>
             <ul className="mt-3 flex flex-col gap-1.5 text-sm">
               {problems.map((p) => (
                 <li key={p.line}>

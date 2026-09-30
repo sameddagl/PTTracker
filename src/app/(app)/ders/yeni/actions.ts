@@ -31,10 +31,10 @@ export type LessonFormState = FormState<LessonField> & {
 
 const lessonSchema = z
   .object({
-    clientIds: z.array(z.uuid()).min(1, "En az bir danışan seç.").max(20, "Bir derse en fazla 20 danışan eklenebilir."),
+    clientIds: z.array(z.uuid()).min(1, "En az bir danışan seç.").max(20, "Bir derse en fazla 20 danışan ekleyebilirsin."),
     date: z.iso.date({ error: "Tarih seç." }),
     time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { error: "Saat seç." }),
-    durationMinutes: z.coerce.number().int().min(10, "Süre en az 10 dakika.").max(240, "Süre en fazla 240 dakika."),
+    durationMinutes: z.coerce.number().int().min(10, "Süre en az 10 dakika olmalı.").max(240, "Süre en fazla 240 dakika olmalı."),
     sessionType: z.enum(["private", "duet", "trio", "group"]),
     status: z.enum(["scheduled", "attended"]),
     note: z
@@ -49,7 +49,7 @@ const lessonSchema = z
   .refine((v) => !v.repeat || v.weekdays.length > 0, { path: ["weekdays"], message: "En az bir gün seç." })
   .refine((v) => !v.repeat || v.status === "scheduled", {
     path: ["status"],
-    message: "Tekrarlayan dersler planlı olarak eklenir.",
+    message: "Tekrar eden dersleri yapıldı olarak kaydedemezsin; önce planla.",
   });
 
 export async function createLessonAction(_prev: LessonFormState, formData: FormData): Promise<LessonFormState> {
@@ -98,7 +98,7 @@ export async function createLessonAction(_prev: LessonFormState, formData: FormD
     return { kind: "created" as const };
   });
 
-  if (outcome.kind === "empty") return { errors: { weekdays: "Seçilen günler bu aralığa denk gelmiyor." } };
+  if (outcome.kind === "empty") return { errors: { weekdays: "Seçtiğin günler bu aralığa denk gelmiyor." } };
   if (outcome.kind === "conflicts") return { conflicts: outcome.conflicts, count: outcome.count };
 
   revalidatePath("/bugun");

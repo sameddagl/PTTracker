@@ -52,7 +52,7 @@ export async function recordPaymentAction(
   if (!result.ok) {
     const message =
       result.reason === "overpay"
-        ? `Bu paketin kalan borcu ${formatTRY(result.due)}. Daha fazlası girilemez.`
+        ? `Bu paketin kalan borcu ${formatTRY(result.due)}; daha fazlasını giremezsin.`
         : "Paket bulunamadı.";
     return { errors: { [result.reason === "overpay" ? "amount" : "clientPackageId"]: message }, values: raw };
   }
@@ -86,19 +86,19 @@ async function notifyClient(clientId: string, heading: string, lines: string[]) 
 
 export async function confirmPaymentAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = z.uuid().safeParse(id);
-  if (!parsed.success) return { ok: false, error: "Geçersiz istek." };
+  if (!parsed.success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
   const result = await withTrainer((tx, trainerId) => confirmPayment(tx, trainerId, parsed.data));
   if (!result.ok) {
     return {
       ok: false,
       error:
         result.reason === "overpay"
-          ? `Bu paketin kalan borcu ${formatTRY(result.due ?? 0)}; bildirim daha büyük. Reddedip danışanla konuş.`
-          : "Bildirim bulunamadı ya da zaten karara bağlanmış.",
+          ? `Bu paketin kalan borcu ${formatTRY(result.due ?? 0)}, bildirilen tutar bundan fazla. Bildirimi reddet ve danışanla konuş.`
+          : "Bildirim bulunamadı ya da daha önce onaylanmış veya reddedilmiş.",
     };
   }
   revalidateAll(result.clientId);
-  await notifyClient(result.clientId, "Ödemen onaylandı", [`${formatTRY(result.amount)} ödemen alındı ve kaydedildi. Teşekkürler!`]);
+  await notifyClient(result.clientId, "Ödemen onaylandı", [`${formatTRY(result.amount)} ödemen onaylandı ve paketine işlendi. Teşekkürler!`]);
   return { ok: true };
 }
 
@@ -111,7 +111,7 @@ export async function rejectPaymentAction(id: string, reason: string): Promise<{
   revalidateAll(row.clientId);
   await notifyClient(row.clientId, "Ödeme bildirimin onaylanmadı", [
     why ? `Eğitmenin notu: ${why}` : "Eğitmenin bu bildirimi onaylamadı.",
-    "Detaylar için eğitmeninle iletişime geçebilirsin.",
+    "Ayrıntı için eğitmenine yazabilirsin.",
   ]);
   return { ok: true };
 }

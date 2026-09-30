@@ -27,7 +27,11 @@ export default async function AvailabilityPage() {
       </Link>
       <PageHeader
         title="Müsaitlik"
-        description={`Danışanlar bu saatlerden randevu alır. Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz iptal edebilirler.`}
+        description={`Danışanlar bu saatlere randevu alır. ${
+          trainer.lateCancelHours === 0
+            ? "İstedikleri zaman ücretsiz iptal edebilirler."
+            : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz iptal edebilirler.`
+        }`}
       />
       <AvailabilityForm
         initial={{

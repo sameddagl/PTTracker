@@ -10,49 +10,49 @@ import { BioLinkAddedButton, GuideVisibilityButton } from "./guide-buttons";
 const STEPS: Record<GuideStepId, { title: string; why: string; href: string; cta: string }> = {
   profile: {
     title: "Profilini ve sayfanı yayınla",
-    why: "Danışanların paketlerini bu sayfada görür ve oradan kayıt olur.",
+    why: "Danışanların paketlerine bu sayfadan bakıp kayıt olur.",
     href: "/ayarlar/profil",
     cta: "Sayfanı hazırla",
   },
   package: {
     title: "İlk paketini oluştur",
-    why: "8 ya da 12 derslik paketlerini bir kez tanımla; satarken tek dokunuşla seçersin.",
+    why: "8 ya da 12 derslik paketlerini bir kez gir; satarken listeden seçersin.",
     href: "/paketler/yeni",
     cta: "Paket ekle",
   },
   availability: {
     title: "Çalışma saatlerini gir",
-    why: "Danışanların boş saatlerinden kendileri randevu alabilsin. Randevu açmayacaksan atlayabilirsin.",
+    why: "Danışanların boş saatlerine kendileri randevu alsın. Online randevu kullanmayacaksan bu adımı geç.",
     href: "/ayarlar/musaitlik",
     cta: "Saatleri gir",
   },
   intake: {
     title: "Kayıt formunu gözden geçir",
-    why: "Sayfandan kayıt olanlara soracağın sorular. Hazır sorularla gelir; istediğini değiştir.",
+    why: "Sayfandan kayıt olan danışanlara bu soruları sorarsın. Hazır sorular ekli, istediğini değiştir.",
     href: "/ayarlar/kayit-formu",
     cta: "Formu aç",
   },
   client: {
     title: "İlk danışanını ekle",
-    why: "Mevcut danışanlarını ekle; paketlerini, derslerini ve ödemelerini buradan takip et.",
+    why: "Şu anki danışanlarını ekle; paket, ders ve ödemelerini buradan takip et.",
     href: "/danisanlar/yeni",
     cta: "Danışan ekle",
   },
   lesson: {
     title: "İlk dersini planla",
-    why: "Tekrarlayan dersleri bir kez gir; yoklamayı bu sayfadan tek dokunuşla alırsın.",
+    why: "Her hafta tekrar eden dersleri bir kez gir; yoklamayı bu sayfadan tek dokunuşla al.",
     href: "/ders/yeni?next=/bugun",
     cta: "Ders planla",
   },
   app: {
     title: "Uygulamayı telefonuna ekle, bildirimleri aç",
-    why: "Ana ekrandan tek dokunuşla açılır; yeni başvuru, randevu, iptal ve mesajları anında görürsün.",
+    why: "Ana ekrandan tek dokunuşla aç; yeni başvuru, randevu, iptal ve mesajlardan anında haberin olsun.",
     href: "/ayarlar/bildirimler",
     cta: "Nasıl yapılır?",
   },
   bio: {
     title: "Sayfanın linkini Instagram bio'na koy",
-    why: "Takipçilerin linke dokunup paket seçer ve başvurur; başvurular sana düşer.",
+    why: "Takipçilerin linke dokunup paket seçer ve başvurur; başvurular buraya düşer.",
     href: "/ayarlar/profil",
     cta: "Sayfanı hazırla",
   },
@@ -71,7 +71,7 @@ export function GettingStarted({ guide, pageUrl }: { guide: Guide; pageUrl: stri
             <h2 id="guide-heading" className="text-xl font-semibold tracking-tight">
               Başlangıç rehberi
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Bunları bir kez yap; gerisini uygulama takip eder.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Bu adımları bir kez yapman yeterli.</p>
           </div>
           <p className="shrink-0 text-2xl font-semibold tracking-tight tabular-nums" aria-hidden>
             {guide.done}/{guide.total}
@@ -175,7 +175,7 @@ export function GuideComplete() {
           Hazırsın!
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Başlangıç adımlarının hepsi tamam. Takıldığında Ayarlar&apos;daki Yardım sayfasına bakabilirsin.
+          Başlangıç adımlarının hepsi tamam. Takıldığın bir yer olursa Ayarlar&apos;daki Yardım sayfasına bak.
         </p>
       </div>
       <div className="flex shrink-0 gap-2">

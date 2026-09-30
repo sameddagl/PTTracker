@@ -14,7 +14,7 @@ export async function subscribeTrainerAction(input: unknown): Promise<{ ok: true
 
 export async function unsubscribeTrainerAction(endpoint: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const claims = await getClaims();
-  if (!claims?.sub) return { ok: false, error: "Oturum yok." };
+  if (!claims?.sub) return { ok: false, error: "Oturumun kapanmış. Tekrar giriş yap." };
   await deleteSubscription({ trainerId: claims.sub, clientId: null }, endpoint);
   return { ok: true };
 }

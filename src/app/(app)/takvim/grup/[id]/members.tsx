@@ -79,7 +79,7 @@ export function MemberList({
       )}
       {live &&
         (full ? (
-          <p className="text-sm text-muted-foreground">Sabit yerler dolu. Kapasiteyi artırarak yer açabilirsin.</p>
+          <p className="text-sm text-muted-foreground">Sabit yerler dolu. Yer açmak için kapasiteyi artır.</p>
         ) : (
           <div className="flex flex-col gap-3 surface p-4 sm:flex-row sm:items-end">
             <label className="flex flex-1 flex-col gap-2 text-sm font-medium">

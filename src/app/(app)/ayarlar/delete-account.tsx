@@ -47,7 +47,7 @@ export function DeleteAccount({ trainerId, clientCount }: { trainerId: string; c
       </h2>
       <p className="text-sm text-muted-foreground">
         Hesabın ve içindeki her şey silinir: {clientCount > 0 ? `${clientCount} danışan, ` : ""}paketler, dersler, ödemeler, dekontlar,
-        kayıt formu cevapları ve herkese açık sayfan. Danışanlarının kişisel linkleri çalışmaz. Bu işlem geri alınamaz.
+        kayıt formu cevapları ve sayfan. Danışanlarının linkleri de çalışmaz. Bunu geri alamazsın.
       </p>
       <label className="flex flex-col gap-2 text-sm font-medium">
         Onaylamak için SİL yaz

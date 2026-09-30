@@ -42,7 +42,7 @@ export default async function ThreadPage({ params }: PageProps<"/mesajlar/[clien
         <div className="min-w-0">
           <h1 className="truncate text-2xl leading-tight font-semibold">{client.fullName}</h1>
           <Link href={`/danisanlar/${client.id}`} className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-            Danışan sayfası
+            Danışan bilgileri
           </Link>
         </div>
       </header>
@@ -50,7 +50,7 @@ export default async function ThreadPage({ params }: PageProps<"/mesajlar/[clien
         <p className="mb-4 flex items-start gap-3 rounded-2xl bg-warning/10 px-4 py-3 text-sm">
           <Link2 className="mt-0.5 size-4 shrink-0 text-warning-strong" aria-hidden />
           <span>
-            Danışanın mesajları görebilmesi için kişisel sayfa linki olmalı.{" "}
+            Danışan mesajları kendi sayfasından okur, ama henüz sayfa linki yok.{" "}
             <Link href={`/danisanlar/${client.id}`} className="font-medium underline underline-offset-4">
               Link oluştur
             </Link>

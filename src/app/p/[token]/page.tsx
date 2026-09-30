@@ -117,14 +117,14 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
         <InstallCard
           storageKey="install-card-client"
           title="Bu sayfayı telefonuna ekle"
-          description={`Ana ekranından uygulama gibi açılsın; ders hatırlatmaları ve ${trainerName}'ın mesajları bildirim olarak gelsin.`}
+          description="Linki her seferinde aramadan ana ekrandan aç. Ders hatırlatmaları ve eğitmeninin mesajları telefonuna bildirim olarak düşsün."
           appName="Derslerim"
           url={url}
           notifyWhere="sayfanın altındaki “Bildirim ayarları” bölümünde"
           push={{
             subscribe: subscribeClientAction.bind(null, token),
             unsubscribe: unsubscribeClientAction.bind(null, token),
-            description: "Ders hatırlatması, onaylar ve eğitmeninin mesajları telefonuna gelsin.",
+            description: "Ders hatırlatmaları, ödeme onayları ve eğitmeninin mesajları bu telefona gelsin.",
           }}
         />
 
@@ -135,14 +135,14 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
               Başvurun alındı
             </p>
             <p className="text-sm opacity-80">
-              Bu sayfa senin kişisel sayfan. Paketini, derslerini ve ödeme bilgilerini buradan takip edeceksin. Kaybetmemek için
-              linki kendine kaydet ya da eğitmenine gönder.
+              Bu sayfa sana özel. Paketini, derslerini ve ödemelerini buradan görürsün. Linki kaybetmemek için kendine kaydet ya da
+              eğitmenine gönder.
             </p>
             {toTrainer && (
               <Button asChild className="h-auto min-h-11 bg-[#1d1d1f] py-2.5 whitespace-normal text-white hover:bg-[#1d1d1f]/85">
                 <a href={toTrainer} target="_blank" rel="noopener noreferrer">
                   <MessageCircle />
-                  Linki WhatsApp&apos;tan {trainerName}&apos;a gönder
+                  Linki WhatsApp&apos;tan eğitmenine gönder
                 </a>
               </Button>
             )}
@@ -158,7 +158,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{app.packageName}</p>
-                <p className="text-sm text-muted-foreground">Eğitmenin onayı bekleniyor. Onaylanınca sana haber vereceğiz.</p>
+                <p className="text-sm text-muted-foreground">Eğitmenin onayladığında sana haber vereceğiz.</p>
               </div>
               {option && (
                 <span className="shrink-0 text-right">
@@ -172,7 +172,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
 
         {turnedDown && (
           <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
-            Başvurun şu an kabul edilemedi. Detaylar için {trainerName} ile iletişime geçebilirsin.
+            Başvurun şimdilik onaylanmadı. Nedenini eğitmenine sorabilirsin.
           </p>
         )}
 
@@ -264,7 +264,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           ) : (
             plans.length > 0 && (
               <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-4 text-sm text-muted-foreground">
-                Ödeme bilgileri için {trainerName} ile iletişime geçebilirsin.
+                Havale bilgilerini eğitmenine sorabilirsin.
               </p>
             )
           ))}
@@ -324,15 +324,15 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           <PushToggle
             subscribe={subscribeClientAction.bind(null, token)}
             unsubscribe={unsubscribeClientAction.bind(null, token)}
-            description="Ders hatırlatması, onaylar ve eğitmeninin mesajları telefonuna gelsin."
+            description="Ders hatırlatmaları, ödeme onayları ve eğitmeninin mesajları bu telefona gelsin."
           />
           <NotifyPrefsForm rows={prefsView("client", client.notifyPrefs)} save={saveClientPrefsAction.bind(null, token)} />
-          <p className="text-xs text-muted-foreground">Başvurunun alındığı ve onaylandığı e-postalar, içinde bu sayfanın linki olduğu için her zaman gelir.</p>
+          <p className="text-xs text-muted-foreground">Başvuru ve onay e-postaları her zaman gelir, çünkü içlerinde bu sayfanın linki var.</p>
         </section>
 
         <footer className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-center text-xs text-muted-foreground">
           <Lock className="size-3.5 shrink-0" aria-hidden />
-          Bu sayfa sadece sana özel. Linki başkasıyla paylaşma.
+          Bu sayfa sana özel, linki kimseyle paylaşma.
         </footer>
       </main>
     </div>

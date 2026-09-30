@@ -20,8 +20,8 @@ const optionalText = z
 
 const clientSchema = z.object({
   fullName: z.string().trim().min(2, "Ad soyad en az 2 karakter olmalı.").max(120),
-  phone: optionalText.refine((v) => v === null || normalizePhone(v) !== null, "Telefon numarası geçersiz."),
-  email: optionalText.pipe(z.email("E-posta geçersiz.").nullable()),
+  phone: optionalText.refine((v) => v === null || normalizePhone(v) !== null, "Telefon numarasını kontrol et."),
+  email: optionalText.pipe(z.email("E-posta adresini kontrol et.").nullable()),
   goals: optionalText,
   notes: optionalText,
   healthNotes: optionalText,

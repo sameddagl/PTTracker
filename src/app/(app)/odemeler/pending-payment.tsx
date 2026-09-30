@@ -52,7 +52,7 @@ export function PendingPaymentCard({
             </a>
           </Button>
         ) : (
-          <span className="text-xs text-muted-foreground">Dekont eklenmemiş</span>
+          <span className="text-xs text-muted-foreground">Dekont yok</span>
         )}
         <span className="flex-1" />
         <Button
@@ -63,7 +63,7 @@ export function PendingPaymentCard({
           loading={rejecting}
           className="text-destructive-strong hover:text-destructive-strong"
           onClick={() => {
-            const reason = window.prompt("Neden onaylamıyorsun? (danışan görecek, boş bırakabilirsin)");
+            const reason = window.prompt("Neden onaylamıyorsun? Danışan bu notu görür; boş da bırakabilirsin.");
             if (reason === null) return;
             startReject(async () => {
               const res = await rejectPaymentAction(p.id, reason);

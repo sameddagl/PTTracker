@@ -7,7 +7,7 @@ import { LoginForm } from "./login-form";
 export const metadata: Metadata = { title: "Giriş" };
 
 const ERRORS: Record<string, string> = {
-  baglanti: "Bağlantının süresi dolmuş ya da daha önce kullanılmış. Yeni bir kod iste.",
+  baglanti: "Linkin süresi dolmuş ya da daha önce kullanılmış. Yeni kod iste.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/giris">) {

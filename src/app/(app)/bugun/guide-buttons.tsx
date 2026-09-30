@@ -35,12 +35,12 @@ export function GuideVisibilityButton({ show = false, ...props }: Props & { show
   return (
     <ActionButton
       run={() => setGuideDismissedAction(!show)}
-      success={show ? "Rehber Bugün sayfasında" : undefined}
+      success={show ? "Rehber Bugün sayfasına geri geldi" : undefined}
       {...props}
     />
   );
 }
 
 export function BioLinkAddedButton(props: Props) {
-  return <ActionButton run={() => setBioLinkAddedAction(true)} success="Harika, adım tamamlandı" {...props} />;
+  return <ActionButton run={() => setBioLinkAddedAction(true)} success="Harika, bu adım tamam" {...props} />;
 }

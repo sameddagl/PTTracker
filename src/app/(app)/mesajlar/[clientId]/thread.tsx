@@ -28,7 +28,7 @@ export function TrainerThread({
         send={(body) => sendMessageAction(clientId, body)}
         poll={() => fetchThreadAction(clientId)}
         markRead={() => markThreadReadAction(clientId)}
-        emptyText={`${firstName} ile henüz mesajlaşmadınız. İlk mesajı sen yaz.`}
+        emptyText={`${firstName} ile henüz mesajlaşmadın. İlk mesajı sen yaz.`}
         placeholder={`${firstName} için mesaj yaz`}
         closed={archived ? "Danışan arşivde. Mesaj göndermek için önce arşivden çıkar." : undefined}
         className="h-[calc(100dvh-14rem-env(safe-area-inset-bottom))] min-h-80 md:h-[calc(100dvh-14rem)]"

@@ -29,8 +29,8 @@ export function MessageThread({
         send={(body) => sendClientMessageAction(token, body)}
         poll={() => fetchClientThreadAction(token)}
         markRead={() => markReadByClientAction(token)}
-        emptyText={`${first} ile buradan yazışabilirsin. Ders saati, paket ya da aklına takılan her şeyi sorabilirsin.`}
-        placeholder={`${first} için mesaj yaz`}
+        emptyText={`${first} ile buradan yazışabilirsin. Ders saati, paket, aklına ne takılırsa sor.`}
+        placeholder="Mesajını yaz"
         className="h-[28rem] max-h-[70dvh]"
       />
     </section>

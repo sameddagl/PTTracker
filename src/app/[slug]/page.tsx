@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">): Promis
   // "Kadıköy, İstanbul" → "Kadıköy"; the title stays short enough not to be cut off.
   const place = trainer.city?.split(",")[0].trim();
   const title = `${name}${place ? ` · ${place}` : ""} ${DISCIPLINE_LABELS[trainer.discipline]} Dersleri`;
-  const description = (trainer.headline || trainer.bio || `${name} ders paketleri ve online kayıt.`).slice(0, 155);
+  const description = (trainer.headline || trainer.bio || `${name} ders paketleri, fiyatlar ve online kayıt.`).slice(0, 155);
   const image = profileImageUrl(trainer.coverPath ?? trainer.avatarPath);
   return {
     title: { absolute: title },
@@ -44,7 +44,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
   const displayName = trainer.businessName || trainer.fullName;
   const cover = profileImageUrl(trainer.coverPath);
   const avatar = profileImageUrl(trainer.avatarPath);
-  const wa = whatsappLink(trainer.phone, `Merhaba, ${displayName} sayfanızdan yazıyorum.`);
+  const wa = whatsappLink(trainer.phone, `Merhaba, ${displayName} sayfanızı gördüm, bilgi almak istiyorum.`);
   // The best discount on the page gets a ring, so the eye lands on a real deal (no invented "popular" label).
   const best = packages.reduce<{ id: string; pct: number } | null>((acc, p) => {
     const pct = discountPercent(p.compareAtPrice, p.price);
@@ -238,7 +238,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
             <span className="flex size-5 items-center justify-center rounded-md bg-lime text-lime-foreground" aria-hidden>
               <Activity className="size-3" />
             </span>
-            {APP_NAME} ile oluşturuldu
+            {APP_NAME} ile hazırlandı
           </Link>
         </footer>
       </main>

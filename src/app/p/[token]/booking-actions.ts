@@ -30,7 +30,7 @@ const bookInput = z.object({ date: z.iso.date(), minute: z.number().int().min(0)
 export async function bookSlotAction(token: string, date: string, minute: number): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
   const parsed = bookInput.safeParse({ date, minute });
-  if (!link || !parsed.success) return { ok: false, error: "Geçersiz istek." };
+  if (!link || !parsed.success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await adminDb.transaction((tx) => bookSlot(tx as unknown as Tx, link, parsed.data));
   if (!result.ok) {
@@ -38,7 +38,7 @@ export async function bookSlotAction(token: string, date: string, minute: number
       ok: false,
       error: {
         disabled: "Eğitmenin şu an randevu almıyor.",
-        no_credit: "Paketinde randevu alınabilecek ders kalmadı.",
+        no_credit: "Paketinde ders hakkın kalmadı.",
         slot_taken: "Bu saat az önce doldu. Başka bir saat seç.",
       }[result.reason],
     };
@@ -56,12 +56,12 @@ export async function cancelBookingAction(
   confirmLate: boolean,
 ): Promise<{ ok: true; late: boolean; makeupUsed: boolean } | { ok: false; error: string; needsConfirm?: boolean }> {
   const link = await resolvePortalToken(token);
-  if (!link || !z.uuid().safeParse(attendeeId).success) return { ok: false, error: "Geçersiz istek." };
+  if (!link || !z.uuid().safeParse(attendeeId).success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await adminDb.transaction((tx) => cancelBooking(tx as unknown as Tx, link, attendeeId, { confirmLate }));
   if (!result.ok) {
     if (result.reason === "confirm_late") return { ok: false, error: "", needsConfirm: true };
-    return { ok: false, error: result.reason === "past" ? "Bu ders başladı ya da geçti." : "Ders bulunamadı." };
+    return { ok: false, error: result.reason === "past" ? "Bu ders başladı ya da bitti." : "Ders bulunamadı." };
   }
 
   const [trainer] = await adminDb.select({ tz: trainers.timezone }).from(trainers).where(eq(trainers.id, link.trainerId));
@@ -69,7 +69,7 @@ export async function cancelBookingAction(
   await notifyTrainer(
     link.clientId,
     result.late ? "Geç iptal" : "Randevu iptali",
-    `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} dersini iptal etti${result.late ? (result.makeupUsed ? " (telafi hakkı kullanıldı)" : " (ders paketten düştü)") : ""}.`,
+    `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} dersini iptal etti${result.late ? (result.makeupUsed ? " (telafi hakkını kullandı)" : " (ders paketten düştü)") : ""}.`,
   );
   revalidatePath(`/p/${token}`);
   return { ok: true, late: result.late, makeupUsed: result.makeupUsed };
@@ -77,7 +77,7 @@ export async function cancelBookingAction(
 
 export async function joinGroupAction(token: string, lessonId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
-  if (!link || !z.uuid().safeParse(lessonId).success) return { ok: false, error: "Geçersiz istek." };
+  if (!link || !z.uuid().safeParse(lessonId).success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await adminDb.transaction((tx) => joinGroupLesson(tx as unknown as Tx, link, lessonId));
   if (!result.ok) {
@@ -86,16 +86,16 @@ export async function joinGroupAction(token: string, lessonId: string): Promise<
       error: {
         not_found: "Ders bulunamadı.",
         full: "Bu ders az önce doldu.",
-        no_credit: "Grup paketinde kullanılabilir ders kalmadı.",
+        no_credit: "Grup paketinde ders hakkın kalmadı.",
         already: "Bu derste zaten yerin var.",
-        too_late: "Bu derse katılmak için süre geçti.",
+        too_late: "Bu ders için kayıt süresi doldu.",
       }[result.reason],
     };
   }
 
   const [trainer] = await adminDb.select({ tz: trainers.timezone }).from(trainers).where(eq(trainers.id, link.trainerId));
   const tz = trainer?.tz ?? "Europe/Istanbul";
-  await notifyTrainer(link.clientId, "Grup dersine katılım", `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} ${result.title} dersine katıldı.`);
+  await notifyTrainer(link.clientId, "Grup dersine kayıt", `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} ${result.title} dersine yazıldı.`);
   revalidatePath(`/p/${token}`);
   return { ok: true };
 }
@@ -103,9 +103,9 @@ export async function joinGroupAction(token: string, lessonId: string): Promise<
 /** "Geliyorum" on an upcoming lesson. */
 export async function confirmAttendanceAction(token: string, attendeeId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
-  if (!link || !z.uuid().safeParse(attendeeId).success) return { ok: false, error: "Geçersiz istek." };
+  if (!link || !z.uuid().safeParse(attendeeId).success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
   const done = await adminDb.transaction((tx) => confirmAttendance(tx as unknown as Tx, link, attendeeId));
-  if (!done) return { ok: false, error: "Bu ders artık onaylanamıyor." };
+  if (!done) return { ok: false, error: "Bu dersi artık onaylayamazsın." };
   revalidatePath(`/p/${token}`);
   return { ok: true };
 }

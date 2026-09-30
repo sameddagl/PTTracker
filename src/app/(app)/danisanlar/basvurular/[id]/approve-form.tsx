@@ -13,7 +13,7 @@ export function ApproveForm({ id, today }: { id: string; today: string }) {
     <form action={action} className="flex flex-col gap-3">
       <input type="hidden" name="id" value={id} />
       <FormError message={state.error} />
-      <Field id="startsOn" label="Paket başlangıcı" hint="son kullanım tarihi buna göre hesaplanır">
+      <Field id="startsOn" label="Paket başlangıcı" hint="paketin son tarihi buna göre belirlenir">
         <Input id="startsOn" name="startsOn" type="date" defaultValue={today} className="max-w-48" />
       </Field>
       <Button type="submit" size="lg" loading={pending} className="sm:self-start">

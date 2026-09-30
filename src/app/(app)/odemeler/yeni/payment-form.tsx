@@ -87,7 +87,7 @@ export function PaymentForm({
           onChange={(ev) => changePackage(ev.target.value)}
           disabled={!clientId}
         >
-          <option value="">Pakete bağlı değil (tek ders vb.)</option>
+          <option value="">Paketsiz (tek ders gibi)</option>
           {clientPackages.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} · {formatShortDate(p.startsOn)}

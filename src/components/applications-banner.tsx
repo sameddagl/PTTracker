@@ -32,5 +32,5 @@ export function PaymentsBanner({ count }: { count: number }) {
 
 export function AttendanceBanner({ count }: { count: number }) {
   if (count === 0) return null;
-  return <Banner href="/yoklama" icon={<ClipboardCheck aria-hidden />} text={`Geçmiş günlerden ${count} yoklama bekliyor`} />;
+  return <Banner href="/yoklama" icon={<ClipboardCheck aria-hidden />} text={`Geçmiş derslerde ${count} eksik yoklama var`} />;
 }

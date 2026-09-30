@@ -17,7 +17,7 @@ export default async function NewGroupClassPage() {
         <ChevronLeft className="size-4" aria-hidden />
         Grup dersleri
       </Link>
-      <PageHeader title="Yeni grup dersi" description="Dersler 4 hafta ileriye kadar takvimine eklenir, sonrası kendiliğinden devam eder." />
+      <PageHeader title="Yeni grup dersi" description="Takviminde her zaman önündeki 4 haftanın dersleri görünür; yeni haftalar kendiliğinden eklenir." />
       <GroupForm
         initial={{ title: "", weekdays: "2,4", startTime: "18:00", durationMinutes: "60", capacity: "8", joinMode: "both", startsOn: today }}
       />

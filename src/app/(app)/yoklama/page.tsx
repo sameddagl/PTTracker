@@ -39,12 +39,12 @@ export default async function AttendancePage() {
     <>
       <PageHeader
         title="Yoklama"
-        description={`Son ${LOOKBACK_DAYS} günde yoklaması alınmamış dersler. İşaretlenen ders paketten düşer.`}
+        description={`Son ${LOOKBACK_DAYS} günde yoklaması alınmayan dersler. Geldi ya da Gelmedi işaretlediğin ders paketten düşer.`}
       />
 
       {pending.length === 0 ? (
         <EmptyState icon={<CheckCircle2 />} title="Bekleyen yoklama yok">
-          Başlamış bütün derslerin yoklaması alınmış.
+          Başlayan bütün derslerin yoklaması alındı.
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-8">
@@ -69,7 +69,7 @@ export default async function AttendancePage() {
       {later.length > 0 && (
         <section aria-labelledby="later-heading" className="mt-8">
           <h2 id="later-heading" className="mb-3 text-base font-semibold">
-            Bugün sıradaki
+            Bugünün kalan dersleri
           </h2>
           <ul className="divide-y overflow-hidden surface">
             {later.map((l) => (

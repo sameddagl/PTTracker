@@ -18,13 +18,13 @@ export default async function LateCancelPage() {
       </Link>
       <PageHeader
         title="Geç iptal kuralı"
-        description="Danışan dersi çok geç iptal ederse ders paketinden düşer. Bu süre danışanın kişisel sayfasında da yazar."
+        description="Danışan dersi geç iptal ederse ders paketinden düşer. Bu süre danışanın kendi sayfasında da yazar."
       />
       <div className="surface p-5">
         <LateCancelForm initial={trainer.lateCancelHours} />
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
-        Değişiklik bundan sonraki iptaller için geçerlidir; daha önce işaretlenmiş yoklamalar değişmez.
+        Değişiklik bundan sonraki iptallere uygulanır; önceki yoklamalar olduğu gibi kalır.
       </p>
     </>
   );
