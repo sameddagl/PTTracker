@@ -1,10 +1,11 @@
-import { HeaderSkeleton, LoadingScreen } from "@/components/skeletons";
+import { HeaderSkeleton, LoadingScreen, StatsSkeleton } from "@/components/skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
     <LoadingScreen>
-      <HeaderSkeleton title="Takvim" />
+      <HeaderSkeleton title="Takvim" action={false} />
+      <StatsSkeleton />
       <div className="mb-4 grid grid-cols-7 gap-1 md:hidden">
         {Array.from({ length: 7 }, (_, i) => (
           <Skeleton key={i} className="h-14 rounded-lg" />

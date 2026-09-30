@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { PageHeader, SectionTitle } from "@/components/page-header";
+import { ActionTiles } from "@/components/action-tiles";
 import { PushToggle } from "@/components/push-toggle";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
@@ -31,13 +32,6 @@ export default async function SettingsPage() {
       hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
     },
     { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
-    { href: "/takvim/grup", icon: UsersRound, title: "Grup dersleri", hint: "Kapasite ve sabit yerler" },
-    {
-      href: "/ayarlar/musaitlik",
-      icon: CalendarClock,
-      title: "Müsaitlik ve randevu",
-      hint: trainer.bookingEnabled ? "Danışanlar randevu alabiliyor" : "Randevu kapalı",
-    },
     {
       href: "/ayarlar/iptal-kurali",
       icon: TimerOff,
@@ -74,6 +68,14 @@ export default async function SettingsPage() {
             </Button>
           </section>
         )}
+
+        <ActionTiles
+          items={[
+            { href: "/ders/yeni?next=/ayarlar", icon: <CalendarPlus />, title: "Ders planla", primary: true },
+            { href: "/takvim/grup", icon: <UsersRound />, title: "Grup dersleri" },
+            { href: "/ayarlar/musaitlik", icon: <CalendarClock />, title: "Müsaitlik ve randevu" },
+          ]}
+        />
 
         <section aria-labelledby="studio-heading">
           <SectionTitle id="studio-heading">Stüdyon</SectionTitle>

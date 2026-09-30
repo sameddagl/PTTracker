@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarPlus, ChevronLeft, ChevronRight, Repeat, UsersRound } from "lucide-react";
+import { CalendarClock, CalendarPlus, ChevronLeft, ChevronRight, Repeat, UsersRound } from "lucide-react";
+import { ActionTiles } from "@/components/action-tiles";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
@@ -47,24 +48,14 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
 
   return (
     <>
-      <PageHeader
-        title="Takvim"
-        action={
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href="/takvim/grup">
-                <UsersRound />
-                <span className="max-sm:sr-only">Grup dersleri</span>
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href={`/ders/yeni?tarih=${selected}&next=${back}`}>
-                <CalendarPlus />
-                <span className="max-sm:sr-only">Ders ekle</span>
-              </Link>
-            </Button>
-          </div>
-        }
+      <PageHeader title="Takvim" />
+      <ActionTiles
+        className="mb-6"
+        items={[
+          { href: `/ders/yeni?tarih=${selected}&next=${back}`, icon: <CalendarPlus />, title: "Ders planla", primary: true },
+          { href: "/takvim/grup", icon: <UsersRound />, title: "Grup dersleri" },
+          { href: "/ayarlar/musaitlik", icon: <CalendarClock />, title: "Müsaitlik ve randevu" },
+        ]}
       />
 
       <nav aria-label="Hafta" className="mb-4 flex items-center gap-2">

@@ -73,14 +73,6 @@ export default async function TodayPage() {
       <PageHeader
         eyebrow={<span className="capitalize">{formatLongDate(now, trainer.timezone)}</span>}
         title={firstName ? `${greeting(now, trainer.timezone)}, ${firstName}` : greeting(now, trainer.timezone)}
-        action={
-          <Button asChild>
-            <Link href="/ders/yeni?next=/bugun">
-              <CalendarPlus />
-              <span className="max-sm:sr-only">Ders ekle</span>
-            </Link>
-          </Button>
-        }
       />
 
       {guide && guideView === "checklist" && <GettingStarted guide={guide} pageUrl={pageUrl} />}
@@ -133,7 +125,7 @@ export default async function TodayPage() {
             <Button asChild variant="outline" size="sm" className="mt-2">
               <Link href="/ders/yeni?next=/bugun">
                 <CalendarPlus />
-                Ders ekle
+                Ders planla
               </Link>
             </Button>
           </EmptyState>

@@ -3,7 +3,7 @@ import { CardsSkeleton, HeaderSkeleton, ListSkeleton, LoadingScreen, SectionTitl
 export default function Loading() {
   return (
     <LoadingScreen>
-      <HeaderSkeleton />
+      <HeaderSkeleton action={false} />
       <StatsSkeleton />
       <section className="mb-8">
         <SectionTitleSkeleton />
