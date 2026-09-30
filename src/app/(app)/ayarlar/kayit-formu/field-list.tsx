@@ -15,6 +15,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { INTAKE_TYPE_LABELS } from "@/lib/intake";
 import { cn } from "@/lib/utils";
@@ -119,6 +120,7 @@ export function FieldList({ fields }: { fields: Row[] }) {
 function SortableField({ field: f, onEdit }: { field: Row; onEdit: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: f.id });
   const [deleting, startDelete] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   return (
     <li
@@ -155,13 +157,20 @@ function SortableField({ field: f, onEdit }: { field: Row; onEdit: () => void })
         variant="ghost"
         loading={deleting}
         aria-label={`${f.label} sorusunu sil`}
-        onClick={() => {
-          if (!window.confirm(`"${f.label}" sorusu silinsin mi? Önceki cevaplar danışan kayıtlarında kalır.`)) return;
+        onClick={async () => {
+          const ok = await confirm({
+            title: `"${f.label}" sorusu silinsin mi?`,
+            body: "Önceki cevaplar danışan kayıtlarında kalır.",
+            confirmLabel: "Soruyu sil",
+            destructive: true,
+          });
+          if (!ok) return;
           startDelete(() => deleteIntakeFieldAction(f.id));
         }}
       >
         <Trash2 className="text-muted-foreground" />
       </Button>
+      {dialog}
     </li>
   );
 }

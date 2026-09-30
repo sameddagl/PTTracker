@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { CalendarClock, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { formatLongDate, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function UpcomingLessons({
 }) {
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
+  const { confirm: confirmDialog, dialog } = useConfirm();
 
   function confirm(l: (typeof lessons)[number]) {
     setBusy(`ok:${l.attendeeId}`);
@@ -32,12 +34,18 @@ export function UpcomingLessons({
     });
   }
 
-  function cancel(l: (typeof lessons)[number]) {
+  async function cancel(l: (typeof lessons)[number]) {
     const when = `${formatLongDate(l.startsAt, timezone)} ${formatTime(l.startsAt, timezone)}`;
-    const question = l.lateIfCancelledNow
-      ? `Derse ${lateCancelHours} saatten az kaldı. Şimdi iptal edersen telafi hakkın varsa ondan, yoksa paketinden bir ders düşer. ${when} dersini iptal etmek istiyor musun?`
-      : `${when} dersini iptal etmek istiyor musun?`;
-    if (!window.confirm(question)) return;
+    const ok = await confirmDialog({
+      title: `${when} dersini iptal etmek istiyor musun?`,
+      body: l.lateIfCancelledNow
+        ? `Derse ${lateCancelHours} saatten az kaldı. Şimdi iptal edersen telafi hakkın varsa ondan, yoksa paketinden bir ders düşer.`
+        : undefined,
+      confirmLabel: "Dersi iptal et",
+      cancelLabel: "Vazgeç",
+      destructive: l.lateIfCancelledNow,
+    });
+    if (!ok) return;
     setBusy(l.attendeeId);
     startTransition(async () => {
       const res = await cancelBookingAction(token, l.attendeeId, l.lateIfCancelledNow);
@@ -52,6 +60,7 @@ export function UpcomingLessons({
 
   return (
     <section id="dersler" aria-labelledby="upcoming-heading" className="scroll-mt-6">
+      {dialog}
       <h2 id="upcoming-heading" className="mb-3 text-base font-semibold">
         Sıradaki derslerin
       </h2>

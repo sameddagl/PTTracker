@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/avatar";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { formatShortDate, formatTRY } from "@/lib/format";
 import { confirmPaymentAction, rejectPaymentAction } from "./actions";
@@ -26,9 +27,11 @@ export function PendingPaymentCard({
 }) {
   const [rejecting, startReject] = useTransition();
   const [confirming, startConfirm] = useTransition();
+  const { ask, dialog } = useConfirm();
 
   return (
     <li className="flex flex-col gap-3 surface p-4">
+      {dialog}
       <div className="flex items-start justify-between gap-3">
         <Avatar name={p.clientName} />
         <div className="min-w-0 flex-1">
@@ -62,8 +65,13 @@ export function PendingPaymentCard({
           disabled={confirming}
           loading={rejecting}
           className="text-destructive-strong hover:text-destructive-strong"
-          onClick={() => {
-            const reason = window.prompt("Neden onaylamıyorsun? Danışan bu notu görür; boş da bırakabilirsin.");
+          onClick={async () => {
+            const reason = await ask({
+              title: "Ödeme bildirimi reddedilsin mi?",
+              input: { label: "Neden onaylamıyorsun?", placeholder: "Danışan bu notu görür; boş da bırakabilirsin.", maxLength: 200 },
+              confirmLabel: "Reddet",
+              destructive: true,
+            });
             if (reason === null) return;
             startReject(async () => {
               const res = await rejectPaymentAction(p.id, reason);
