@@ -84,3 +84,10 @@ Her ikisinde de altta: **studyomapp.com** ve küçük "Beta · ücretsiz" etiket
 - **Bağlantı:** `https://studyomapp.com/?utm_source=instagram&utm_medium=bio` (Umami'de Instagram'dan gelenler ayrı görünür).
 - **Hesap türü:** Profesyonel hesap → İşletme, kategori "Yazılım" (yoksa "Uygulama sayfası"). İletişim e-postası: info@studyomapp.com.
 - **Öne çıkanlar** (hikâyeler geldikçe): Nasıl çalışır · Danışan · Ödemeler · SSS · Beta
+
+## Hazır gönderiler
+
+- **1. gönderi:** `docs/marketing/instagram/post-1.png` (1080×1350). Kaynak HTML ve ekran görüntüleri `docs/marketing/instagram/kaynak/`. Telefondaki ekranlar yerel eğitmen sayfasından (`/reformpilates`) alındı; görüntüde isimler "Elif ile Pilates / Elif Yıldız" olarak değiştirildi, Instagram kullanıcı adı kaldırıldı (veritabanı aynı). Yeniden çizmek için:
+  ```bash
+  PLAYWRIGHT_BROWSERS_PATH=~/.claude/skills/seo/ms-playwright ~/.claude/skills/seo/.venv/bin/python3 docs/marketing/instagram/kaynak/render.py "$PWD/docs/marketing/instagram/kaynak/post-1.html" "$PWD/docs/marketing/instagram/post-1.png"
+  ```
