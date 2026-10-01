@@ -176,6 +176,13 @@
       "when": 1790888840248,
       "tag": "20261001210720_famous_mandrill",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790890028990,
+      "tag": "20261001212708_delete_confirmed_receipts",
+      "breakpoints": true
     }
   ]
 }

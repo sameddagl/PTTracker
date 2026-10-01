@@ -180,7 +180,7 @@ export function PaymentPanel({
                       <span className="text-muted-foreground">{multi ? `${next.seq}. taksit` : "Ödeme"}: </span>
                       <span className="font-semibold tabular-nums">{formatTRY(next.remaining)}</span>
                     </p>
-                    <Field id="receipt" label="Dekont" hint="isteğe bağlı · fotoğraf ya da PDF" error={e.receipt}>
+                    <Field id="receipt" label="Dekont" hint="isteğe bağlı · fotoğraf ya da PDF · eğitmenin onaylayınca silinir" error={e.receipt}>
                       <Input
                         id="receipt"
                         name="receipt"

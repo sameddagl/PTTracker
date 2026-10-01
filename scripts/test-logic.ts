@@ -82,7 +82,6 @@ import { addUsers, createTestDb } from "./pglite";
 const T = "00000000-0000-0000-0000-0000000000a1";
 process.env.PORTAL_SECRET ??= "test-secret-test-secret-test-secret";
 const trainer = { id: T, timezone: "Europe/Istanbul" };
-let withReceiptId = "";
 
 async function main() {
   const pg = await createTestDb();
@@ -720,15 +719,21 @@ async function main() {
   assert.equal(waiting.length, 2);
   assert.equal(await asTrainer((tx) => countPendingPayments(tx, T)), 2);
   const withReceipt = waiting.find((w) => w.receiptType)!;
-  withReceiptId = withReceipt.id;
   // PGlite returns Uint8Array, postgres-js a Buffer; compare the bytes.
   assert.ok(Buffer.from((await asTrainer((tx) => getReceipt(tx, T, withReceipt.id)))!.data).equals(receiptBytes));
+  const otherTrainerReceipt = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b2', true)`);
+    await tx.execute(sql`set local role authenticated`);
+    return getReceipt(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", withReceipt.id);
+  });
+  assert.equal(otherTrainerReceipt, null, "receipts are private to their trainer");
   assert.ok(!(await asTrainer((tx) => listRecentPayments(tx, T, { clientId: payer.id }))).length, "pending not in history");
 
   // Confirm #1 → debt and overdue drop; reject #2 → it's payable again.
   const [firstReport, secondReport] = waiting.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   assert.equal((await asTrainer((tx) => confirmPayment(tx, T, firstReport.id))).ok, true);
   assert.equal((await asTrainer((tx) => confirmPayment(tx, T, firstReport.id))).ok, false, "only once");
+  assert.equal(await asTrainer((tx) => getReceipt(tx, T, withReceipt.id)), null, "receipt deleted once confirmed");
   payerBal = await balance(payerPkg);
   assert.deepEqual([String(payerBal.dueAmount), String(payerBal.overdueAmount)], ["4000.00", "2000.00"]);
   assert.ok(await asTrainer((tx) => rejectPayment(tx, T, secondReport.id, "Hesaba geçmedi")));
@@ -1154,12 +1159,6 @@ async function main() {
     "another trainer cannot open a portal link for my client",
   );
   assert.ok(await asTrainer((tx) => deletePayment(tx, T, someone.id)), "owner can delete");
-  const otherTrainerReceipt = await db.transaction(async (tx) => {
-    await tx.execute(sql`select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b2', true)`);
-    await tx.execute(sql`set local role authenticated`);
-    return getReceipt(tx as unknown as Tx, "00000000-0000-0000-0000-0000000000b2", withReceiptId);
-  });
-  assert.equal(otherTrainerReceipt, null, "receipts are private to their trainer");
   console.log("cross-tenant attendance and payment delete blocked");
 
   // Deleting the account removes every row the trainer owns, in every table.

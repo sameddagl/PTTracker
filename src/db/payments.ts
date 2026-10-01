@@ -317,8 +317,8 @@ export type ReviewResult =
   | { ok: false; reason: "not_found" | "overpay"; due?: number };
 
 /**
- * Confirms a client-reported payment. Refuses if it would take a priced
- * package past its price (e.g. two reports for the same transfer).
+ * Confirms a client-reported payment and deletes its receipt. Refuses if it
+ * would take a priced package past its price (e.g. two reports for the same transfer).
  */
 export async function confirmPayment(tx: Tx, trainerId: string, id: string, { amount }: { amount?: number } = {}): Promise<ReviewResult> {
   const [p] = await tx
@@ -355,6 +355,8 @@ export async function confirmPayment(tx: Tx, trainerId: string, id: string, { am
     .update(payments)
     .set({ status: "confirmed", amount: finalAmount.toFixed(2), reviewedAt: new Date() })
     .where(eq(payments.id, id));
+  // The receipt has done its job once the trainer confirms; don't keep the file.
+  await tx.delete(paymentReceipts).where(eq(paymentReceipts.paymentId, id));
   return { ok: true, clientId: p.clientId, clientEmail: p.clientEmail, clientName: p.clientName, amount: finalAmount.toFixed(2) };
 }
 
