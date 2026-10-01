@@ -1,4 +1,4 @@
-import { Activity, ArrowDown, Check, CheckCheck, FileSpreadsheet, FileText, Lock, UserPlus } from "lucide-react";
+import { Activity, ArrowDown, CalendarDays, Check, CheckCheck, Dumbbell, FileSpreadsheet, FileText, Lock, MessagesSquare, Salad, TrendingUp, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { MuscleMap } from "@/components/muscle-map";
 import { MUSCLES, type MuscleKey } from "@/lib/muscles";
@@ -485,6 +485,147 @@ export function ExerciseCardsDemo() {
           <MuscleMap primary={r.primary} secondary={r.secondary} compact className="w-16 shrink-0" />
         </div>
       ))}
+    </div>
+  );
+}
+
+/** A tiny phone with the client's page: a screen and the tab bar with one tab lit. */
+function MiniPhone({ tab, label, children }: { tab: number; label: string; children: React.ReactNode }) {
+  const tabs = [CalendarDays, TrendingUp, Dumbbell, Salad, MessagesSquare];
+  return (
+    <figure className="flex w-44 shrink-0 flex-col items-center gap-2 sm:w-48">
+      <div className="flex h-[24rem] w-full flex-col overflow-hidden rounded-[1.75rem] border-[5px] border-foreground/85 bg-canvas shadow-float">
+        <div className="flex h-4 shrink-0 items-center justify-center">
+          <span className="h-2 w-12 rounded-full bg-foreground/85" />
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-2.5 pt-1">{children}</div>
+        <div className="mx-2 mb-2 flex gap-0.5 rounded-full bg-[#1d1d1f] p-1">
+          {tabs.map((Icon, i) => (
+            <span key={i} className={cn("flex h-6 flex-1 items-center justify-center rounded-full", i === tab ? "bg-lime text-lime-foreground" : "text-white/60")}>
+              <Icon className="size-3" />
+            </span>
+          ))}
+        </div>
+      </div>
+      <figcaption className="text-xs font-medium text-muted-foreground">{label}</figcaption>
+    </figure>
+  );
+}
+
+const mini = "rounded-xl border bg-card p-2 shadow-card";
+
+/** The client's page, tab by tab: lessons, program, nutrition, progress. */
+export function PortalPhonesDemo() {
+  return (
+    <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:justify-center sm:px-0 [&::-webkit-scrollbar]:hidden">
+      <MiniPhone tab={0} label="Derslerim">
+        <p className="text-sm font-semibold">Merhaba Selin</p>
+        <div className="rounded-xl bg-lime p-2 text-lime-foreground">
+          <p className="text-[11px] font-semibold">Yarın 10:00 dersin var</p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1 text-[9px] font-medium whitespace-nowrap">
+            <span className="rounded-full bg-lime-foreground py-1 text-center text-lime">Geliyorum</span>
+            <span className="rounded-full border border-lime-foreground/30 py-1 text-center">Gelemiyorum</span>
+          </div>
+        </div>
+        <div className={mini}>
+          <p className="text-[10px] text-muted-foreground">Paketin</p>
+          <p className="text-[11px] font-semibold">12 Ders Özel Reformer</p>
+          <p className="mt-1 text-2xl leading-none font-semibold tabular-nums">
+            6 <span className="text-[10px] font-normal text-muted-foreground">/ 12 kaldı</span>
+          </p>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-1/2 rounded-full bg-lime" />
+          </div>
+        </div>
+        <div className={cn(mini, "text-[10px]")}>
+          <p className="font-semibold">Ders al</p>
+          <div className="mt-1 flex gap-1">
+            {["Sal 6", "Per 8", "Cmt 10"].map((d, i) => (
+              <span key={d} className={cn("flex-1 rounded-lg py-1 text-center", i === 0 ? "bg-lime text-lime-foreground" : "bg-muted")}>
+                {d}
+              </span>
+            ))}
+          </div>
+        </div>
+      </MiniPhone>
+
+      <MiniPhone tab={2} label="Programım">
+        <p className="text-sm font-semibold">Gün A</p>
+        <div className={mini}>
+          <MuscleMap primary={["gluteal", "quadriceps", "upper-back"]} secondary={["hamstring", "biceps"]} compact className="mx-auto w-24" />
+        </div>
+        {[
+          ["Hip thrust", "3 × 12 · 30 kg", ["gluteal"]],
+          ["Low row", "3 × 10 · 35 kg", ["upper-back"]],
+        ].map(([n, sum, m]) => (
+          <div key={n as string} className={cn(mini, "flex items-center gap-2")}>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold">{n as string}</p>
+              <p className="text-[10px] text-muted-foreground tabular-nums">{sum as string}</p>
+            </div>
+            <MuscleMap primary={m as MuscleKey[]} compact className="w-9 shrink-0" />
+          </div>
+        ))}
+        <span className="flex items-center justify-center gap-1 rounded-full bg-primary py-1.5 text-[10px] font-medium text-primary-foreground">
+          <Check className="size-3" strokeWidth={3} />
+          Bugün yaptım
+        </span>
+      </MiniPhone>
+
+      <MiniPhone tab={3} label="Beslenme">
+        <p className="text-sm font-semibold">Beslenme planın</p>
+        <div className="grid grid-cols-2 gap-1">
+          {[
+            ["Su", "2,5 lt"],
+            ["Protein", "90 g"],
+          ].map(([l, v]) => (
+            <div key={l} className={mini}>
+              <p className="text-[9px] text-muted-foreground">{l}</p>
+              <p className="text-[11px] font-semibold">{v}</p>
+            </div>
+          ))}
+        </div>
+        {[
+          ["Kahvaltı", "2 yumurta, beyaz peynir, domates"],
+          ["Öğle", "Izgara tavuk, bulgur, salata"],
+          ["Akşam", "Fırında somon, yoğurt"],
+        ].map(([m, t]) => (
+          <div key={m} className={mini}>
+            <p className="text-[11px] font-semibold">{m}</p>
+            <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <span className="size-1 shrink-0 rounded-full bg-lime" />
+              {t}
+            </p>
+          </div>
+        ))}
+      </MiniPhone>
+
+      <MiniPhone tab={1} label="İlerlemem">
+        <p className="text-sm font-semibold">İlerlemem</p>
+        <div className="grid grid-cols-2 gap-1">
+          {[
+            ["Kilo", "62,2", "−2,6"],
+            ["Bel", "72,5", "−5,5"],
+          ].map(([l, v, d]) => (
+            <div key={l} className={mini}>
+              <p className="text-[9px] text-muted-foreground">{l}</p>
+              <p className="text-[12px] font-semibold tabular-nums">{v}</p>
+              <p className="text-[9px] text-muted-foreground tabular-nums">{d} · 3 ayda</p>
+            </div>
+          ))}
+        </div>
+        <div className={mini}>
+          <svg viewBox="0 0 120 60" className="h-16 w-full text-foreground">
+            <path d="M4,12 L34,22 L64,34 L94,40 L116,52 L116,60 L4,60 Z" fill="var(--lime)" fillOpacity="0.35" />
+            <path d="M4,12 L34,22 L64,34 L94,40 L116,52" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="116" cy="52" r="3.5" fill="var(--lime)" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+        <div className={cn(mini, "text-[10px]")}>
+          <p className="font-semibold">Kilonu gir</p>
+          <p className="mt-1 rounded-lg bg-muted px-2 py-1 text-muted-foreground">61,9 kg</p>
+        </div>
+      </MiniPhone>
     </div>
   );
 }

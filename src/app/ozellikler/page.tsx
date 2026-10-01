@@ -18,7 +18,6 @@ import {
   FileText,
   Gift,
   Globe,
-  LayoutGrid,
   Link2,
   ListChecks,
   Lock,
@@ -50,11 +49,11 @@ import { Analytics } from "@/components/analytics";
 import {
   BodyMapDemo,
   BookingDemo,
-  ConfirmDemo,
   ImportDemo,
   InstallmentDemo,
   MessagesDemo,
   ProgressDemo,
+  PortalPhonesDemo,
   PublicPageDemo,
 } from "@/components/landing/feature-demos";
 import { Reveal } from "@/components/landing/reveal";
@@ -76,7 +75,8 @@ export const metadata: Metadata = {
 };
 
 type Feature = { icon: LucideIcon; title: string; text: string };
-type Group = { id: string; label: string; title: string; lead: string; Demo: () => React.ReactNode; features: Feature[] };
+/** `wide`: the demo spans the page above the features (the client's page, shown as phones). */
+type Group = { id: string; label: string; title: string; lead: string; Demo: () => React.ReactNode; features: Feature[]; wide?: boolean };
 
 const GROUPS: Group[] = [
   {
@@ -92,6 +92,25 @@ const GROUPS: Group[] = [
       { icon: Gift, title: "Deneme dersi", text: "İlk kez gelenlere deneme dersi gösterin; aynı numara bir kez alabilir." },
       { icon: UserCheck, title: "Başvuru onayı", text: "Gelen başvuruyu onaylayınca danışan listenize eklenir, kendi sayfasının linki ona gider." },
       { icon: Search, title: "Arama motorlarında", text: "Yayındaki sayfanız Google'a açıktır; şehrinizde pilates ya da PT arayan sizi bulabilir." },
+    ],
+  },
+  {
+    id: "danisan",
+    label: "Danışanın sayfası",
+    title: "Danışanın sayfası",
+    lead: "Danışanınız uygulama indirmez, şifre belirlemez. Kendi linkini açar; dersleri, programı, beslenme planı ve gelişimi tek sayfada, sekme sekme.",
+    Demo: PortalPhonesDemo,
+    wide: true,
+    features: [
+      { icon: Link2, title: "Kişisel link, şifre yok", text: "Her danışanın kendine ait bir sayfası olur; linki WhatsApp'tan ya da e-postayla gönderirsiniz, tarayıcıda açılır." },
+      { icon: CalendarDays, title: "Derslerim", text: "Kalan dersini ve sıradaki derslerini görür; boş saatlerinizden ders alır, kuralınıza göre iptal eder." },
+      { icon: Check, title: "“Geliyorum”", text: "Ders yaklaşınca sayfanın en üstünde sorulur; “Geliyorum” ya da “Gelemiyorum” der, cevabı listenize düşer." },
+      { icon: Dumbbell, title: "Programım", text: "Günün hareketleri set, tekrar ve ağırlığıyla; video linki varsa izler. Antrenmanı bitirince “Bugün yaptım” der." },
+      { icon: PersonStanding, title: "Vücut haritası", text: "Günün çalışan kaslarını ön ve arka figürde görür; harekete dokununca o hareketin kasları büyük açılır." },
+      { icon: Salad, title: "Beslenme", text: "Öğün öğün planı ve günlük su, protein, adım hedefleri; eklediğiniz PDF de burada." },
+      { icon: TrendingUp, title: "İlerlemem", text: "Ölçümlerinin grafiklerini ve ilk ölçümden bu yana değişimi görür; izin verirseniz kilosunu kendisi girer." },
+      { icon: FileText, title: "Ödemeler", text: "Havale bilgilerini ve açıklama kodunu görür, dekontunu yükler. Taksit günü sayfanın en üstünde çıkar." },
+      { icon: MessagesSquare, title: "Mesajlar ve bildirimler", text: "Size buradan yazar. Rehberle sayfayı ana ekranına ekler, hangi bildirimleri alacağını kendisi seçer." },
     ],
   },
   {
@@ -167,21 +186,6 @@ const GROUPS: Group[] = [
       { icon: Send, title: "WhatsApp da elinizde", text: "Aynı hazır metinle danışana WhatsApp'tan da tek dokunuşla yazarsınız." },
       { icon: CalendarCheck, title: "Haftalık özet", text: "Her pazartesi geçen haftanın dersleri, katılımı ve tahsilatı tek bildirimde." },
       { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanları bir listede görün, hemen yazın." },
-    ],
-  },
-  {
-    id: "danisan",
-    label: "Danışanın sayfası",
-    title: "Danışanın sayfası",
-    lead: "Danışanınız uygulama indirmez, şifre belirlemez. Kendi linkini açar, her şeyi orada bulur.",
-    Demo: ConfirmDemo,
-    features: [
-      { icon: Link2, title: "Kişisel link", text: "Her danışanın kendine ait bir sayfası olur; WhatsApp'tan ya da e-postayla gönderirsiniz." },
-      { icon: LayoutGrid, title: "Sekmeli sayfa", text: "Derslerim, İlerlemem, Programım, Beslenme, Mesajlar. Program ya da beslenme planı vermediyseniz o sekmeler görünmez." },
-      { icon: Smartphone, title: "Ana ekrana ekleme", text: "Adım adım rehberle sayfasını telefonuna ekler; hatırlatmalar bildirim olarak gelir." },
-      { icon: CalendarClock, title: "Ders alır, iptal eder", text: "Boş saatlerinizden dersini alır; iptal kuralınız burada da geçerli." },
-      { icon: FileText, title: "Ödemesini bildirir", text: "Havale bilgilerini görür, dekontunu yükler; taksit günü sayfanın en üstünde çıkar." },
-      { icon: Check, title: "“Geliyorum” der", text: "Ders yaklaşınca sayfasının en üstünde sorulur; cevabı sizin listenize düşer." },
     ],
   },
   {
@@ -268,6 +272,38 @@ export default function FeaturesPage() {
 
         {GROUPS.map((g, gi) => (
           <section key={g.id} id={g.id} aria-labelledby={`${g.id}-heading`} className="scroll-mt-36 px-4 pt-20 sm:px-6 sm:pt-28">
+            {g.wide ? (
+              <div className="mx-auto flex max-w-6xl flex-col gap-8">
+                <div data-reveal className="max-w-3xl">
+                  <p className="mb-3 flex items-center gap-3">
+                    <span className="flex size-10 items-center justify-center rounded-full bg-lime text-sm font-semibold text-lime-foreground tabular-nums">
+                      {String(gi + 1).padStart(2, "0")}
+                    </span>
+                    <span className="eyebrow">{g.label}</span>
+                  </p>
+                  <h2 id={`${g.id}-heading`} className="text-[2rem] leading-[1.08] font-semibold tracking-[-0.03em] text-balance sm:text-5xl">
+                    {g.title}
+                  </h2>
+                  <p className="mt-3 text-base leading-relaxed text-muted-foreground sm:text-lg">{g.lead}</p>
+                </div>
+                <div aria-hidden data-reveal className={cn(card, "overflow-hidden bg-canvas px-4 py-8 sm:px-8")}>
+                  <g.Demo />
+                </div>
+                <ul className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                  {g.features.map(({ icon: Icon, title, text }, i) => (
+                    <li key={title} data-reveal style={stagger(i, 3)} className={cn(card, "hover-lift flex gap-4 p-4 sm:flex-col sm:gap-3 sm:p-5")}>
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                        <Icon className="size-5" />
+                      </span>
+                      <div className="flex min-w-0 flex-col gap-1 sm:gap-3">
+                        <h3 className="text-base font-semibold tracking-[-0.02em]">{title}</h3>
+                        <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
             <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12">
               <div data-reveal className="flex flex-col gap-5 lg:sticky lg:top-36 lg:self-start">
                 <div>
@@ -300,6 +336,7 @@ export default function FeaturesPage() {
                 ))}
               </ul>
             </div>
+            )}
           </section>
         ))}
 
