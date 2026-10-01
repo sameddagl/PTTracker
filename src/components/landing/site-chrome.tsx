@@ -16,6 +16,7 @@ export type NavLink = { href: string; label: string };
 
 /** Marketing pages linked from every footer. */
 export const MARKETING_PAGES: NavLink[] = [
+  { href: "/ozellikler", label: "Özellikler" },
   { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri" },
   { href: "/personal-trainer", label: "Personal trainer" },
   { href: "/fiyatlar", label: "Fiyatlar" },
@@ -23,7 +24,6 @@ export const MARKETING_PAGES: NavLink[] = [
 
 /** The same header menu on every marketing page; the landing's sections are linked from inner pages too. */
 export const SITE_NAV: NavLink[] = [
-  { href: "/#ozellikler", label: "Özellikler" },
   ...MARKETING_PAGES,
   { href: "/#sss", label: "SSS" },
 ];

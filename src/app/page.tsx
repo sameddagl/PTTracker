@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import {
   AttendanceDemo,
+  BodyMapDemo,
   BookingDemo,
   ConfirmDemo,
+  ExerciseCardsDemo,
   GroupDemo,
   ImportDemo,
   InstallmentDemo,
@@ -145,8 +147,8 @@ const PROGRESS = [
   },
   {
     title: "Antrenman programı",
-    text: "Hazır hareket listesinden programı gün gün kurun; set, tekrar, ağırlık ya da yay ayarını yazın. Şablonu bir kez hazırlayıp danışana kopyalarsınız. Danışan yaptığı günü işaretler, kimin programa uyduğunu görürsünüz.",
-    chips: ["Hareket listesi", "Şablon", "Video linki", "Yaptım"],
+    text: "200'den fazla hazır hareketten programı gün gün kurun; set, tekrar, ağırlık ya da yay ayarını yazın. Şablonu bir kez hazırlayıp danışana kopyalarsınız. Danışan yaptığı günü işaretler, kimin programa uyduğunu görürsünüz.",
+    chips: ["Hazır hareketler", "Vücut haritası", "Şablon", "Yaptım"],
     Demo: ProgramDemo,
   },
   {
@@ -494,6 +496,35 @@ export default function Home() {
               </li>
             ))}
           </ul>
+
+          {/* The body map: the one visual a client remembers. */}
+          <div data-reveal className={cn(card, "mx-auto mt-4 grid max-w-6xl gap-6 p-2 sm:mt-5 lg:grid-cols-2 lg:items-center lg:gap-10")}>
+            <div className="flex flex-col gap-4 px-4 pt-5 lg:order-2 lg:px-6 lg:py-8">
+              <p className="eyebrow">Vücut haritası</p>
+              <h3 className="text-2xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-3xl">
+                Hangi hareket hangi kası çalıştırıyor, danışanınız görsün.
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                200&apos;den fazla hazır hareketin her birinde ana ve yardımcı kaslar işaretli. Danışan programını açınca o günün çalışan
+                kaslarını ön ve arka vücut figüründe görür, harekete dokununca kendi kaslarını. Kendi eklediğiniz harekette kası
+                figüre dokunarak siz seçersiniz.
+              </p>
+              <ul className="flex flex-col gap-2 text-sm">
+                {["Makine, serbest ağırlık, reformer ve mat hareketleri", "Ana kas lime, yardımcı kas açık tonda", "Programdaki her günün kas haritası"].map((t) => (
+                  <li key={t} className="flex items-center gap-2.5">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                      <Check className="size-3" strokeWidth={3} />
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div aria-hidden className="grid gap-3 rounded-[1.35rem] bg-canvas p-4 sm:grid-cols-[1.1fr_1fr] sm:p-5 lg:order-1">
+              <BodyMapDemo />
+              <ExerciseCardsDemo />
+            </div>
+          </div>
         </section>
 
         {/* Features */}
@@ -504,6 +535,12 @@ export default function Home() {
             lead="Seans paketinden ödemeye her şey tek yerde."
             rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
           />
+          <p data-reveal className="mt-6 text-center">
+            <Link href="/ozellikler" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline">
+              Bütün özellikler, konu konu
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </p>
           <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ title, text, chips, Demo }, i) => (
               <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col p-2")}>

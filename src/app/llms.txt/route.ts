@@ -15,6 +15,7 @@ ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yokla
 ## Sayfalar
 
 - [Ana sayfa](${base}/): özellikler, nasıl çalıştığı, sık sorulan sorular
+- [Özellikler](${base}/ozellikler): bütün özellikler konu konu (profil, randevu, paket ve ödeme, antrenman ve beslenme, gelişim, mesaj, danışanın sayfası, veriler)
 - [Pilates eğitmenleri](${base}/pilates-egitmenleri): reformer ve mat; paket, telafi hakkı, kontenjan, ev programı
 - [Personal trainer](${base}/personal-trainer): PT paketi, antrenman programı, ölçüm ve beslenme planı
 - [Fiyatlar](${base}/fiyatlar): beta süresince ücretsiz; ücretli plana geçmeden en az bir hafta önce haber
@@ -28,7 +29,7 @@ ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yokla
 - Seans paketleri: peşin, taksitli ve indirimli fiyat; deneme dersi; paket biterken yenileme teklifi.
 - Dersten önce "Geliyor musun?" hatırlatması ve tek dokunuşla onay.
 - Eğitmene özel herkese açık sayfa ve online kayıt formu; grup derslerinde kontenjan ve sabit yer.
-- Antrenman programı: hazır hareket listesi (salon, reformer, mat), şablondan kopyalama, set/tekrar/ağırlık, danışanın "yaptım" işareti.
+- Antrenman programı: 200'den fazla hazır hareket (makine, serbest ağırlık, reformer, mat), her harekette vücut haritasında ana ve yardımcı kaslar, şablondan kopyalama, set/tekrar/ağırlık, danışanın "yaptım" işareti.
 - Ölçüm takibi: kilo, kas, yağ oranı, çevre ölçüleri; danışanın sayfasında gelişim grafikleri; periyodik ölçüm hatırlatması.
 - Beslenme planı: öğün öğün öneriler, günlük hedefler, PDF ekleme; kalori hesabı ve diyet listesi yok.
 - Ders notları ve sağlık uyarısı; taksit hatırlatması; hatırlatma ve hazır mesaj metinleri eğitmenin kendi cümleleriyle.

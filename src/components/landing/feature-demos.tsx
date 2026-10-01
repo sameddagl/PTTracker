@@ -1,5 +1,7 @@
 import { Activity, ArrowDown, Check, CheckCheck, FileSpreadsheet, FileText, Lock, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { MuscleMap } from "@/components/muscle-map";
+import { MUSCLES, type MuscleKey } from "@/lib/muscles";
 import { APP_DOMAIN } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
@@ -445,6 +447,44 @@ export function InstallmentDemo() {
           <p className="text-xs opacity-80">Havale bilgileri ve “Ödedim” için dokun</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** A day's muscles on the body figure, as the client sees it on Programım. */
+export function BodyMapDemo() {
+  return (
+    <div className={cn(panel, "w-full p-4")}>
+      <p className="mb-3 text-sm font-semibold">Bu antrenmanda çalışan kaslar</p>
+      <MuscleMap
+        primary={["gluteal", "quadriceps", "upper-back", "abs"]}
+        secondary={["hamstring", "biceps", "front-deltoids", "obliques"]}
+        className="mx-auto max-w-xs"
+      />
+    </div>
+  );
+}
+
+/** Exercise rows with their own small figure. */
+export function ExerciseCardsDemo() {
+  const rows: { name: string; sum: string; primary: MuscleKey[]; secondary: MuscleKey[] }[] = [
+    { name: "Hip thrust", sum: "3 × 12 · 30 kg", primary: ["gluteal"], secondary: ["hamstring"] },
+    { name: "Low row", sum: "3 × 10 · 35 kg", primary: ["upper-back"], secondary: ["biceps", "back-deltoids"] },
+    { name: "Pec deck", sum: "3 × 12 · 25 kg", primary: ["chest"], secondary: ["front-deltoids"] },
+  ];
+  return (
+    <div className="flex w-full flex-col gap-2">
+      {rows.map((r, i) => (
+        <div key={r.name} className={cn(panel, "flex items-center gap-3 p-3")}>
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-lime text-xs font-semibold text-lime-foreground tabular-nums">{i + 1}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">{r.name}</p>
+            <p className="text-xs text-muted-foreground tabular-nums">{r.sum}</p>
+            <p className="text-xs text-muted-foreground">{r.primary.map((m) => MUSCLES[m]).join(" · ")}</p>
+          </div>
+          <MuscleMap primary={r.primary} secondary={r.secondary} compact className="w-16 shrink-0" />
+        </div>
+      ))}
     </div>
   );
 }
