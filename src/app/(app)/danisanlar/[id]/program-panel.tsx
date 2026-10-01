@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, Dumbbell, FilePlus2, FileText, Pencil, Salad } from "lucide-react";
+import { CalendarCheck, Dumbbell, FilePlus2, Pencil, Printer, Salad } from "lucide-react";
 import { EmptyState } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
@@ -130,13 +130,6 @@ export function ProgramPanel({
           </dl>
         )}
 
-        {current.pdfName && (
-          <a href={`/programlar/${current.id}/pdf`} target="_blank" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline">
-            <FileText className="size-4" aria-hidden />
-            {current.pdfName}
-          </a>
-        )}
-
         <ol className="flex flex-col gap-3">
           {current.days.map((d) => (
             <li key={d.id}>
@@ -161,6 +154,12 @@ export function ProgramPanel({
                 <Pencil />
                 Düzenle
               </Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <a href={`/yazdir/${current.id}`} target="_blank">
+                <Printer />
+                Yazdır / PDF
+              </a>
             </Button>
           </div>
         )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { Check, FileText, PlayCircle, X } from "lucide-react";
+import { Check, PlayCircle, Printer, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Program } from "@/db/programs";
@@ -165,6 +165,7 @@ export function ProgramTab({
           </ul>
         </section>
       )}
+      <PrintLink href={`/p/${token}/yazdir/antrenman`} />
       <p className="text-center text-xs text-muted-foreground">Bir hareket ağrı yaparsa dur ve {trainerName} ile konuş.</p>
       <ExerciseSheet item={openItem} onClose={() => setOpenItem(null)} />
     </div>
@@ -227,7 +228,7 @@ function ExerciseSheet({ item: i, onClose }: { item: Program["days"][number]["it
 }
 
 /** The client's nutrition plan: targets, then meal by meal. */
-export function NutritionTab({ program, pdfHref }: { program: Program; pdfHref: string }) {
+export function NutritionTab({ program, printHref }: { program: Program; printHref: string }) {
   const targets = NUTRITION_TARGETS.filter((t) => program.targets[t.key]);
   return (
     <div className="flex flex-col gap-5">
@@ -261,14 +262,20 @@ export function NutritionTab({ program, pdfHref }: { program: Program; pdfHref: 
           </li>
         ))}
       </ol>
-      {program.pdfName && (
-        <a href={pdfHref} target="_blank" className="flex min-h-12 items-center gap-3 surface px-4 text-sm font-medium">
-          <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0 flex-1 truncate">{program.pdfName}</span>
-          <span className="text-muted-foreground">Aç</span>
-        </a>
-      )}
+      <PrintLink href={printHref} />
       <p className="rounded-2xl bg-muted px-4 py-3 text-xs leading-relaxed text-muted-foreground">{NUTRITION_DISCLAIMER}</p>
     </div>
+  );
+}
+
+/** Opens the plan as a printable page (paper or "PDF olarak kaydet"). */
+function PrintLink({ href }: { href: string }) {
+  return (
+    <Button asChild variant="outline" className="w-full">
+      <a href={href} target="_blank">
+        <Printer />
+        Yazdır / PDF olarak kaydet
+      </a>
+    </Button>
   );
 }

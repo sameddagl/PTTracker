@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CopyPlus, Trash2 } from "lucide-react";
+import { CopyPlus, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,11 @@ export function ProgramHeaderActions({ id, isTemplate }: { id: string; isTemplat
   return (
     <div className="flex gap-1">
       {dialog}
+      <Button asChild size="icon" variant="outline" aria-label="Yazdır ya da PDF olarak kaydet" title="Yazdır / PDF">
+        <a href={`/yazdir/${id}`} target="_blank">
+          <Printer />
+        </a>
+      </Button>
       {!isTemplate && (
         <Button
           type="button"

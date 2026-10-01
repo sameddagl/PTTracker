@@ -10,7 +10,6 @@ import { clients } from "@/db/schema";
 import { toInputDays } from "@/lib/programs";
 import { ProgramEditor } from "../program-editor";
 import { ProgramHeaderActions } from "./header-actions";
-import { PlanPdf } from "./plan-pdf";
 
 export const metadata: Metadata = { title: "Program" };
 
@@ -48,7 +47,6 @@ export default async function ProgramPage({ params }: PageProps<"/programlar/[id
         }
         action={<ProgramHeaderActions id={program.id} isTemplate={!client} />}
       />
-      {!workout && <PlanPdf programId={program.id} fileName={program.pdfName} />}
       <ProgramEditor
         kind={program.kind}
         initial={{

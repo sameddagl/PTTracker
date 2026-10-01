@@ -107,7 +107,7 @@ const GROUPS: Group[] = [
       { icon: Check, title: "“Geliyorum”", text: "Ders yaklaşınca sayfanın en üstünde sorulur; “Geliyorum” ya da “Gelemiyorum” der, cevabı listenize düşer." },
       { icon: Dumbbell, title: "Programım", text: "Günün hareketleri set, tekrar ve ağırlığıyla; video linki varsa izler. Antrenmanı bitirince “Bugün yaptım” der." },
       { icon: PersonStanding, title: "Vücut haritası", text: "Günün çalışan kaslarını ön ve arka figürde görür; harekete dokununca o hareketin kasları büyük açılır." },
-      { icon: Salad, title: "Beslenme", text: "Öğün öğün planı ve günlük su, protein, adım hedefleri; eklediğiniz PDF de burada." },
+      { icon: Salad, title: "Beslenme", text: "Öğün öğün planı ve günlük su, protein, adım hedefleri; isterse yazdırır ya da PDF olarak kaydeder." },
       { icon: TrendingUp, title: "İlerlemem", text: "Ölçümlerinin grafiklerini ve ilk ölçümden bu yana değişimi görür; izin verirseniz kilosunu kendisi girer." },
       { icon: FileText, title: "Ödemeler", text: "Havale bilgilerini ve açıklama kodunu görür, dekontunu yükler. Taksit günü sayfanın en üstünde çıkar." },
       { icon: MessagesSquare, title: "Mesajlar ve bildirimler", text: "Size buradan yazar. Rehberle sayfayı ana ekranına ekler, hangi bildirimleri alacağını kendisi seçer." },
@@ -155,7 +155,7 @@ const GROUPS: Group[] = [
       { icon: PersonStanding, title: "Vücut haritası", text: "Her harekette ana ve yardımcı kaslar işaretli; danışan günün kaslarını ön ve arka figürde görür." },
       { icon: Copy, title: "Şablonlar", text: "Sık verdiğiniz programı bir kez hazırlayın, her danışana kopyalayıp kişiye göre düzenleyin." },
       { icon: PlayCircle, title: "Video linki", text: "Harekete kendi videonuzun ya da beğendiğiniz bir YouTube, Instagram videosunun linkini ekleyin." },
-      { icon: Salad, title: "Beslenme planı", text: "Öğün öğün öneriler; günlük su, protein ve adım hedefi. Diyetisyen listesini PDF olarak ekleyin." },
+      { icon: Salad, title: "Beslenme planı", text: "Öğün öğün öneriler; günlük su, protein ve adım hedefi. Planı yazdırın ya da PDF olarak kaydedin." },
     ],
   },
   {

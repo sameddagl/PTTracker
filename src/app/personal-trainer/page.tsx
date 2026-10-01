@@ -36,7 +36,7 @@ const FEATURES = [
   {
     icon: Salad,
     title: "Beslenme planı",
-    text: "Öğün öğün öneriler ve günlük su, protein, adım hedefi. Danışanın diyetisyeni varsa onun listesini PDF olarak plana ekleyebilirsiniz.",
+    text: "Öğün öğün öneriler ve günlük su, protein, adım hedefi. Planı yazdırabilir ya da PDF olarak kaydedebilirsiniz.",
   },
   {
     icon: Package,
@@ -73,7 +73,7 @@ const FAQ: Faq[] = [
   },
   {
     q: "Beslenme planı verebilir miyim?",
-    a: "Evet. Öğün öğün önerilerinizi ve günlük hedefleri (su, protein, adım) yazarsınız. Kalori hesabı ya da besin veritabanı yok; kişiye özel diyet listesi diyetisyenin işi olduğu için her planın altında bunu belirten bir not çıkar. Danışanın diyetisyen listesini PDF olarak plana ekleyebilirsiniz.",
+    a: "Evet. Öğün öğün önerilerinizi ve günlük hedefleri (su, protein, adım) yazarsınız. Kalori hesabı ya da besin veritabanı yok; kişiye özel diyet listesi diyetisyenin işi olduğu için her planın altında bunu belirten bir not çıkar. Planı yazdırabilir ya da PDF olarak kaydedebilirsiniz.",
   },
   {
     q: "Danışanım ölçümlerini ve gelişimini görebiliyor mu?",

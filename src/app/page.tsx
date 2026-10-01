@@ -153,8 +153,8 @@ const PROGRESS = [
   },
   {
     title: "Beslenme planı",
-    text: "Öğün öğün öneriler; günlük su, protein ve adım hedefi. Diyetisyenin hazırladığı listeyi PDF olarak da ekleyebilirsiniz.",
-    chips: ["Öğünler", "Günlük hedef", "PDF"],
+    text: "Öğün öğün öneriler; günlük su, protein ve adım hedefi. Plan tek tıkla yazdırılır ya da PDF olarak kaydedilir.",
+    chips: ["Öğünler", "Günlük hedef", "Yazdır / PDF"],
     Demo: NutritionDemo,
   },
 ];
@@ -222,7 +222,7 @@ const FAQ = [
   },
   {
     q: "Danışanlarıma antrenman programı ve beslenme planı verebilir miyim?",
-    a: "Evet. Hazır hareket listesinden gün gün antrenman programı kurarsınız: set, tekrar, ağırlık, dinlenme ve not. Beslenme planında öğünleri ve günlük hedefleri yazarsınız, isterseniz PDF eklersiniz. Şablon olarak kaydettiğiniz programı başka danışanlara kopyalayıp kişiye göre düzenlersiniz. Danışan programını kendi sayfasında görür, antrenmanı yaptığı günleri işaretler.",
+    a: "Evet. Hazır hareket listesinden gün gün antrenman programı kurarsınız: set, tekrar, ağırlık, dinlenme ve not. Beslenme planında öğünleri ve günlük hedefleri yazarsınız. İki planı da yazdırabilir ya da PDF olarak kaydedebilirsiniz. Şablon olarak kaydettiğiniz programı başka danışanlara kopyalayıp kişiye göre düzenlersiniz. Danışan programını kendi sayfasında görür, antrenmanı yaptığı günleri işaretler.",
   },
   {
     q: "Danışanım ölçümlerini görebiliyor mu?",

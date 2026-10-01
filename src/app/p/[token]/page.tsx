@@ -408,7 +408,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
             program: workout && (
               <ProgramTab token={token} program={workout.program} checkins={workout.checkins} today={todayISO(tz)} trainerName={trainerName.split(" ")[0]} />
             ),
-            beslenme: nutrition && <NutritionTab program={nutrition.program} pdfHref={`/p/${token}/beslenme-pdf`} />,
+            beslenme: nutrition && <NutritionTab program={nutrition.program} printHref={`/p/${token}/yazdir/beslenme`} />,
             mesajlar: (
               <MessageThread token={token} initial={messages} trainerName={trainerName} timeZone={tz} />
             ),

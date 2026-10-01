@@ -6,16 +6,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import {
-  MAX_PLAN_PDF_BYTES,
   archiveExercise,
   archiveProgram,
   copyProgram,
   createProgram,
-  deleteAttachment,
   getProgram,
   saveExercise,
   sendProgram,
-  setAttachment,
   updateProgram,
   type ProgramKind,
 } from "@/db/programs";
@@ -162,27 +159,5 @@ export async function archiveExerciseAction(id: string): Promise<Result> {
   const ok = await withTrainer((tx, trainerId) => archiveExercise(tx, trainerId, id));
   if (!ok) return { ok: false, error: FAIL };
   revalidatePath("/programlar/hareketler");
-  return { ok: true };
-}
-
-/** Attaches (or replaces) a PDF on a nutrition plan, e.g. one from the client's dietitian. */
-export async function uploadPlanPdfAction(programId: string, formData: FormData): Promise<Result> {
-  if (!uuid.safeParse(programId).success) return { ok: false, error: FAIL };
-  const file = formData.get("pdf");
-  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Bir PDF dosyası seç." };
-  if (file.size > MAX_PLAN_PDF_BYTES) return { ok: false, error: "Dosya en fazla 1,5 MB olabilir." };
-  const data = Buffer.from(await file.arrayBuffer());
-  // Checked by content, not by the name: a PDF starts with "%PDF".
-  if (data.subarray(0, 4).toString("latin1") !== "%PDF") return { ok: false, error: "Sadece PDF dosyası yükleyebilirsin." };
-  const ok = await withTrainer((tx, trainerId) => setAttachment(tx, trainerId, programId, { fileName: file.name, data }));
-  if (!ok) return { ok: false, error: FAIL };
-  revalidatePath(`/programlar/${programId}`);
-  return { ok: true };
-}
-
-export async function deletePlanPdfAction(programId: string): Promise<Result> {
-  if (!uuid.safeParse(programId).success) return { ok: false, error: FAIL };
-  await withTrainer((tx, trainerId) => deleteAttachment(tx, trainerId, programId));
-  revalidatePath(`/programlar/${programId}`);
   return { ok: true };
 }

@@ -14,7 +14,8 @@
  */
 
 /* Follow the OS theme; no theme switcher yet. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/* Screen only: printouts always use the light palette. */
+@custom-variant dark (@media screen and (prefers-color-scheme: dark));
 
 @theme inline {
   --color-background: var(--background);
@@ -132,7 +133,7 @@
   --sidebar-ring: #1d1d1f;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --canvas: #0a0a0b;
     --background: #0a0a0b;

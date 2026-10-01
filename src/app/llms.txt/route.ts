@@ -31,7 +31,8 @@ ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yokla
 - Eğitmene özel herkese açık sayfa ve online kayıt formu; grup derslerinde kontenjan ve sabit yer.
 - Antrenman programı: 200'den fazla hazır hareket (makine, serbest ağırlık, reformer, mat), her harekette vücut haritasında ana ve yardımcı kaslar, şablondan kopyalama, set/tekrar/ağırlık, danışanın "yaptım" işareti.
 - Ölçüm takibi: kilo, kas, yağ oranı, çevre ölçüleri; danışanın sayfasında gelişim grafikleri; periyodik ölçüm hatırlatması.
-- Beslenme planı: öğün öğün öneriler, günlük hedefler, PDF ekleme; kalori hesabı ve diyet listesi yok.
+- Beslenme planı: öğün öğün öneriler, günlük hedefler; kalori hesabı ve diyet listesi yok.
+- Programlar ve beslenme planları yazdırılabilir ya da PDF olarak kaydedilebilir.
 - Ders notları ve sağlık uyarısı; taksit hatırlatması; hatırlatma ve hazır mesaj metinleri eğitmenin kendi cümleleriyle.
 - Excel'den danışan aktarma ve bütün verileri Excel olarak indirme.
 - Veriler Frankfurt'taki (AB) sunucularda; sağlık bilgisi yalnızca açık rızayla.

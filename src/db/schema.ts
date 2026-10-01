@@ -943,22 +943,6 @@ export const programCheckins = pgTable(
   ],
 );
 
-// A PDF attached to a nutrition plan (e.g. from the client's dietitian), stored like receipts.
-export const programAttachments = pgTable(
-  "program_attachments",
-  {
-    programId: uuid("program_id")
-      .primaryKey()
-      .references(() => programs.id, { onDelete: "cascade" }),
-    trainerId: uuid("trainer_id").notNull(),
-    fileName: text("file_name").notNull(),
-    size: integer("size").notNull(),
-    data: bytea("data").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [check("program_attachments_size", sql`${t.size} between 1 and 5242880`), ownRows("program_attachments_own", t.trainerId)],
-);
-
 // Messages to us: from the landing's contact form (no trainer; we answer by
 // e-mail) or from a trainer inside the app (one ongoing thread, answered in the
 // app). Trainers see only their own rows; /yonetim reads everything as owner.
