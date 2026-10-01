@@ -19,6 +19,7 @@ export const CLIENT_KINDS = {
   reminder: { label: "Ders hatırlatması", hint: "Dersten önce “Geliyor musun?” sorusu", push: true, email: null },
   package: { label: "Paket ve ödemeler", hint: "Ödemen onaylandığında, paketin bitmek üzereyken", push: true, email: false },
   message: { label: "Mesajlar", hint: "Eğitmenin sana yazdığında", push: true, email: null },
+  program: { label: "Program ve beslenme", hint: "Eğitmenin yeni bir program gönderdiğinde", push: true, email: null },
 } satisfies Record<string, KindDef>;
 
 export type TrainerKind = keyof typeof TRAINER_KINDS;

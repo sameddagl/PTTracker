@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
-import { Bell, CalendarDays, Dumbbell, MessagesSquare, TrendingUp } from "lucide-react";
+import { Bell, CalendarDays, Dumbbell, MessagesSquare, Salad, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // The client's page in tabs, with a floating tab bar like the trainer app's.
 // The URL hash picks the tab, so links from notifications (#mesajlar,
 // #paketler…) open the right one and scroll to the section.
 
-const ICONS = { dersler: CalendarDays, ilerleme: TrendingUp, program: Dumbbell, mesajlar: MessagesSquare, bildirimler: Bell };
+const ICONS = { dersler: CalendarDays, ilerleme: TrendingUp, program: Dumbbell, beslenme: Salad, mesajlar: MessagesSquare, bildirimler: Bell };
 
-export type PortalTab = { id: keyof typeof ICONS; label: string; badge?: number; anchors?: string[] };
+/** `offBar` tabs are reached from elsewhere (the bell in the header), not the tab bar. */
+export type PortalTab = { id: keyof typeof ICONS; label: string; badge?: number; anchors?: string[]; offBar?: boolean };
 
 const subscribe = (cb: () => void) => {
   window.addEventListener("hashchange", cb);
@@ -38,13 +39,13 @@ export function PortalTabs({ tabs, panels }: { tabs: PortalTab[]; panels: Partia
   return (
     <>
       {tabs.map((t) => (
-        <div key={t.id} role="tabpanel" id={`panel-${t.id}`} aria-labelledby={`tab-${t.id}`} hidden={t.id !== active} className="flex flex-col gap-8">
+        <div key={t.id} role="tabpanel" id={`panel-${t.id}`} aria-labelledby={t.offBar ? undefined : `tab-${t.id}`} aria-label={t.offBar ? t.label : undefined} hidden={t.id !== active} className="flex flex-col gap-8">
           {panels[t.id]}
         </div>
       ))}
       <nav aria-label="Sayfa bölümleri" className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40">
         <ul role="tablist" className="mx-auto flex max-w-md gap-1 rounded-full bg-[#1d1d1f] p-1.5 shadow-float ring-1 ring-white/10 dark:bg-[#1c1c1f]">
-          {tabs.map((t) => {
+          {tabs.filter((t) => !t.offBar).map((t) => {
             const Icon = ICONS[t.id];
             const on = t.id === active;
             return (

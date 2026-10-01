@@ -5,6 +5,7 @@ import { getBookingView, upcomingForClient } from "@/db/booking";
 import { renewablePackages } from "@/db/engagement";
 import { getClientThread } from "@/db/messages";
 import { portalProgress } from "@/db/progress";
+import { portalProgram } from "@/db/programs";
 import { getGroupView } from "@/db/groups";
 import { PORTAL_TOKEN_PATTERN, hashToken } from "@/db/portal";
 import {
@@ -172,13 +173,15 @@ export async function getPortalData(token: string) {
     .orderBy(desc(payments.createdAt));
 
   const who = { trainerId: link.trainerId, clientId: link.clientId };
-  const { groups, booking, bookable, messages, progress } = await adminDb.transaction(async (tx) => ({
+  const { groups, booking, bookable, messages, progress, workout, nutrition } = await adminDb.transaction(async (tx) => ({
     // First: it creates this week's group lessons and places fixed members, which the list below shows.
     groups: await getGroupView(tx as unknown as Tx, who),
     booking: await getBookingView(tx as unknown as Tx, who),
     bookable: await upcomingForClient(tx as unknown as Tx, who),
     messages: await getClientThread(tx as unknown as Tx, who),
     progress: await portalProgress(tx as unknown as Tx, who),
+    workout: await portalProgram(tx as unknown as Tx, who, "workout"),
+    nutrition: await portalProgram(tx as unknown as Tx, who, "nutrition"),
   }));
   const renewable = await renewablePackages(adminDb as unknown as Tx, who, client.timezone);
   // Trials are for newcomers: hide them once the client has a package or has applied.
@@ -206,5 +209,7 @@ export async function getPortalData(token: string) {
     bookable,
     groups,
     progress,
+    workout,
+    nutrition,
   };
 }

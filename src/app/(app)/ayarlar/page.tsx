@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, BellRing, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { Bell, BellRing, Dumbbell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
@@ -30,6 +30,7 @@ export default async function SettingsPage() {
       hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
     },
     { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
+    { href: "/programlar", icon: Dumbbell, title: "Programlar", hint: "Antrenman ve beslenme şablonları, hareketler" },
     {
       href: "/ayarlar/iptal-kurali",
       icon: TimerOff,

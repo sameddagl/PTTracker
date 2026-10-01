@@ -46,6 +46,8 @@ import { renderTemplate } from "@/lib/templates";
 import { ArchivedBanner } from "./archived-banner";
 import { MeasurePanel, type MeasureDay } from "./measure-panel";
 import { NotesPanel } from "./notes-panel";
+import { ProgramPanel } from "./program-panel";
+import { clientPrograms, listTemplates, recentCheckins } from "@/db/programs";
 import { PortalCard } from "./portal-card";
 
 export const metadata: Metadata = { title: "Danışan" };
@@ -62,6 +64,7 @@ const TABS = [
   { key: "genel", label: "Genel" },
   { key: "notlar", label: "Notlar" },
   { key: "olcumler", label: "Ölçümler" },
+  { key: "program", label: "Program" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
@@ -137,11 +140,19 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
             return { custom, consented, rows, metrics: activeMetrics(trainer.measureMetrics, trainer.discipline, custom) };
           })()
         : null;
-    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress };
+    const workout =
+      tab === "program"
+        ? {
+            programs: await clientPrograms(tx, id, "workout"),
+            templates: await listTemplates(tx, trainerId, "workout"),
+            checkins: await recentCheckins(tx, id),
+          }
+        : null;
+    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout };
   });
   if (!data) notFound();
 
-  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout } = data;
   const firstName = client.fullName.split(" ")[0];
   const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
@@ -211,7 +222,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
                 href={t.key === "genel" ? `/danisanlar/${client.id}` : `/danisanlar/${client.id}?sekme=${t.key}`}
                 aria-current={tab === t.key ? "page" : undefined}
                 scroll={false}
-                className={`flex min-h-10 items-center rounded-full px-4 text-sm font-medium transition-colors ${
+                className={`flex min-h-10 items-center rounded-full px-3 text-sm font-medium transition-colors sm:px-4 ${
                   tab === t.key ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -255,6 +266,18 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
             phone: client.phone,
             portal: portal ? portalUrl(portal.token) : null,
           }}
+        />
+      )}
+
+      {tab === "program" && workout && (
+        <ProgramPanel
+          kind="workout"
+          clientId={client.id}
+          firstName={firstName}
+          archived={Boolean(client.archivedAt)}
+          programs={workout.programs}
+          templates={workout.templates}
+          checkins={workout.checkins}
         />
       )}
 

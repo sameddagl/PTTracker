@@ -4,6 +4,22 @@
 // Run with: npx tsx --conditions=react-server scripts/test-engagement.ts
 import assert from "node:assert/strict";
 import { TEMPLATES, cleanTemplates, renderTemplate } from "../src/lib/templates";
+import { STARTER_EXERCISES, cleanVideoUrl, itemSummary, programInputSchema } from "../src/lib/programs";
+import {
+  archiveProgram,
+  clientPrograms,
+  copyProgram,
+  createProgram,
+  ensureExerciseLibrary,
+  getProgram,
+  listExercises,
+  listTemplates,
+  portalProgram,
+  recentCheckins,
+  sendProgram,
+  setCheckin,
+  updateProgram,
+} from "../src/db/programs";
 import { BUILTIN_METRICS, activeMetrics, formatMetric, parseMetricValue, seriesChange, spanPhrase } from "../src/lib/measurements";
 import {
   addNote,
@@ -311,6 +327,53 @@ async function main() {
   assert.deepEqual(activeMetrics(null, "pilates", []).map((m) => m.key), ["weight", "waist", "flexibility", "pain"]);
   assert.deepEqual(activeMetrics(["waist", "c1"], "pt", [{ id: "c1", label: "Plank", unit: "sn", decimals: 0 }]).map((m) => m.label), ["Bel", "Plank"]);
   console.log("notes and measurements ok");
+
+  // ---- Programs ----
+  await as(A, (tx) => ensureExerciseLibrary(tx, A));
+  await as(A, (tx) => ensureExerciseLibrary(tx, A));
+  const lib = await as(A, (tx) => listExercises(tx, A));
+  assert.equal(lib.length, STARTER_EXERCISES.length, "starter library once");
+  assert.equal((await as(B, (tx) => listExercises(tx, A))).length, 0, "RLS hides the library");
+  const squat = lib.find((e) => e.name === "Squat")!;
+  const days = [
+    { title: "Gün A", items: [{ exerciseId: squat.id, name: "Squat", sets: 3, reps: "10", load: "20 kg", rest: "60 sn", note: null }, { exerciseId: null, name: "Ters lunge", sets: 3, reps: "12", load: null, rest: null, note: null }] },
+    { title: "Gün B", items: [{ exerciseId: null, name: "plank", sets: 3, reps: "45 sn", load: null, rest: null, note: "Kalça düşmesin" }] },
+  ];
+  const tpl2 = await as(A, (tx) => createProgram(tx, A, { kind: "workout", clientId: null, name: "Tüm vücut", note: null, targets: {}, startsOn: null, days }));
+  assert.ok(tpl2);
+  const afterLib = await as(A, (tx) => listExercises(tx, A));
+  assert.ok(afterLib.some((e) => e.name === "Ters lunge"), "a typed exercise joins the library");
+  assert.equal(afterLib.filter((e) => e.name.toLocaleLowerCase("tr") === "plank").length, 1, "an existing name is reused, not duplicated");
+  assert.deepEqual((await as(A, (tx) => listTemplates(tx, A, "workout"))).map((t) => [t.name, t.days]), [["Tüm vücut", 2]]);
+
+  const given = await as(A, (tx) => copyProgram(tx, A, tpl2!, zeynep.id, day));
+  assert.ok(given);
+  assert.equal(await as(B, (tx) => copyProgram(tx, B, tpl2!, zeynep.id, day)), null, "another trainer can't copy it");
+  assert.equal(await owner((tx) => portalProgram(tx, zP, "workout")), null, "unsent programs stay hidden from the client");
+  assert.ok(await as(A, (tx) => sendProgram(tx, A, given!)));
+  const seen = (await owner((tx) => portalProgram(tx, zP, "workout")))!;
+  assert.equal(seen.program.days[0].items[0].name, "Squat");
+  const dayA = seen.program.days[0].id;
+  assert.equal(await owner((tx) => setCheckin(tx, zP, dayA, day, true)), true);
+  assert.equal(await owner((tx) => setCheckin(tx, zP, dayA, day, true)), true, "twice is still one check-in");
+  assert.equal(await owner((tx) => setCheckin(tx, { trainerId: A, clientId: ali.id }, dayA, day, true)), false, "not someone else's program");
+  assert.equal((await as(A, (tx) => recentCheckins(tx, zeynep.id))).length, 1);
+  // Editing keeps a day's check-ins when the day keeps its title.
+  await as(A, (tx) => updateProgram(tx, A, given!, { name: "Tüm vücut (Zeynep)", note: null, targets: {}, startsOn: day, days: [...days, { title: "Gün C", items: [] }] }));
+  assert.equal((await as(A, (tx) => recentCheckins(tx, zeynep.id))).length, 1, "check-ins survive an edit");
+  const edited = (await as(A, (tx) => clientPrograms(tx, zeynep.id, "workout")))[0];
+  assert.deepEqual(edited.days.map((d) => d.title), ["Gün A", "Gün B", "Gün C"]);
+  // The template is untouched by the client's copy.
+  assert.equal((await as(A, (tx) => getProgram(tx, A, tpl2!)))!.name, "Tüm vücut");
+  await owner((tx) => setCheckin(tx, zP, edited.days[0].id, day, false));
+  assert.equal((await as(A, (tx) => recentCheckins(tx, zeynep.id))).length, 0, "undo");
+  assert.ok(await as(A, (tx) => archiveProgram(tx, A, given!)));
+  assert.equal(await owner((tx) => portalProgram(tx, zP, "workout")), null, "a deleted program leaves the client's page");
+  assert.equal(itemSummary({ sets: 3, reps: "10–12", load: "20 kg", rest: "60 sn" }), "3 × 10–12 · 20 kg · 60 sn dinlenme");
+  assert.equal(cleanVideoUrl("javascript:alert(1)"), null);
+  assert.equal(cleanVideoUrl("http://x.com"), null);
+  assert.equal(programInputSchema.safeParse({ name: "x", days: [] }).success, false, "a program needs a day");
+  console.log("programs ok");
 
   // ---- Notification choices ----
   assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");

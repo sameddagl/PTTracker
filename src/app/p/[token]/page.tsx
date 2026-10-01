@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Check, CheckCircle2, Hourglass, Lock, Minus } from "lucide-react";
+import { Bell, Check, CheckCircle2, Hourglass, Lock, Minus } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { Avatar } from "@/components/avatar";
 import { InstallCard } from "@/components/install-guide";
@@ -24,6 +24,7 @@ import { applicationOption, optionLabel } from "@/lib/pricing";
 import { NextLessonPrompt, UpcomingLessons } from "./booking-panel";
 import { PortalTabs } from "./portal-tabs";
 import { ProgressTab } from "./progress-tab";
+import { NutritionTab, ProgramTab } from "./program-tab";
 import { LessonPicker } from "./lesson-picker";
 import { PackageShop } from "./package-shop";
 import { MessageThread } from "./message-thread";
@@ -58,7 +59,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups, progress } = data;
+  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups, progress, workout, nutrition } = data;
   const unreadFromTrainer = messages.filter((m) => m.sender === "trainer" && !m.readAt).length;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
@@ -119,10 +120,17 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
         <header className="flex flex-col gap-5">
           <div className="flex items-center gap-3">
             <Avatar name={trainerName} size="md" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{trainerName}</p>
               <p className="text-xs text-muted-foreground">Kişisel ders sayfan</p>
             </div>
+            <a
+              href="#bildirimler"
+              aria-label="Bildirim ayarları"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-muted-foreground shadow-card hover:text-foreground"
+            >
+              <Bell className="size-5" aria-hidden />
+            </a>
           </div>
           <h1 className="text-3xl font-semibold">Merhaba {client.fullName.split(" ")[0]}</h1>
         </header>
@@ -141,8 +149,10 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           tabs={[
             { id: "dersler", label: "Derslerim", anchors: ["dersler", "paketler", "odeme"] },
             { id: "ilerleme", label: "İlerlemem" },
+            ...(workout ? [{ id: "program" as const, label: "Programım" }] : []),
+            ...(nutrition ? [{ id: "beslenme" as const, label: "Beslenme" }] : []),
             { id: "mesajlar", label: "Mesajlar", badge: unreadFromTrainer },
-            { id: "bildirimler", label: "Bildirimler" },
+            { id: "bildirimler", label: "Bildirimler", offBar: true },
           ]}
           panels={{
             dersler: (
@@ -153,7 +163,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
                   description="Linki her seferinde aramadan ana ekrandan aç. Ders hatırlatmaları ve eğitmeninin mesajları telefonuna bildirim olarak düşsün."
                   appName="Derslerim"
                   url={url}
-                  notifyWhere="alttaki “Bildirimler” sekmesinde"
+                  notifyWhere="sağ üstteki zil simgesinde"
                   push={{
                     subscribe: subscribeClientAction.bind(null, token),
                     unsubscribe: unsubscribeClientAction.bind(null, token),
@@ -360,6 +370,10 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
                 notes={progress.notes.map((n) => ({ id: n.id, body: n.body, when: formatDayMonth(n.createdAt, tz) }))}
               />
             ),
+            program: workout && (
+              <ProgramTab token={token} program={workout.program} checkins={workout.checkins} today={todayISO(tz)} trainerName={trainerName.split(" ")[0]} />
+            ),
+            beslenme: nutrition && <NutritionTab program={nutrition.program} />,
             mesajlar: (
               <MessageThread token={token} initial={messages} trainerName={trainerName} timeZone={tz} />
             ),

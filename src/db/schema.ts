@@ -48,6 +48,7 @@ export const paymentStatusEnum = pgEnum("payment_status", ["pending", "confirmed
 export const paymentReporterEnum = pgEnum("payment_reporter", ["trainer", "client"]);
 export const consentKindEnum = pgEnum("consent_kind", ["kvkk_notice", "health_data"]);
 export const measurementSourceEnum = pgEnum("measurement_source", ["trainer", "client"]);
+export const programKindEnum = pgEnum("program_kind", ["workout", "nutrition"]);
 // "applicant": signed up on the trainer's public page, not approved yet.
 export const clientStatusEnum = pgEnum("client_status", ["applicant", "active"]);
 export const clientSourceEnum = pgEnum("client_source", ["manual", "public_page"]);
@@ -802,6 +803,128 @@ export const measurements = pgTable(
     unique("measurements_one_per_day").on(t.clientId, t.metric, t.measuredOn),
     index("measurements_client_idx").on(t.clientId, t.measuredOn),
     ownRows("measurements_own", t.trainerId),
+  ],
+);
+
+// The trainer's exercise library (seeded with common Turkish names on first use).
+export const exercises = pgTable(
+  "exercises",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    category: text("category"),
+    videoUrl: text("video_url"),
+    note: text("note"),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("exercises_name_length", sql`char_length(${t.name}) between 1 and 80`),
+    check("exercises_video_url", sql`${t.videoUrl} is null or ${t.videoUrl} ~ '^https://'`),
+    index("exercises_trainer_idx").on(t.trainerId),
+    ownRows("exercises_own", t.trainerId),
+  ],
+);
+
+// Workout and nutrition programs. client_id null = a template; a client's
+// program is a copy, so editing the template never changes what a client has.
+// Days are workout days (or meals); items are exercises (or the meal's lines).
+export const programs = pgTable(
+  "programs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id"),
+    kind: programKindEnum("kind").notNull().default("workout"),
+    name: text("name").notNull(),
+    note: text("note"),
+    // Nutrition: daily targets such as { water: "2,5 litre", protein: "110 g" }.
+    targets: jsonb("targets").$type<Record<string, string>>().notNull().default({}),
+    startsOn: date("starts_on"),
+    // Set when the trainer sends it; the client sees it only after that.
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    check("programs_name_length", sql`char_length(${t.name}) between 1 and 80`),
+    foreignKey({ name: "programs_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    index("programs_client_idx").on(t.clientId, t.kind),
+    ownRows("programs_own", t.trainerId),
+  ],
+);
+
+export const programDays = pgTable(
+  "program_days",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    programId: uuid("program_id")
+      .notNull()
+      .references(() => programs.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    sortOrder: smallint("sort_order").notNull().default(0),
+  },
+  (t) => [
+    check("program_days_title_length", sql`char_length(${t.title}) between 1 and 60`),
+    index("program_days_program_idx").on(t.programId, t.sortOrder),
+    ownRows("program_days_own", t.trainerId),
+  ],
+);
+
+export const programItems = pgTable(
+  "program_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    dayId: uuid("day_id")
+      .notNull()
+      .references(() => programDays.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id").references(() => exercises.id, { onDelete: "set null" }),
+    // Copied from the exercise so later library edits don't rewrite programs.
+    name: text("name").notNull(),
+    sets: smallint("sets"),
+    reps: text("reps"),
+    load: text("load"),
+    rest: text("rest"),
+    note: text("note"),
+    sortOrder: smallint("sort_order").notNull().default(0),
+  },
+  (t) => [
+    check("program_items_name_length", sql`char_length(${t.name}) between 1 and 300`),
+    check("program_items_sets", sql`${t.sets} is null or ${t.sets} between 1 and 50`),
+    index("program_items_day_idx").on(t.dayId, t.sortOrder),
+    ownRows("program_items_own", t.trainerId),
+  ],
+);
+
+// "Bugünkü antrenmanı yaptım" from the client's page: one per day of the program per date.
+export const programCheckins = pgTable(
+  "program_checkins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    programId: uuid("program_id")
+      .notNull()
+      .references(() => programs.id, { onDelete: "cascade" }),
+    dayId: uuid("day_id")
+      .notNull()
+      .references(() => programDays.id, { onDelete: "cascade" }),
+    doneOn: date("done_on").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("program_checkins_once").on(t.dayId, t.doneOn),
+    index("program_checkins_client_idx").on(t.clientId, t.doneOn),
+    ownRows("program_checkins_own", t.trainerId),
   ],
 );
 

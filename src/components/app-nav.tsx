@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CalendarCheck, CalendarDays, ClipboardCheck, MessagesSquare, Package, Settings, Users, Wallet } from "lucide-react";
+import { Activity, CalendarCheck, CalendarDays, ClipboardCheck, Dumbbell, MessagesSquare, Package, Settings, Users, Wallet } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const ITEMS = [
   { href: "/mesajlar", label: "Mesajlar", icon: MessagesSquare },
   { href: "/odemeler", label: "Ödemeler", icon: Wallet },
   { href: "/paketler", label: "Paketler", icon: Package, desktopOnly: true },
+  { href: "/programlar", label: "Programlar", icon: Dumbbell, desktopOnly: true },
   { href: "/ayarlar", label: "Ayarlar", icon: Settings, desktopOnly: true },
 ] as const;
 
