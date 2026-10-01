@@ -94,6 +94,15 @@ export default function KvkkPage() {
         </p>
       </Section>
 
+      <Section id="iletisim" title="İletişim formu ve destek mesajları">
+        <p>
+          Sitedeki iletişim formuyla ya da uygulamadaki “Bize yazın” bölümünden bize yazdığınızda adınızı, e-posta adresinizi,
+          varsa telefon numaranızı ve mesajınızı yalnızca size cevap vermek ve sorununuzu çözmek için işleriz. Hukuki sebep, talebinize
+          cevap verilmesindeki meşru menfaatimizdir (m.5/2-f). Bu mesajları reklam ya da pazarlama için kullanmayız; silinmesini
+          istediğinizde sileriz.
+        </p>
+      </Section>
+
       <Section id="aktarim" title="3. Verilerin aktarıldığı taraflar">
         <p>Verileriniz yalnızca hizmetin çalışması için gerekli altyapı sağlayıcılarıyla paylaşılır:</p>
         <ul>

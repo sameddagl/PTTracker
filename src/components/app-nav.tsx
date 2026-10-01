@@ -74,7 +74,7 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
   const { isActive, onTap } = useActiveTab();
   const pathname = usePathname();
   // Inside a conversation the composer takes the bottom of the screen, like any chat app.
-  if (pathname.startsWith("/mesajlar/")) return null;
+  if (pathname.startsWith("/mesajlar/") || pathname === "/ayarlar/destek") return null;
   return (
     <nav
       aria-label="Ana menü"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, BellRing, Dumbbell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { Bell, BellRing, Dumbbell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, LifeBuoy, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
@@ -9,6 +9,7 @@ import { PageHeader, SectionTitle } from "@/components/page-header";
 import { ActionTiles } from "@/components/action-tiles";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
+import { countUnreadSupport } from "@/db/support";
 import { siteUrl } from "@/lib/config";
 import { signOut } from "../../giris/actions";
 import { DeleteAccount } from "./delete-account";
@@ -16,8 +17,12 @@ import { DeleteAccount } from "./delete-account";
 export const metadata: Metadata = { title: "Ayarlar" };
 
 export default async function SettingsPage() {
-  const [{ trainer, clientCount }, claims] = await Promise.all([
-    withTrainer(async (tx, id) => ({ trainer: await getTrainer(tx, id), clientCount: (await listClients(tx, id)).length })),
+  const [{ trainer, clientCount, supportUnread }, claims] = await Promise.all([
+    withTrainer(async (tx, id) => ({
+      trainer: await getTrainer(tx, id),
+      clientCount: (await listClients(tx, id)).length,
+      supportUnread: await countUnreadSupport(tx, id),
+    })),
     getClaims(),
   ]);
 
@@ -118,6 +123,18 @@ export default async function SettingsPage() {
                   <CircleHelp aria-hidden />
                 </RowIcon>
                 <RowText title="Yardım" hint="Paket, yoklama, ödeme ve diğer konular adım adım" />
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+              </Link>
+            </li>
+            <li>
+              <Link href="/ayarlar/destek" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                <RowIcon>
+                  <LifeBuoy aria-hidden />
+                </RowIcon>
+                <RowText title="Bize yazın" hint={supportUnread > 0 ? `${supportUnread} yeni cevap` : "Soru, öneri, takıldığın bir yer"} />
+                {supportUnread > 0 && (
+                  <span className="min-w-6 rounded-full bg-lime px-1.5 text-center text-xs leading-6 font-semibold text-lime-foreground tabular-nums">{supportUnread}</span>
+                )}
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
               </Link>
             </li>

@@ -34,7 +34,7 @@ import { Analytics } from "@/components/analytics";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
 import { Reveal } from "@/components/landing/reveal";
 import { stagger } from "@/lib/motion";
-import { Chips, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card } from "@/components/landing/site-chrome";
+import { Chips, ContactSection, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
 import { APP_DESCRIPTION, APP_DOMAIN, APP_NAME, siteUrl } from "@/lib/config";
 import { LEGAL } from "@/lib/legal";
@@ -640,6 +640,8 @@ export default function Home() {
         </section>
 
         <FaqSection items={FAQ} />
+
+        <ContactSection />
 
         <CtaBand
           page="landing"

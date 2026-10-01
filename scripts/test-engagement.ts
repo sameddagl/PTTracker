@@ -44,6 +44,19 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import type { Tx } from "../src/db";
 import { requestPackage } from "../src/db/applications";
+import {
+  LANDING_DAILY_LIMIT,
+  addAdminReply,
+  adminThreads,
+  cleanSupportBody,
+  countUnreadForAdmin,
+  countUnreadSupport,
+  createLandingThread,
+  markSupportReadByAdmin,
+  markSupportReadByTrainer,
+  sendTrainerSupport,
+  trainerSupportMessages,
+} from "../src/db/support";
 import { recordPayment } from "../src/db/payments";
 import { INSTALLMENT_INTERVAL_DAYS } from "../src/lib/installments";
 import {
@@ -458,6 +471,34 @@ async function main() {
   await db.update(schema.trainers).set({ installmentRemindersEnabled: true }).where(eq(schema.trainers.id, A));
   assert.equal((await owner((tx) => installmentRemindersDue(tx, { hours: [25, 26] }))).length, 0, "only during the day");
   console.log("installment reminders ok");
+
+  // ---- Support messages ----
+  for (let i = 0; i < LANDING_DAILY_LIMIT; i++) {
+    assert.equal((await owner((tx) => createLandingThread(tx, { name: "Ziyaretçi", email: "Z@ornek.com", phone: null, body: "Merhaba, bir sorum var." }))).ok, true);
+  }
+  assert.deepEqual(await owner((tx) => createLandingThread(tx, { name: "Ziyaretçi", email: "z@ornek.com", phone: null, body: "Bir daha" })), {
+    ok: false,
+    reason: "rate_limited",
+  });
+  const sup1 = await as(A, (tx) => sendTrainerSupport(tx, A, "Program şablonunu nasıl kopyalarım?"));
+  const sup2 = await as(A, (tx) => sendTrainerSupport(tx, A, "Bir de PDF ekleyebilir miyim?"));
+  assert.equal(sup1.threadId, sup2.threadId, "one ongoing thread per trainer");
+  assert.equal((await as(B, (tx) => trainerSupportMessages(tx, B))).length, 0);
+  assert.equal((await as(B, (tx) => tx.select().from(schema.supportMessages))).length, 0, "RLS hides other trainers' and landing messages");
+  assert.equal(await owner((tx) => countUnreadForAdmin(tx)), LANDING_DAILY_LIMIT + 2);
+  await owner((tx) => markSupportReadByAdmin(tx, sup1.threadId));
+  const replied = await owner((tx) => addAdminReply(tx, sup1.threadId, "Programlar → şablon → Kopyala."));
+  assert.equal(replied?.trainerId, A);
+  assert.equal(await as(A, (tx) => countUnreadSupport(tx, A)), 1);
+  const chat = await as(A, (tx) => trainerSupportMessages(tx, A));
+  assert.deepEqual(chat.map((m) => m.sender), ["trainer", "trainer", "client"], "ours show as the other side");
+  assert.equal(await as(A, (tx) => markSupportReadByTrainer(tx, A)), 1);
+  assert.equal(await as(A, (tx) => countUnreadSupport(tx, A)), 0);
+  const inbox = await owner((tx) => adminThreads(tx));
+  assert.equal(inbox[0].id, sup1.threadId, "newest activity first");
+  assert.equal(inbox.find((t) => t.source === "landing")?.email, "Z@ornek.com");
+  assert.equal(cleanSupportBody("  "), null);
+  console.log("support messages ok");
 
   // ---- Notification choices ----
   assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");

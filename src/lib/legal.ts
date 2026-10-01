@@ -8,7 +8,7 @@ export const LEGAL = {
   address: null as string | null,
   email: "info@studyomapp.com",
   /** Version stamps stored with each consent (see consents.text_version); bump when a text changes. */
-  noticeVersion: "aydinlatma-2026-10-01",
+  noticeVersion: "aydinlatma-2026-10-01b",
   healthConsentVersion: "saglik-rizasi-2026-10-01",
   termsVersion: "kosullar-2026-10-01",
   updatedOn: "1 Ekim 2026",

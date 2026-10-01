@@ -49,6 +49,8 @@ export const paymentReporterEnum = pgEnum("payment_reporter", ["trainer", "clien
 export const consentKindEnum = pgEnum("consent_kind", ["kvkk_notice", "health_data"]);
 export const measurementSourceEnum = pgEnum("measurement_source", ["trainer", "client"]);
 export const programKindEnum = pgEnum("program_kind", ["workout", "nutrition"]);
+export const supportSourceEnum = pgEnum("support_source", ["landing", "app"]);
+export const supportSenderEnum = pgEnum("support_sender", ["user", "admin"]);
 // "applicant": signed up on the trainer's public page, not approved yet.
 export const clientStatusEnum = pgEnum("client_status", ["applicant", "active"]);
 export const clientSourceEnum = pgEnum("client_source", ["manual", "public_page"]);
@@ -955,6 +957,52 @@ export const programAttachments = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [check("program_attachments_size", sql`${t.size} between 1 and 5242880`), ownRows("program_attachments_own", t.trainerId)],
+);
+
+// Messages to us: from the landing's contact form (no trainer; we answer by
+// e-mail) or from a trainer inside the app (one ongoing thread, answered in the
+// app). Trainers see only their own rows; /yonetim reads everything as owner.
+export const supportThreads = pgTable(
+  "support_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").references(() => trainers.id, { onDelete: "cascade" }),
+    source: supportSourceEnum("source").notNull(),
+    name: text("name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("support_threads_name_length", sql`char_length(${t.name}) between 1 and 120`),
+    index("support_threads_last_idx").on(t.lastMessageAt),
+    unique("support_threads_one_per_trainer").on(t.trainerId),
+    ownRows("support_threads_own", t.trainerId),
+  ],
+);
+
+export const supportMessages = pgTable(
+  "support_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => supportThreads.id, { onDelete: "cascade" }),
+    // Copied from the thread so RLS can scope the rows (null for landing threads).
+    trainerId: uuid("trainer_id"),
+    sender: supportSenderEnum("sender").notNull(),
+    body: text("body").notNull(),
+    // Set when the other side has seen it.
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("support_messages_body_length", sql`char_length(${t.body}) between 1 and 4000`),
+    index("support_messages_thread_idx").on(t.threadId, t.createdAt),
+    ownRows("support_messages_own", t.trainerId),
+  ],
 );
 
 export const consents = pgTable(

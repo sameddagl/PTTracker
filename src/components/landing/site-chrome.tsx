@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Activity, ArrowRight, ChevronRight, Plus } from "lucide-react";
+import { Activity, ArrowRight, ChevronRight, Mail, Plus } from "lucide-react";
+import { ContactForm } from "@/components/landing/contact-form";
 import { SiteMenu } from "@/components/landing/site-menu";
 import { Button } from "@/components/ui/button";
 import { APP_NAME, siteUrl } from "@/lib/config";
@@ -98,6 +99,7 @@ export function SiteFooter() {
             {[
               { href: "/kvkk", label: "KVKK Aydınlatma Metni" },
               { href: "/kosullar", label: "Kullanım Koşulları" },
+              { href: "/#iletisim", label: "İletişim" },
               { href: "/giris", label: "Giriş yap" },
             ].map((l) => (
               <li key={l.href}>
@@ -271,4 +273,31 @@ export function pageJsonLd({ path, title, description, crumbs, faq }: { path: st
 export function JsonLd({ data }: { data: unknown }) {
   // Escaping "<" keeps the JSON from closing the script tag.
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
+}
+
+/** "Bize yazın": the contact form next to the address, for the marketing pages. */
+export function ContactSection() {
+  return (
+    <section id="iletisim" aria-labelledby="contact-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
+      <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1fr_1.3fr] lg:gap-14">
+        <div data-reveal className="flex flex-col gap-4">
+          <p className="eyebrow">İletişim</p>
+          <h2 id="contact-heading" className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
+            Bize yazın
+          </h2>
+          <p className="text-base leading-relaxed text-muted-foreground">
+            Bir sorunuz, öneriniz ya da görmek istediğiniz bir özellik mi var? Formu doldurun, e-postayla dönelim. Kayıt olduysanız
+            uygulamada Ayarlar → Bize yazın bölümünden de yazabilirsiniz.
+          </p>
+          <a href={`mailto:${LEGAL.email}`} className="inline-flex min-h-11 items-center gap-2 self-start text-base font-medium underline-offset-4 hover:underline">
+            <Mail className="size-4" aria-hidden />
+            {LEGAL.email}
+          </a>
+        </div>
+        <div data-reveal className={cn(card, "relative")}>
+          <ContactForm />
+        </div>
+      </div>
+    </section>
+  );
 }

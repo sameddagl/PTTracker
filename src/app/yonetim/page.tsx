@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatTile } from "@/components/stat-tile";
 import { adminDb, getClaims, type Tx } from "@/db";
 import { activation, overview, trainerList, weekly } from "@/db/admin-metrics";
+import { countUnreadForAdmin } from "@/db/support";
 import { isAdminEmail } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +31,7 @@ export default async function AdminPage() {
   const a = await activation(db);
   const weeks = await weekly(db, 8);
   const trainers = await trainerList(db);
+  const supportUnread = await countUnreadForAdmin(db);
 
   const funnel = [
     { label: "Kayıt oldu", n: a.signed_up },
@@ -50,6 +53,13 @@ export default async function AdminPage() {
         <p className="eyebrow">Yalnızca sen görüyorsun</p>
         <h1 className="text-3xl font-semibold">Yönetim</h1>
         <p className="mt-2 text-sm text-muted-foreground">Sayılar anlık. Danışanların adı ya da iletişim bilgisi bu sayfada yok.</p>
+        <Link
+          href="/yonetim/mesajlar"
+          className={cn("mt-4 inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium", supportUnread > 0 ? "bg-lime text-lime-foreground" : "bg-card shadow-card")}
+        >
+          Gelen mesajlar
+          {supportUnread > 0 && <span className="rounded-full bg-lime-foreground px-2 text-xs leading-5 text-lime tabular-nums">{supportUnread} yeni</span>}
+        </Link>
       </header>
 
       <section aria-labelledby="summary" className="flex flex-col gap-3">
