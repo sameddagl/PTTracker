@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { TEMPLATES, cleanTemplates, renderTemplate } from "../src/lib/templates";
 import { STARTER_EXERCISES, cleanVideoUrl, itemSummary, programInputSchema } from "../src/lib/programs";
+import { MUSCLE_KEYS, cleanMuscles, combineMuscles, isMuscle } from "../src/lib/muscles";
 import {
   archiveProgram,
   clientPrograms,
@@ -16,6 +17,7 @@ import {
   listTemplates,
   portalProgram,
   recentCheckins,
+  saveExercise,
   sendProgram,
   setCheckin,
   updateProgram,
@@ -378,6 +380,17 @@ async function main() {
   assert.equal((await as(A, (tx) => recentCheckins(tx, zeynep.id))).length, 0, "undo");
   assert.ok(await as(A, (tx) => archiveProgram(tx, A, given!)));
   assert.equal(await owner((tx) => portalProgram(tx, zP, "workout")), null, "a deleted program leaves the client's page");
+  // Muscles: every starter exercise names known muscles; the figure data reaches the client's program.
+  for (const e of STARTER_EXERCISES) {
+    assert.ok(e.primary.length > 0 && [...e.primary, ...e.secondary].every(isMuscle), `muscles for ${e.name}`);
+  }
+  assert.deepEqual(lib.find((e) => e.name === "Squat")!.primary, ["gluteal", "quadriceps"].filter(isMuscle).sort((a, b) => MUSCLE_KEYS.indexOf(a) - MUSCLE_KEYS.indexOf(b)));
+  assert.deepEqual(seen.program.days[0].items[0].primary, lib.find((e) => e.name === "Squat")!.primary);
+  assert.deepEqual(cleanMuscles(["abs", "bogus", "abs", "chest"]), ["chest", "abs"]);
+  assert.deepEqual(combineMuscles([{ primary: ["chest"], secondary: ["triceps"] }, { primary: ["triceps"], secondary: ["abs"] }]), { primary: ["chest", "triceps"], secondary: ["abs"] });
+  const own = await as(A, (tx) => saveExercise(tx, A, { name: "Kendi hareketim", category: null, videoUrl: null, note: null, primary: ["chest", "chest", "x"], secondary: ["chest", "abs"] }));
+  const mine = (await as(A, (tx) => listExercises(tx, A))).find((e) => e.id === own)!;
+  assert.deepEqual([mine.primary, mine.secondary], [["chest"], ["abs"]], "a muscle is primary or secondary, not both");
   assert.equal(itemSummary({ sets: 3, reps: "10–12", load: "20 kg", rest: "60 sn" }), "3 × 10–12 · 20 kg · 60 sn dinlenme");
   assert.equal(cleanVideoUrl("javascript:alert(1)"), null);
   assert.equal(cleanVideoUrl("http://x.com"), null);

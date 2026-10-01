@@ -828,6 +828,9 @@ export const exercises = pgTable(
     category: text("category"),
     videoUrl: text("video_url"),
     note: text("note"),
+    // Muscle groups for the body figure (keys in src/lib/muscles.ts).
+    primaryMuscles: text("primary_muscles").array().notNull().default(sql`'{}'::text[]`),
+    secondaryMuscles: text("secondary_muscles").array().notNull().default(sql`'{}'::text[]`),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

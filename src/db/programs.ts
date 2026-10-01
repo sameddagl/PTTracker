@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { cleanMuscles, type MuscleKey } from "@/lib/muscles";
 import { STARTER_EXERCISES, cleanVideoUrl, toInputDays, type ProgramInput } from "@/lib/programs";
 import type { Tx } from "./index";
 import { clients, exercises, programAttachments, programCheckins, programDays, programItems, programs } from "./schema";
@@ -12,29 +13,46 @@ export type ProgramKind = "workout" | "nutrition";
 
 // ---- Exercise library ----
 
-export type Exercise = { id: string; name: string; category: string | null; videoUrl: string | null; note: string | null };
+export type Exercise = { id: string; name: string; category: string | null; videoUrl: string | null; note: string | null; primary: MuscleKey[]; secondary: MuscleKey[] };
 
 /** Fills an empty library with the starter list, once. */
 export async function ensureExerciseLibrary(tx: Tx, trainerId: string) {
   const [any] = await tx.select({ id: exercises.id }).from(exercises).where(eq(exercises.trainerId, trainerId)).limit(1);
   if (any) return;
-  await tx.insert(exercises).values(STARTER_EXERCISES.map((e) => ({ trainerId, name: e.name, category: e.category })));
+  await tx.insert(exercises).values(STARTER_EXERCISES.map((e) => ({ trainerId, name: e.name, category: e.category, primaryMuscles: e.primary, secondaryMuscles: e.secondary })));
 }
 
-export function listExercises(tx: Tx, trainerId: string): Promise<Exercise[]> {
-  return tx
-    .select({ id: exercises.id, name: exercises.name, category: exercises.category, videoUrl: exercises.videoUrl, note: exercises.note })
+export async function listExercises(tx: Tx, trainerId: string): Promise<Exercise[]> {
+  const rows = await tx
+    .select({
+      id: exercises.id,
+      name: exercises.name,
+      category: exercises.category,
+      videoUrl: exercises.videoUrl,
+      note: exercises.note,
+      primary: exercises.primaryMuscles,
+      secondary: exercises.secondaryMuscles,
+    })
     .from(exercises)
     .where(and(eq(exercises.trainerId, trainerId), isNull(exercises.archivedAt)))
     .orderBy(asc(exercises.category), asc(exercises.name));
+  return rows.map((r) => ({ ...r, primary: cleanMuscles(r.primary), secondary: cleanMuscles(r.secondary) }));
 }
 
 export async function saveExercise(
   tx: Tx,
   trainerId: string,
-  input: { id?: string | null; name: string; category: string | null; videoUrl: string | null; note: string | null },
+  input: { id?: string | null; name: string; category: string | null; videoUrl: string | null; note: string | null; primary?: string[]; secondary?: string[] },
 ) {
-  const values = { name: input.name, category: input.category, videoUrl: cleanVideoUrl(input.videoUrl), note: input.note };
+  const primaryMuscles = cleanMuscles(input.primary);
+  const values = {
+    name: input.name,
+    category: input.category,
+    videoUrl: cleanVideoUrl(input.videoUrl),
+    note: input.note,
+    primaryMuscles,
+    secondaryMuscles: cleanMuscles(input.secondary).filter((m) => !primaryMuscles.includes(m)),
+  };
   if (input.id) {
     const rows = await tx
       .update(exercises)
@@ -72,6 +90,8 @@ export type ProgramDay = {
     rest: string | null;
     note: string | null;
     videoUrl: string | null;
+    primary: MuscleKey[];
+    secondary: MuscleKey[];
   }[];
 };
 
@@ -125,6 +145,8 @@ async function withDays(tx: Tx, rows: Omit<Program, "days">[]): Promise<Program[
             rest: programItems.rest,
             note: programItems.note,
             videoUrl: exercises.videoUrl,
+            primaryMuscles: exercises.primaryMuscles,
+            secondaryMuscles: exercises.secondaryMuscles,
           })
           .from(programItems)
           .leftJoin(exercises, eq(exercises.id, programItems.exerciseId))
@@ -134,7 +156,13 @@ async function withDays(tx: Tx, rows: Omit<Program, "days">[]): Promise<Program[
     ...r,
     days: days
       .filter((d) => d.programId === r.id)
-      .map((d) => ({ id: d.id, title: d.title, items: items.filter((i) => i.dayId === d.id) })),
+      .map((d) => ({
+        id: d.id,
+        title: d.title,
+        items: items
+          .filter((i) => i.dayId === d.id)
+          .map(({ primaryMuscles, secondaryMuscles, ...i }) => ({ ...i, primary: cleanMuscles(primaryMuscles), secondary: cleanMuscles(secondaryMuscles) })),
+      })),
   }));
 }
 

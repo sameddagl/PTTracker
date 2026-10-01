@@ -155,6 +155,13 @@
       "when": 1790839189386,
       "tag": "20261001071949_lame_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790840713706,
+      "tag": "20261001074513_mixed_zarek",
+      "breakpoints": true
     }
   ]
 }

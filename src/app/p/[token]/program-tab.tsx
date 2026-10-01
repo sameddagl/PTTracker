@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Program } from "@/db/programs";
 import { NUTRITION_DISCLAIMER, NUTRITION_TARGETS, itemSummary } from "@/lib/programs";
+import { MuscleMap } from "@/components/muscle-map";
+import { MUSCLES, combineMuscles } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
 import { setCheckinAction } from "./program-actions";
 
@@ -101,6 +103,13 @@ export function ProgramTab({
         </div>
       )}
 
+      {day && day.items.some((i) => i.primary.length > 0) && (
+        <section aria-label="Bu antrenmanda çalışan kaslar" className="surface p-4">
+          <p className="mb-3 text-sm font-semibold">Bu antrenmanda çalışan kaslar</p>
+          <MuscleMap {...combineMuscles(day.items)} className="mx-auto max-w-xs" />
+        </section>
+      )}
+
       {day && (
         <ol className="flex flex-col gap-3" aria-label={day.title}>
           {day.items.map((i, n) => (
@@ -111,6 +120,7 @@ export function ProgramTab({
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{i.name}</p>
                 {itemSummary(i) && <p className="text-sm text-muted-foreground tabular-nums">{itemSummary(i)}</p>}
+                {i.primary.length > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{i.primary.map((m) => MUSCLES[m]).join(" · ")}</p>}
                 {i.note && <p className="mt-1 text-sm">{i.note}</p>}
                 {i.videoUrl && (
                   <a

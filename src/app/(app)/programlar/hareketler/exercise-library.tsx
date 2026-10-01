@@ -8,10 +8,27 @@ import { NativeSelect } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Exercise } from "@/db/programs";
+import { MuscleMap } from "@/components/muscle-map";
+import { MUSCLES, type MuscleKey } from "@/lib/muscles";
 import { archiveExerciseAction, saveExerciseAction } from "../actions";
 
-type Draft = { id: string | null; name: string; category: string; videoUrl: string; note: string };
-const toDraft = (e?: Exercise): Draft => ({ id: e?.id ?? null, name: e?.name ?? "", category: e?.category ?? "", videoUrl: e?.videoUrl ?? "", note: e?.note ?? "" });
+type Draft = { id: string | null; name: string; category: string; videoUrl: string; note: string; primary: MuscleKey[]; secondary: MuscleKey[] };
+const toDraft = (e?: Exercise): Draft => ({
+  id: e?.id ?? null,
+  name: e?.name ?? "",
+  category: e?.category ?? "",
+  videoUrl: e?.videoUrl ?? "",
+  note: e?.note ?? "",
+  primary: e?.primary ?? [],
+  secondary: e?.secondary ?? [],
+});
+
+/** One tap on the figure: none → primary → secondary → none. */
+function cycle(d: Draft, m: MuscleKey): Draft {
+  if (d.primary.includes(m)) return { ...d, primary: d.primary.filter((x) => x !== m), secondary: [...d.secondary, m] };
+  if (d.secondary.includes(m)) return { ...d, secondary: d.secondary.filter((x) => x !== m) };
+  return { ...d, primary: [...d.primary, m] };
+}
 
 export function ExerciseLibrary({ exercises, categories }: { exercises: Exercise[]; categories: string[] }) {
   const [q, setQ] = useState("");
@@ -68,6 +85,12 @@ export function ExerciseLibrary({ exercises, categories }: { exercises: Exercise
         Video linki <span className="text-xs font-normal text-muted-foreground">isteğe bağlı · YouTube, Instagram ya da başka bir https linki</span>
         <Input value={d.videoUrl} onChange={(e) => setEditing({ ...d, videoUrl: e.target.value })} inputMode="url" placeholder="https://" className="bg-card" />
       </label>
+      <div className="flex flex-col gap-2 rounded-xl bg-card p-3">
+        <p className="text-sm font-medium">
+          Çalışan kaslar <span className="text-xs font-normal text-muted-foreground">dokun: bir kez ana kas, iki kez yardımcı, üç kez kaldır</span>
+        </p>
+        <MuscleMap primary={d.primary} secondary={d.secondary} onToggle={(m) => setEditing(cycle(d, m))} className="mx-auto w-full max-w-xs" />
+      </div>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Not <span className="text-xs font-normal text-muted-foreground">isteğe bağlı</span>
         <Input value={d.note} onChange={(e) => setEditing({ ...d, note: e.target.value })} maxLength={300} placeholder="Sırt düz, nefesi tutma." className="bg-card" />
@@ -127,7 +150,10 @@ export function ExerciseLibrary({ exercises, categories }: { exercises: Exercise
                   <div className="py-2">{form(editing)}</div>
                 ) : (
                   <button type="button" onClick={() => setEditing(toDraft(e))} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-2 text-left text-sm hover:bg-muted/50">
-                    <span className="flex-1 font-medium">{e.name}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium">{e.name}</span>
+                      {e.primary.length > 0 && <span className="block truncate text-xs text-muted-foreground">{e.primary.map((m) => MUSCLES[m]).join(", ")}</span>}
+                    </span>
                     {e.videoUrl && <PlayCircle className="size-4 text-muted-foreground" aria-label="Video var" />}
                   </button>
                 )}

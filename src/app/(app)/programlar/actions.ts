@@ -134,13 +134,23 @@ const exerciseSchema = z.object({
     .transform((v) => v || null)
     .refine((v) => !v || /^https:\/\//.test(v), "Video linki https:// ile başlamalı."),
   note: z.string().trim().max(300).nullable().optional().transform((v) => v || null),
+  primary: z.array(z.string()).max(20).optional(),
+  secondary: z.array(z.string()).max(20).optional(),
 });
 
 export async function saveExerciseAction(input: unknown): Promise<Result> {
   const parsed = exerciseSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const id = await withTrainer((tx, trainerId) =>
-    saveExercise(tx, trainerId, { id: parsed.data.id ?? null, name: parsed.data.name, category: parsed.data.category, videoUrl: parsed.data.videoUrl, note: parsed.data.note }),
+    saveExercise(tx, trainerId, {
+      id: parsed.data.id ?? null,
+      name: parsed.data.name,
+      category: parsed.data.category,
+      videoUrl: parsed.data.videoUrl,
+      note: parsed.data.note,
+      primary: parsed.data.primary,
+      secondary: parsed.data.secondary,
+    }),
   );
   if (!id) return { ok: false, error: FAIL };
   revalidatePath("/programlar/hareketler");
