@@ -65,17 +65,10 @@ export async function deleteNoteAction(noteId: string): Promise<Result> {
   return { ok: true };
 }
 
-/** The trainer records that the client gave explicit consent (as on the client form). */
-export async function attestHealthConsentAction(clientId: string): Promise<Result> {
-  if (!uuid.safeParse(clientId).success) return { ok: false, error: FAIL };
-  await withTrainer((tx, trainerId) => grantHealthConsent(tx, { trainerId, clientId }));
-  refresh(clientId);
-  return { ok: true };
-}
-
 export type MeasureResult = { ok: true; saved: number } | { ok: false; error: string; field?: string };
 
-export async function saveMeasurementsAction(clientId: string, measuredOn: string, values: Record<string, string>): Promise<MeasureResult> {
+/** `attest`: the trainer confirms the client's explicit consent, recorded once with the first entry. */
+export async function saveMeasurementsAction(clientId: string, measuredOn: string, values: Record<string, string>, attest = false): Promise<MeasureResult> {
   if (!uuid.safeParse(clientId).success || !isISODate(measuredOn)) return { ok: false, error: FAIL };
   return withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
@@ -90,8 +83,9 @@ export async function saveMeasurementsAction(clientId: string, measuredOn: strin
       if (r.value !== null) parsed.push({ metric, value: r.value });
     }
     if (parsed.length === 0) return { ok: false, error: "En az bir ölçü yaz." } as const;
+    if (attest === true) await grantHealthConsent(tx, { trainerId, clientId });
     const res = await saveMeasurements(tx, { trainerId, clientId }, measuredOn, parsed);
-    if (!res.ok) return { ok: false, error: res.reason === "consent" ? "Önce danışanın açık rızası gerekiyor." : "Danışan bulunamadı." } as const;
+    if (!res.ok) return { ok: false, error: res.reason === "consent" ? "Kaydetmek için danışanın açık rızasını aldığını işaretle." : "Danışan bulunamadı." } as const;
     refresh(clientId);
     return { ok: true, saved: res.saved } as const;
   });

@@ -42,7 +42,6 @@ import { formatPhone, whatsappLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { hasHealthConsent, listMeasurementTypes, listMeasurements, listNotes, toSeries, type MeasurementRow } from "@/db/progress";
 import { activeMetrics, metricCatalog, type CustomType } from "@/lib/measurements";
-import { renderTemplate } from "@/lib/templates";
 import { ArchivedBanner } from "./archived-banner";
 import { MeasurePanel, type MeasureDay } from "./measure-panel";
 import { NotesPanel } from "./notes-panel";
@@ -264,11 +263,6 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
           days={measureDays(progress.rows, progress.custom)}
           today={today}
           every={client.measureEveryDays}
-          ask={{
-            text: renderTemplate(messageTemplates, "consentAsk", { ad: client.fullName }),
-            phone: client.phone,
-            portal: portal ? portalUrl(portal.token) : null,
-          }}
         />
       )}
 

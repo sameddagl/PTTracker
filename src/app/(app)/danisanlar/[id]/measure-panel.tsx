@@ -2,10 +2,9 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Plus, Settings2, ShieldCheck, Trash2, X } from "lucide-react";
+import { Plus, Settings2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
-import { ContactButtons } from "@/components/contact-buttons";
 import { ProgressView } from "@/components/progress-chart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import { formatMetric } from "@/lib/measurements";
 import { cn } from "@/lib/utils";
 import { NativeSelect } from "@/components/field";
 import { MEASURE_EVERY_OPTIONS } from "@/lib/templates";
-import { attestHealthConsentAction, deleteMeasurementDayAction, saveMeasurementsAction, setMeasureIntervalAction } from "./progress-actions";
+import { deleteMeasurementDayAction, saveMeasurementsAction, setMeasureIntervalAction } from "./progress-actions";
 
 export type MeasureDay = { date: string; label: string; items: { metric: MetricDef; value: number; byClient: boolean }[] };
 
@@ -26,7 +25,6 @@ export function MeasurePanel({
   series,
   days,
   today,
-  ask,
   archived,
   every,
 }: {
@@ -37,8 +35,6 @@ export function MeasurePanel({
   series: Series[];
   days: MeasureDay[];
   today: string;
-  /** Ready-made consent request for the message / WhatsApp buttons. */
-  ask: { text: string; phone: string | null; portal: string | null };
   archived: boolean;
   /** Reminder interval in days, null when off. */
   every: number | null;
@@ -47,59 +43,17 @@ export function MeasurePanel({
   const [date, setDate] = useState(today);
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<{ text: string; field?: string } | null>(null);
+  // Health data: the first entry records the client's consent (once), unless they gave it at sign-up or on their page.
+  const [attest, setAttest] = useState(false);
   const [saving, startSave] = useTransition();
   const [pending, start] = useTransition();
   const { confirm, dialog } = useConfirm();
   const last = new Map(series.map((s) => [s.metric.key, s.points[s.points.length - 1].value]));
 
-  if (!consented) {
-    return (
-      <div className="flex flex-col gap-4 surface p-5">
-        {dialog}
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted" aria-hidden>
-            <ShieldCheck className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-base font-semibold">Önce danışanın onayı gerekiyor</h2>
-            <p className="text-sm text-muted-foreground">
-              Kilo, yağ oranı ve vücut ölçüleri KVKK&apos;ya göre sağlık verisi. Kaydetmek için danışanın açık rızası lazım. {firstName} kendi
-              sayfasındaki <strong className="font-medium text-foreground">İlerlemem</strong> sekmesinden tek dokunuşla onay verebilir.
-            </p>
-          </div>
-        </div>
-        {!archived && (
-          <div className="flex flex-wrap items-center gap-2">
-            <ContactButtons clientId={clientId} name={firstName} {...ask} label="Onay iste" />
-            <Button
-              type="button"
-              variant="ghost"
-              loading={pending}
-              onClick={async () => {
-                const ok = await confirm({
-                  title: "Açık rızasını aldın mı?",
-                  body: `${firstName}, ölçümlerinin (sağlık verisi) kaydedilmesine açıkça onay verdi mi? Onayı yazılı ya da mesajla almış olman gerekir; bunu sen kaydediyorsun.`,
-                  confirmLabel: "Evet, onay verdi",
-                });
-                if (!ok) return;
-                start(async () => {
-                  const res = await attestHealthConsentAction(clientId);
-                  if (!res.ok) toast.error(res.error);
-                });
-              }}
-            >
-              Onayını aldım
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   function save() {
     setError(null);
     startSave(async () => {
-      const res = await saveMeasurementsAction(clientId, date, values);
+      const res = await saveMeasurementsAction(clientId, date, values, !consented && attest);
       if (!res.ok) return setError({ text: res.error, field: res.field });
       toast.success(res.saved === 1 ? "Ölçüm kaydedildi" : `${res.saved} ölçü kaydedildi`);
       setValues({});
@@ -155,6 +109,17 @@ export function MeasurePanel({
                 </label>
               ))}
             </div>
+            {!consented && (
+              <label className="flex items-start gap-3 rounded-xl bg-muted/60 p-3 text-sm">
+                <input type="checkbox" checked={attest} onChange={(e) => setAttest(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--primary)]" />
+                <span>
+                  <span className="font-medium">Danışanın açık rızasını aldım.</span>{" "}
+                  <span className="text-muted-foreground">
+                    Ölçümler sağlık verisi sayılır; bu bir kez sorulur. Danışan onayı kendi sayfasındaki İlerlemem sekmesinden de verebilir.
+                  </span>
+                </span>
+              </label>
+            )}
             {error && <p className="text-sm text-destructive-strong">{error.text}</p>}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
@@ -163,7 +128,7 @@ export function MeasurePanel({
                   Ölçüleri seç
                 </Link>
               </Button>
-              <Button type="button" onClick={save} loading={saving} disabled={!Object.values(values).some((v) => v.trim())}>
+              <Button type="button" onClick={save} loading={saving} disabled={!Object.values(values).some((v) => v.trim()) || (!consented && !attest)}>
                 Kaydet
               </Button>
             </div>
