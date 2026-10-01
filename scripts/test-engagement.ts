@@ -41,9 +41,13 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import type { Tx } from "../src/db";
 import { requestPackage } from "../src/db/applications";
+import { recordPayment } from "../src/db/payments";
+import { INSTALLMENT_INTERVAL_DAYS } from "../src/lib/installments";
 import {
   confirmAttendance,
   dueReminders,
+  installmentRemindersDue,
+  markInstallmentReminded,
   dueWeeklySummaries,
   lostClients,
   markReminded,
@@ -397,6 +401,41 @@ async function main() {
   assert.equal(remind.length, 0);
   await as(A, (tx) => setMeasureInterval(tx, A, zeynep.id, null));
   console.log("periodic measurements ok");
+
+  // ---- Installment reminders ----
+  const allHours = { hours: [0, 24] as [number, number] };
+  // 3 × 1000; the second installment falls due tomorrow.
+  const [plan] = await db
+    .insert(schema.clientPackages)
+    .values({
+      trainerId: A,
+      clientId: ali.id,
+      name: "12 Ders",
+      sessionType: "private",
+      totalSessions: 12,
+      startsOn: addDays(day, 1 - INSTALLMENT_INTERVAL_DAYS),
+      price: "3000.00",
+      installments: 3,
+    })
+    .returning({ id: schema.clientPackages.id });
+  const forPlan = async () => (await owner((tx) => installmentRemindersDue(tx, allHours))).filter((r) => r.clientPackageId === plan.id);
+  let due3 = await forPlan();
+  assert.deepEqual(due3.map((r) => [r.kind, r.seq]), [["late", 1]], "the first installment is already late");
+  await owner((tx) => markInstallmentReminded(tx, due3));
+  assert.equal((await forPlan()).length, 0, "told once");
+  await as(A, (tx) =>
+    recordPayment(tx, A, { clientId: ali.id, clientPackageId: plan.id, amount: 1000, method: "cash", paidOn: day, note: null }),
+  );
+  due3 = await forPlan();
+  assert.deepEqual(due3.map((r) => [r.kind, r.seq, r.amount, r.dueOn]), [["soon", 2, 1000, addDays(day, 1)]], "the next one, the day before");
+  await owner((tx) => markInstallmentReminded(tx, due3));
+  assert.equal((await forPlan()).length, 0);
+  await db.update(schema.trainers).set({ installmentRemindersEnabled: false }).where(eq(schema.trainers.id, A));
+  await db.update(schema.clientPackages).set({ installmentRemindedSeq: 0, installmentLateRemindedSeq: 0 }).where(eq(schema.clientPackages.id, plan.id));
+  assert.equal((await forPlan()).length, 0, "reminders off");
+  await db.update(schema.trainers).set({ installmentRemindersEnabled: true }).where(eq(schema.trainers.id, A));
+  assert.equal((await owner((tx) => installmentRemindersDue(tx, { hours: [25, 26] }))).length, 0, "only during the day");
+  console.log("installment reminders ok");
 
   // ---- Notification choices ----
   assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");

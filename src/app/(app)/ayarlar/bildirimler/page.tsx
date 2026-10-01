@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { NotifyPrefsForm } from "@/components/notify-prefs-form";
 import { PageHeader } from "@/components/page-header";
-import { InstallSteps } from "@/components/install-guide";
+import { InstallSteps, TutorialButton } from "@/components/install-guide";
 import { APP_NAME, siteUrl } from "@/lib/config";
 import { withTrainer } from "@/db";
 import { getTrainer } from "@/db/queries";
@@ -29,6 +29,7 @@ export default async function NotificationsPage() {
               Bu cihazda bildirimler
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">Her telefon ve bilgisayarda ayrı açılır. iPhone&apos;da önce ana ekrana eklemen gerekir.</p>
+            <TutorialButton appName={APP_NAME} url={`${siteUrl()}/bugun`} notifyWhere="Ayarlar → Bildirimler'de" label="Adım adım göster" variant="outline" className="mt-3" />
           </div>
           <InstallSteps
             appName={APP_NAME}

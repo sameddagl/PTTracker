@@ -30,6 +30,7 @@ export default async function MessageSettingsPage() {
           remindersEnabled: trainer.remindersEnabled,
           reminderHours: trainer.reminderHours,
           renewalOffersEnabled: trainer.renewalOffersEnabled,
+          installmentRemindersEnabled: trainer.installmentRemindersEnabled,
           texts,
         }}
       />

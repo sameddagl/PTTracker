@@ -17,7 +17,7 @@ export const TRAINER_KINDS = {
 export const CLIENT_KINDS = {
   // Reminders are push only: an e-mail about tomorrow's lesson is noise.
   reminder: { label: "Ders hatırlatması", hint: "Dersten önce “Geliyor musun?” sorusu", push: true, email: null },
-  package: { label: "Paket ve ödemeler", hint: "Ödemen onaylandığında, paketin bitmek üzereyken", push: true, email: false },
+  package: { label: "Paket ve ödemeler", hint: "Taksit günü yaklaşınca, ödemen onaylandığında, paketin bitmek üzereyken", push: true, email: false },
   message: { label: "Mesajlar", hint: "Eğitmenin sana yazdığında", push: true, email: null },
   program: { label: "Program ve ölçüm", hint: "Yeni program ya da beslenme planı geldiğinde, ölçüm zamanı geldiğinde", push: true, email: null },
 } satisfies Record<string, KindDef>;

@@ -135,6 +135,7 @@ export const trainers = pgTable(
     remindersEnabled: boolean("reminders_enabled").notNull().default(true),
     reminderHours: smallint("reminder_hours").notNull().default(24),
     renewalOffersEnabled: boolean("renewal_offers_enabled").notNull().default(true),
+    installmentRemindersEnabled: boolean("installment_reminders_enabled").notNull().default(true),
     messageTemplates: jsonb("message_templates").$type<MessageTemplates>().notNull().default({}),
 
     // Progress tracking (src/lib/measurements.ts): the metrics on the trainer's
@@ -258,6 +259,10 @@ export const clientPackages = pgTable(
     notes: text("notes"),
     // When the client was told this package is running out (renewal offer sent once).
     renewalOfferedAt: timestamp("renewal_offered_at", { withTimezone: true }),
+    // Installment reminders already sent: the highest installment number told
+    // "yarın" and told "gecikti", so each goes out once.
+    installmentRemindedSeq: smallint("installment_reminded_seq").notNull().default(0),
+    installmentLateRemindedSeq: smallint("installment_late_reminded_seq").notNull().default(0),
     ...timestamps,
   },
   (t) => [

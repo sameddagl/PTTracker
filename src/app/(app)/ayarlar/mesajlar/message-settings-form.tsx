@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { BellRing, MessagesSquare, PackageCheck, RotateCcw, Ruler } from "lucide-react";
+import { BellRing, MessagesSquare, PackageCheck, RotateCcw, Ruler, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Field, NativeSelect } from "@/components/field";
 import { FormSubmit } from "@/components/form-submit";
@@ -20,7 +20,7 @@ import {
 } from "@/lib/templates";
 import { saveMessageSettingsAction } from "./actions";
 
-type Initial = { remindersEnabled: boolean; reminderHours: number; renewalOffersEnabled: boolean; texts: Record<TemplateKey, string> };
+type Initial = { remindersEnabled: boolean; reminderHours: number; renewalOffersEnabled: boolean; installmentRemindersEnabled: boolean; texts: Record<TemplateKey, string> };
 
 // What the preview under each box fills in.
 const SAMPLE: Record<TemplateVar, string> = {
@@ -33,6 +33,7 @@ const SAMPLE: Record<TemplateVar, string> = {
   tarih: "12 Ekim",
   tutar: "₺4.000",
   link: "studyomapp.com/p/…",
+  taksit: "2",
 };
 
 const hoursLabel = (h: number) => (h === 24 ? "1 gün önce" : h === 48 ? "2 gün önce" : `${h} saat önce`);
@@ -44,6 +45,7 @@ export function MessageSettingsForm({ initial }: { initial: Initial }) {
   const [reminders, setReminders] = useState(initial.remindersEnabled);
   const [hours, setHours] = useState(initial.reminderHours);
   const [renewals, setRenewals] = useState(initial.renewalOffersEnabled);
+  const [installments, setInstallments] = useState(initial.installmentRemindersEnabled);
 
   useEffect(() => {
     if (state.savedAt) toast.success("Kaydedildi");
@@ -53,6 +55,7 @@ export function MessageSettingsForm({ initial }: { initial: Initial }) {
     <form action={action} className="flex flex-col gap-8" noValidate>
       <input type="hidden" name="remindersEnabled" value={reminders ? "on" : ""} />
       <input type="hidden" name="renewalOffersEnabled" value={renewals ? "on" : ""} />
+      <input type="hidden" name="installmentRemindersEnabled" value={installments ? "on" : ""} />
 
       <section aria-labelledby="reminder-heading" className="flex flex-col gap-5 surface p-5">
         <SectionHead
@@ -105,6 +108,28 @@ export function MessageSettingsForm({ initial }: { initial: Initial }) {
           <TemplateField name="renewal" initial={initial.texts.renewal} error={state.errors?.renewal} />
         ) : (
           <input type="hidden" name="renewal" value={initial.texts.renewal} />
+        )}
+      </section>
+
+      <section aria-labelledby="installment-heading" className="flex flex-col gap-5 surface p-5">
+        <SectionHead
+          id="installment-heading"
+          icon={<Wallet />}
+          title="Taksit hatırlatması"
+          text="Taksitli paketlerde danışana taksit gününden bir gün önce, ödemeyi bildirmediyse taksit günü geçince bir kez daha bildirim gider."
+          on={installments}
+          onChange={setInstallments}
+        />
+        {installments ? (
+          <>
+            <TemplateField name="installmentSoon" initial={initial.texts.installmentSoon} error={state.errors?.installmentSoon} />
+            <TemplateField name="installmentLate" initial={initial.texts.installmentLate} error={state.errors?.installmentLate} />
+          </>
+        ) : (
+          <>
+            <input type="hidden" name="installmentSoon" value={initial.texts.installmentSoon} />
+            <input type="hidden" name="installmentLate" value={initial.texts.installmentLate} />
+          </>
         )}
       </section>
 
@@ -207,7 +232,7 @@ function TemplateField({ name, initial, error }: { name: TemplateKey; initial: s
   }
 
   return (
-    <Field id={`t-${name}`} label={def.auto ? "Bildirim metni" : def.label} hint={def.auto ? undefined : def.hint} error={error}>
+    <Field id={`t-${name}`} label={def.auto ? (name.startsWith("installment") ? def.label : "Bildirim metni") : def.label} hint={def.auto ? undefined : def.hint} error={error}>
       <div className="flex flex-col gap-2">
         <Textarea
           ref={ref}

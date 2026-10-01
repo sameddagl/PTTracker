@@ -4,6 +4,8 @@ import { adminDb, type Tx } from "@/db";
 import {
   dueReminders,
   dueWeeklySummaries,
+  installmentRemindersDue,
+  markInstallmentReminded,
   markReminded,
   markRenewalOffered,
   markWeeklySent,
@@ -12,7 +14,7 @@ import {
 } from "@/db/engagement";
 import { ensureGroupOccurrences } from "@/db/groups";
 import { markMeasureReminded, measureRemindersDue } from "@/db/progress";
-import { formatTRY } from "@/lib/format";
+import { formatShortDate, formatTRY } from "@/lib/format";
 import { APP_NAME } from "@/lib/config";
 import { notifyClient, notifyTrainer } from "@/lib/notify";
 import { sendLessonReminder } from "@/lib/reminder";
@@ -35,7 +37,7 @@ function authorized(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!authorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const tx = adminDb as unknown as Tx;
-  const report = { groups: 0, reminders: 0, renewals: 0, measures: 0, summaries: 0 };
+  const report = { groups: 0, reminders: 0, renewals: 0, installments: 0, measures: 0, summaries: 0 };
 
   // 1. Keep group-class occurrences (and their fixed members) four weeks ahead,
   //    even for trainers who haven't opened the app, so reminders can go out.
@@ -75,7 +77,26 @@ export async function GET(req: NextRequest) {
   await markRenewalOffered(tx, renewals.map((p) => p.clientPackageId));
   report.renewals = renewals.length;
 
-  // 4. Periodic measurements: "Ölçüm zamanı geldi", once per interval.
+  // 4. Installments: the day before, and once more when it's past due without a report.
+  const installments = await installmentRemindersDue(tx);
+  for (const i of installments) {
+    await notifyClient({ trainerId: i.trainerId, clientId: i.clientId }, "package", {
+      title: i.trainerName,
+      body: renderTemplate(i.templates, i.kind === "soon" ? "installmentSoon" : "installmentLate", {
+        ad: i.clientName,
+        paket: i.packageName,
+        taksit: i.seq,
+        tutar: formatTRY(i.amount),
+        tarih: formatShortDate(i.dueOn),
+      }),
+      hash: "#odeme",
+      tag: `installment-${i.clientPackageId}-${i.seq}`,
+    });
+  }
+  await markInstallmentReminded(tx, installments);
+  report.installments = installments.length;
+
+  // 5. Periodic measurements: "Ölçüm zamanı geldi", once per interval.
   const measures = await measureRemindersDue(tx);
   for (const m of measures) {
     await notifyClient({ trainerId: m.trainerId, clientId: m.clientId }, "program", {
@@ -88,7 +109,7 @@ export async function GET(req: NextRequest) {
   await markMeasureReminded(tx, measures);
   report.measures = measures.length;
 
-  // 5. Monday morning summary for each trainer.
+  // 6. Monday morning summary for each trainer.
   for (const s of await dueWeeklySummaries(tx)) {
     const lines = [
       `Geçen hafta ${s.lessons} ders verdin, ${s.attended} kez katılım oldu${s.missed > 0 ? `; ${s.missed} kez danışan gelmedi ya da son anda iptal etti` : ""}.`,

@@ -29,6 +29,7 @@ export async function saveMessageSettingsAction(_prev: FormState<Key>, formData:
         remindersEnabled: formData.get("remindersEnabled") === "on",
         reminderHours: hours,
         renewalOffersEnabled: formData.get("renewalOffersEnabled") === "on",
+        installmentRemindersEnabled: formData.get("installmentRemindersEnabled") === "on",
         // An emptied box goes back to the default text.
         messageTemplates: cleanTemplates(raw),
       })

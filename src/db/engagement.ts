@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { addDays } from "@/lib/dates";
 import { todayISO } from "@/lib/format";
+import { installmentPlan, installmentStates, nextPayable } from "@/lib/installments";
 import type { MessageTemplates } from "@/lib/templates";
 import type { Tx } from "./index";
 import {
@@ -381,4 +382,86 @@ export async function trainersWithGroups(tx: Tx): Promise<{ id: string; timezone
   `);
   // postgres-js returns the rows array; PGlite wraps it in { rows }.
   return (Array.isArray(rows) ? rows : (rows as unknown as { rows: { id: string; timezone: string }[] }).rows) as { id: string; timezone: string }[];
+}
+
+// ---- Installment reminders (cron) ----
+
+export type InstallmentReminder = {
+  clientPackageId: string;
+  trainerId: string;
+  clientId: string;
+  clientName: string;
+  trainerName: string;
+  packageName: string;
+  templates: MessageTemplates;
+  kind: "soon" | "late";
+  seq: number;
+  amount: number;
+  dueOn: string;
+};
+
+/**
+ * Installment plans whose next unpaid installment is due tomorrow ("soon") or
+ * is past due ("late") and hasn't been told about yet. Pending reports count as
+ * paid here, so a client who already reported isn't nagged. Daytime only.
+ */
+export async function installmentRemindersDue(tx: Tx, { hours = [10, 19] as [number, number], limit = 300 } = {}): Promise<InstallmentReminder[]> {
+  const rows = await tx
+    .select({
+      clientPackageId: clientPackages.id,
+      trainerId: trainers.id,
+      clientId: clients.id,
+      clientName: clients.fullName,
+      trainerName: sql<string>`coalesce(nullif(${trainers.businessName}, ''), ${trainers.fullName})`,
+      timezone: trainers.timezone,
+      templates: trainers.messageTemplates,
+      packageName: clientPackages.name,
+      price: clientPackages.price,
+      installments: clientPackages.installments,
+      startsOn: clientPackages.startsOn,
+      remindedSeq: clientPackages.installmentRemindedSeq,
+      lateSeq: clientPackages.installmentLateRemindedSeq,
+      paid: clientPackageBalances.paidAmount,
+      pending: sql<string>`coalesce((select sum(${payments.amount}) from ${payments} where ${payments.clientPackageId} = ${clientPackages.id} and ${payments.status} = 'pending'), 0)`,
+    })
+    .from(clientPackages)
+    .innerJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, clientPackages.id))
+    .innerJoin(clients, eq(clients.id, clientPackages.clientId))
+    .innerJoin(trainers, eq(trainers.id, clientPackages.trainerId))
+    .where(
+      and(
+        eq(trainers.installmentRemindersEnabled, true),
+        gt(clientPackages.installments, 1),
+        gt(clientPackageBalances.dueAmount, "0"),
+        inArray(clientPackageBalances.state, ["active", "frozen"]),
+        isNull(clients.archivedAt),
+        sql`extract(hour from now() at time zone ${trainers.timezone}) between ${hours[0]} and ${hours[1]}`,
+      ),
+    )
+    .limit(limit);
+
+  const out: InstallmentReminder[] = [];
+  for (const r of rows) {
+    const today = todayISO(r.timezone);
+    const states = installmentStates(installmentPlan(Number(r.price), r.installments, r.startsOn), Number(r.paid), Number(r.pending), today);
+    const next = nextPayable(states);
+    if (!next) continue;
+    const base = { ...r, seq: next.seq, amount: next.remaining, dueOn: next.dueOn };
+    if (next.dueOn < today && next.seq > r.lateSeq) out.push({ ...base, kind: "late" });
+    else if (next.dueOn === addDays(today, 1) && next.seq > r.remindedSeq) out.push({ ...base, kind: "soon" });
+  }
+  return out;
+}
+
+export async function markInstallmentReminded(tx: Tx, sent: InstallmentReminder[]) {
+  for (const s of sent) {
+    await tx
+      .update(clientPackages)
+      .set(
+        s.kind === "late"
+          ? { installmentLateRemindedSeq: s.seq, installmentRemindedSeq: sql`greatest(${clientPackages.installmentRemindedSeq}, ${s.seq})` }
+          : { installmentRemindedSeq: s.seq },
+      )
+      .where(eq(clientPackages.id, s.clientPackageId));
+  }
 }

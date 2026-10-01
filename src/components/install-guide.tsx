@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { Activity, Bell, BookOpen, ChevronLeft, ChevronRight, Copy, EllipsisVertical, MoreHorizontal, Share, Smartphone, SquarePlus, X } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
+import { InstallTutorial } from "@/components/install-tutorial";
 import { PushToggle } from "@/components/push-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -275,10 +276,50 @@ export function InstallSteps({ appName, url, push, notifyWhere }: { appName: str
   );
 }
 
+/** What can be done right here, without the walkthrough: one-tap install on Android, notifications where the browser allows them. */
+function InstallQuick({ push }: { push: Push }) {
+  const { device, prompt, clearPrompt } = useDevice();
+  if (!device) return null;
+  // iPhone outside the home-screen app can't take notifications; the walkthrough covers it.
+  if (!device.standalone && (device.kind === "ios" || device.kind === "ios-inapp")) return null;
+  return (
+    <div className="flex flex-col gap-3">
+      {prompt && !device.standalone && (
+        <Button
+          type="button"
+          onClick={async () => {
+            await prompt.prompt();
+            await prompt.userChoice;
+            clearPrompt();
+          }}
+          className="self-start"
+        >
+          <SquarePlus />
+          Ana ekrana ekle
+        </Button>
+      )}
+      <PushToggle {...push} />
+    </div>
+  );
+}
+
+/** "Adım adım göster": opens the walkthrough dialog. */
+export function TutorialButton({ appName, url, notifyWhere, label = "Nasıl yapılır?", ...props }: { appName: string; url: string; notifyWhere: string; label?: string } & Omit<ComponentProps<typeof Button>, "onClick">) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button type="button" size="sm" {...props} onClick={() => setOpen(true)}>
+        {label}
+      </Button>
+      <InstallTutorial open={open} onClose={() => setOpen(false)} appName={appName} url={url} notifyWhere={notifyWhere} />
+    </>
+  );
+}
+
 /**
  * A dismissible card that invites the reader to install the app. It hides
  * itself once the app runs from the home screen with notifications allowed,
- * or when closed on this device.
+ * or when closed on this device. "Nasıl yapılır?" opens the walkthrough.
  */
 export function InstallCard({
   storageKey,
@@ -286,7 +327,7 @@ export function InstallCard({
   description,
   ...steps
 }: { storageKey: string; title: string; description: string } & Parameters<typeof InstallSteps>[0]) {
-  const [state, setState] = useState<"hidden" | "closed" | "open">("hidden");
+  const [state, setState] = useState<"hidden" | "shown">("hidden");
 
   useEffect(() => {
     let dismissed = false;
@@ -297,7 +338,7 @@ export function InstallCard({
     }
     const d = detect();
     const done = d.standalone && "Notification" in window && Notification.permission === "granted";
-    queueMicrotask(() => setState(dismissed || done ? "hidden" : "closed"));
+    queueMicrotask(() => setState(dismissed || done ? "hidden" : "shown"));
   }, [storageKey]);
 
   if (state === "hidden") return null;
@@ -317,26 +358,20 @@ export function InstallCard({
         <span className="flex size-12 shrink-0 items-center justify-center rounded-[0.9rem] bg-lime text-lime-foreground shadow-card" aria-hidden>
           <Activity className="size-6" />
         </span>
-        <div className="min-w-0 flex-1 pr-8">
-          <h2 id={`${storageKey}-title`} className="text-base font-semibold">
-            {title}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          {state === "closed" && (
-            <Button type="button" size="sm" className="mt-3" onClick={() => setState("open")}>
-              Nasıl yapılır?
-            </Button>
-          )}
+        <div className="flex min-w-0 flex-1 flex-col gap-3 pr-8">
+          <div>
+            <h2 id={`${storageKey}-title`} className="text-base font-semibold">
+              {title}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+          <TutorialButton appName={steps.appName} url={steps.url} notifyWhere={steps.notifyWhere} className="self-start" />
+          <InstallQuick push={steps.push} />
         </div>
         <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" aria-label="Kapat" onClick={dismiss}>
           <X />
         </Button>
       </div>
-      {state === "open" && (
-        <div className="border-t p-5">
-          <InstallSteps {...steps} />
-        </div>
-      )}
     </section>
   );
 }

@@ -15,6 +15,7 @@ export const TEMPLATE_VARS = {
   tarih: "paketin bitiş tarihi",
   tutar: "kalan ödeme",
   link: "danışanın sayfasının linki",
+  taksit: "kaçıncı taksit",
 } as const;
 
 export type TemplateVar = keyof typeof TEMPLATE_VARS;
@@ -35,6 +36,20 @@ export const TEMPLATES = {
     auto: true,
     vars: ["ad", "paket", "durum"],
     text: "{durum} Aynı paketi sayfandan yenileyebilirsin.",
+  },
+  installmentSoon: {
+    label: "Taksit günü yaklaştı",
+    hint: "Taksit gününden bir gün önce giden bildirim.",
+    auto: true,
+    vars: ["ad", "paket", "taksit", "tutar", "tarih"],
+    text: "Yarın {paket} paketinin {taksit}. taksidi var: {tutar}. Ödeyince sayfandan bildirebilirsin.",
+  },
+  installmentLate: {
+    label: "Taksit gecikti",
+    hint: "Taksit günü geçip ödeme bildirilmediyse bir kez giden bildirim.",
+    auto: true,
+    vars: ["ad", "paket", "taksit", "tutar", "tarih"],
+    text: "{paket} paketinin {taksit}. taksidi {tarih} tarihindeydi: {tutar}. Ödediysen sayfandan bildir, eğitmenin onaylasın.",
   },
   measureReminder: {
     label: "Ölçüm hatırlatması",

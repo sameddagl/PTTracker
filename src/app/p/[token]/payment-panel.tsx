@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatShortDate, formatTRY } from "@/lib/format";
 import type { InstallmentState } from "@/lib/installments";
+import { copyText } from "@/lib/clipboard";
 import { cn } from "@/lib/utils";
 import { reportPaymentAction, type ReportState } from "./actions";
 
@@ -52,12 +53,8 @@ function CopyRow({ label, value, display }: { label: string; value: string; disp
         variant="ghost"
         aria-label={`${label} kopyala`}
         onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(value);
-            toast.success(`${label} kopyalandı`);
-          } catch {
-            toast.error("Kopyalanamadı. Üstüne basılı tutup kopyala.");
-          }
+          if (await copyText(value)) toast.success(`${label} kopyalandı`);
+          else toast.error("Kopyalanamadı. Üstüne basılı tutup kopyala.");
         }}
       >
         <Copy />
@@ -112,7 +109,7 @@ export function PaymentPanel({
   }
 
   return (
-    <section aria-labelledby="payment-heading" className="flex flex-col gap-3">
+    <section id="odeme" aria-labelledby="payment-heading" className="flex scroll-mt-6 flex-col gap-3">
       <h2 id="payment-heading" className="text-base font-semibold">
         Ödeme
       </h2>

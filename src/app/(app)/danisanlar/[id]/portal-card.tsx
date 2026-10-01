@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Copy, ExternalLink, Link2, Link2Off, RefreshCw } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
+import { copyText } from "@/lib/clipboard";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -62,12 +63,8 @@ export function PortalCard({
 
   async function copy() {
     if (!url) return;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link kopyalandı");
-    } catch {
-      toast.error("Kopyalanamadı. Linki basılı tutup kopyala.");
-    }
+    if (await copyText(url)) toast.success("Link kopyalandı");
+    else toast.error("Kopyalanamadı", { description: url, duration: 15000 });
   }
 
   const wa = url ? whatsappLink(phone, renderTemplate(templates, "portalInvite", { ad: clientName, link: url })) : null;

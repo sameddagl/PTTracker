@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Bell, Check, CheckCircle2, Hourglass, Lock, Minus } from "lucide-react";
+import { Bell, Check, CheckCircle2, ChevronRight, Hourglass, Lock, Minus, Wallet } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { Avatar } from "@/components/avatar";
 import { InstallCard } from "@/components/install-guide";
@@ -112,6 +112,10 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const rejected = reported.filter((r) => r.status === "rejected");
   // The reminder's question waits at the top once the lesson is within the trainer's reminder window.
   const answer = lessonToAnswer(bookable, client.reminderHours);
+  // An installment due today or late gets the same spot at the top as the lesson question.
+  const dueInstallment = plans
+    .map((p) => ({ name: p.name, multi: p.states.length > 1, next: p.states.find((s) => s.remaining > 0.001) }))
+    .find((p) => p.next && (p.next.status === "due" || p.next.status === "overdue"));
   const answerWhen = answer ? whenPhrase(answer.startsAt, tz) : "";
 
   return (
@@ -134,6 +138,37 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           </div>
           <h1 className="text-3xl font-semibold">Merhaba {client.fullName.split(" ")[0]}</h1>
         </header>
+
+        {dueInstallment?.next && (
+          <a
+            href="#odeme"
+            className={cn(
+              "flex items-center gap-3 rounded-2xl p-4",
+              dueInstallment.next.status === "overdue" ? "bg-destructive/10" : "bg-lime text-lime-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-full",
+                dueInstallment.next.status === "overdue" ? "bg-destructive text-background" : "bg-lime-foreground text-lime",
+              )}
+              aria-hidden
+            >
+              <Wallet className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">
+                {dueInstallment.multi ? `${dueInstallment.next.seq}. taksit` : "Paket ödemesi"} {dueInstallment.next.status === "overdue" ? "gecikti" : "bugün"}
+                {" · "}
+                <span className="tabular-nums">{formatTRY(dueInstallment.next.remaining)}</span>
+              </span>
+              <span className={cn("block text-sm", dueInstallment.next.status === "overdue" ? "text-muted-foreground" : "opacity-80")}>
+                {dueInstallment.name} · Havale bilgileri ve “Ödedim” için dokun
+              </span>
+            </span>
+            <ChevronRight className="size-5 shrink-0" aria-hidden />
+          </a>
+        )}
 
         {answer && (
           <NextLessonPrompt
