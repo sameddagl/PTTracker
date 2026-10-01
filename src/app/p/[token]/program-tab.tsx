@@ -1,7 +1,7 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
-import { Check, PlayCircle } from "lucide-react";
+import { Check, FileText, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Program } from "@/db/programs";
@@ -157,7 +157,7 @@ export function ProgramTab({
 }
 
 /** The client's nutrition plan: targets, then meal by meal. */
-export function NutritionTab({ program }: { program: Program }) {
+export function NutritionTab({ program, pdfHref }: { program: Program; pdfHref: string }) {
   const targets = NUTRITION_TARGETS.filter((t) => program.targets[t.key]);
   return (
     <div className="flex flex-col gap-5">
@@ -191,6 +191,13 @@ export function NutritionTab({ program }: { program: Program }) {
           </li>
         ))}
       </ol>
+      {program.pdfName && (
+        <a href={pdfHref} target="_blank" className="flex min-h-12 items-center gap-3 surface px-4 text-sm font-medium">
+          <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{program.pdfName}</span>
+          <span className="text-muted-foreground">Aç</span>
+        </a>
+      )}
       <p className="rounded-2xl bg-muted px-4 py-3 text-xs leading-relaxed text-muted-foreground">{NUTRITION_DISCLAIMER}</p>
     </div>
   );

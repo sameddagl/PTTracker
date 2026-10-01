@@ -12,10 +12,12 @@ import {
   grantHealthConsent,
   listMeasurementTypes,
   saveMeasurements,
+  setMeasureInterval,
   setNoteVisibility,
 } from "@/db/progress";
 import { getTrainer } from "@/db/queries";
 import { metricCatalog, parseMetricValue } from "@/lib/measurements";
+import { MEASURE_EVERY_OPTIONS } from "@/lib/templates";
 import { isISODate } from "@/lib/dates";
 import { todayISO } from "@/lib/format";
 
@@ -99,5 +101,15 @@ export async function deleteMeasurementDayAction(clientId: string, measuredOn: s
   if (!uuid.safeParse(clientId).success || !isISODate(measuredOn)) return { ok: false, error: FAIL };
   await withTrainer((tx, trainerId) => deleteMeasurements(tx, { trainerId, clientId }, measuredOn));
   refresh(clientId);
+  return { ok: true };
+}
+
+export async function setMeasureIntervalAction(clientId: string, days: number | null): Promise<Result> {
+  if (!uuid.safeParse(clientId).success) return { ok: false, error: FAIL };
+  if (days !== null && !(MEASURE_EVERY_OPTIONS as readonly number[]).includes(days)) return { ok: false, error: FAIL };
+  const ok = await withTrainer((tx, trainerId) => setMeasureInterval(tx, trainerId, clientId, days));
+  if (!ok) return { ok: false, error: FAIL };
+  refresh(clientId);
+  revalidatePath("/bugun");
   return { ok: true };
 }

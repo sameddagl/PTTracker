@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import type { MetricDef, Series } from "@/lib/measurements";
 import { formatMetric } from "@/lib/measurements";
 import { cn } from "@/lib/utils";
-import { attestHealthConsentAction, deleteMeasurementDayAction, saveMeasurementsAction } from "./progress-actions";
+import { NativeSelect } from "@/components/field";
+import { MEASURE_EVERY_OPTIONS } from "@/lib/templates";
+import { attestHealthConsentAction, deleteMeasurementDayAction, saveMeasurementsAction, setMeasureIntervalAction } from "./progress-actions";
 
 export type MeasureDay = { date: string; label: string; items: { metric: MetricDef; value: number; byClient: boolean }[] };
 
@@ -26,6 +28,7 @@ export function MeasurePanel({
   today,
   ask,
   archived,
+  every,
 }: {
   clientId: string;
   firstName: string;
@@ -37,6 +40,8 @@ export function MeasurePanel({
   /** Ready-made consent request for the message / WhatsApp buttons. */
   ask: { text: string; phone: string | null; portal: string | null };
   archived: boolean;
+  /** Reminder interval in days, null when off. */
+  every: number | null;
 }) {
   const [open, setOpen] = useState(series.length === 0);
   const [date, setDate] = useState(today);
@@ -173,6 +178,8 @@ export function MeasurePanel({
 
       <ProgressView series={series} emptyText={`${firstName} için henüz ölçüm yok. İlk ölçümü ekleyince grafik burada çıkar.`} />
 
+      {!archived && <IntervalPicker clientId={clientId} every={every} />}
+
       {days.length > 0 && (
         <section aria-labelledby="measure-history-heading">
           <h2 id="measure-history-heading" className="mb-3 text-base font-semibold">
@@ -198,5 +205,47 @@ export function MeasurePanel({
         </section>
       )}
     </div>
+  );
+}
+
+function IntervalPicker({ clientId, every }: { clientId: string; every: number | null }) {
+  const [value, setValue] = useState(every);
+  const [pending, start] = useTransition();
+  return (
+    <section aria-labelledby="interval-heading" className="flex flex-col gap-3 surface p-4 sm:flex-row sm:items-center">
+      <div className="min-w-0 flex-1">
+        <h2 id="interval-heading" className="text-base font-semibold">
+          Ölçüm hatırlatması
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Zamanı gelince Bugün ekranında görürsün; danışana da bildirim gider.
+        </p>
+      </div>
+      <NativeSelect
+        aria-label="Ölçüm sıklığı"
+        value={value ?? ""}
+        disabled={pending}
+        className="sm:max-w-52"
+        onChange={(e) => {
+          const next = e.target.value ? Number(e.target.value) : null;
+          const before = value;
+          setValue(next);
+          start(async () => {
+            const res = await setMeasureIntervalAction(clientId, next);
+            if (!res.ok) {
+              setValue(before);
+              toast.error(res.error);
+            } else toast.success(next ? `${next / 7} haftada bir hatırlatılacak` : "Ölçüm hatırlatması kapandı");
+          });
+        }}
+      >
+        <option value="">Kapalı</option>
+        {MEASURE_EVERY_OPTIONS.map((d) => (
+          <option key={d} value={d}>
+            {d / 7} haftada bir
+          </option>
+        ))}
+      </NativeSelect>
+    </section>
   );
 }

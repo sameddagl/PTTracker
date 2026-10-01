@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, Dumbbell, FilePlus2, Pencil, Salad } from "lucide-react";
+import { CalendarCheck, Dumbbell, FilePlus2, FileText, Pencil, Salad } from "lucide-react";
 import { EmptyState } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +128,13 @@ export function ProgramPanel({
               </div>
             ))}
           </dl>
+        )}
+
+        {current.pdfName && (
+          <a href={`/programlar/${current.id}/pdf`} target="_blank" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline">
+            <FileText className="size-4" aria-hidden />
+            {current.pdfName}
+          </a>
         )}
 
         <ol className="flex flex-col gap-3">

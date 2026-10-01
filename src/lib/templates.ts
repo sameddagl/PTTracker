@@ -36,6 +36,13 @@ export const TEMPLATES = {
     vars: ["ad", "paket", "durum"],
     text: "{durum} Aynı paketi sayfandan yenileyebilirsin.",
   },
+  measureReminder: {
+    label: "Ölçüm hatırlatması",
+    hint: "Danışanın ölçüm sıklığı dolunca bir kez giden bildirim.",
+    auto: true,
+    vars: ["ad"],
+    text: "Ölçüm zamanı geldi. Kilonu sayfandan girebilirsin ya da bir sonraki derste birlikte ölçeriz.",
+  },
   confirmAsk: {
     label: "Onay isteme",
     hint: "Bugün → Yarın gelecekler",
@@ -78,6 +85,13 @@ export const TEMPLATES = {
     vars: ["ad"],
     text: "Merhaba {ad}, bir süredir görüşemedik. Bu hafta bir ders planlayalım mı? 🙂",
   },
+  measureDue: {
+    label: "Ölçüm zamanı",
+    hint: "Bugün → Ölçüm zamanı gelenler",
+    auto: false,
+    vars: ["ad"],
+    text: "Merhaba {ad}, ölçüm zamanı geldi. Bir sonraki dersimizde ölçelim mi?",
+  },
   consentAsk: {
     label: "Ölçüm onayı isteme",
     hint: "Danışan → Ölçümler",
@@ -101,6 +115,9 @@ export const TEMPLATE_MAX_LENGTH = 500;
 
 /** Hours before a lesson the trainer can pick for the reminder. */
 export const REMINDER_HOUR_OPTIONS = [3, 6, 12, 24, 36, 48] as const;
+
+/** How often a client's measurements are due, in days (off when unset). */
+export const MEASURE_EVERY_OPTIONS = [14, 28, 42, 56, 84] as const;
 
 export const messageTemplatesSchema = z.object(
   Object.fromEntries(Object.keys(TEMPLATES).map((k) => [k, z.string().trim().max(TEMPLATE_MAX_LENGTH).optional()])) as Record<

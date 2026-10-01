@@ -11,6 +11,7 @@ import {
   trainersWithGroups,
 } from "@/db/engagement";
 import { ensureGroupOccurrences } from "@/db/groups";
+import { markMeasureReminded, measureRemindersDue } from "@/db/progress";
 import { formatTRY } from "@/lib/format";
 import { APP_NAME } from "@/lib/config";
 import { notifyClient, notifyTrainer } from "@/lib/notify";
@@ -34,7 +35,7 @@ function authorized(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!authorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const tx = adminDb as unknown as Tx;
-  const report = { groups: 0, reminders: 0, renewals: 0, summaries: 0 };
+  const report = { groups: 0, reminders: 0, renewals: 0, measures: 0, summaries: 0 };
 
   // 1. Keep group-class occurrences (and their fixed members) four weeks ahead,
   //    even for trainers who haven't opened the app, so reminders can go out.
@@ -74,7 +75,20 @@ export async function GET(req: NextRequest) {
   await markRenewalOffered(tx, renewals.map((p) => p.clientPackageId));
   report.renewals = renewals.length;
 
-  // 4. Monday morning summary for each trainer.
+  // 4. Periodic measurements: "Ölçüm zamanı geldi", once per interval.
+  const measures = await measureRemindersDue(tx);
+  for (const m of measures) {
+    await notifyClient({ trainerId: m.trainerId, clientId: m.clientId }, "program", {
+      title: m.trainerName,
+      body: renderTemplate(m.templates, "measureReminder", { ad: m.clientName }),
+      hash: "#ilerleme",
+      tag: `measure-${m.clientId}`,
+    });
+  }
+  await markMeasureReminded(tx, measures);
+  report.measures = measures.length;
+
+  // 5. Monday morning summary for each trainer.
   for (const s of await dueWeeklySummaries(tx)) {
     const lines = [
       `Geçen hafta ${s.lessons} ders verdin, ${s.attended} kez katılım oldu${s.missed > 0 ? `; ${s.missed} kez danışan gelmedi ya da son anda iptal etti` : ""}.`,

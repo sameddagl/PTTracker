@@ -65,6 +65,7 @@ const TABS = [
   { key: "notlar", label: "Notlar" },
   { key: "olcumler", label: "Ölçümler" },
   { key: "program", label: "Program" },
+  { key: "beslenme", label: "Beslenme" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
@@ -140,14 +141,15 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
             return { custom, consented, rows, metrics: activeMetrics(trainer.measureMetrics, trainer.discipline, custom) };
           })()
         : null;
-    const workout =
-      tab === "program"
-        ? {
-            programs: await clientPrograms(tx, id, "workout"),
-            templates: await listTemplates(tx, trainerId, "workout"),
-            checkins: await recentCheckins(tx, id),
-          }
-        : null;
+    const kind: "workout" | "nutrition" | null = tab === "program" ? "workout" : tab === "beslenme" ? "nutrition" : null;
+    const workout = kind
+      ? {
+          kind,
+          programs: await clientPrograms(tx, id, kind),
+          templates: await listTemplates(tx, trainerId, kind),
+          checkins: kind === "workout" ? await recentCheckins(tx, id) : [],
+        }
+      : null;
     return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout };
   });
   if (!data) notFound();
@@ -261,6 +263,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
           series={toSeries(progress.rows, progress.custom)}
           days={measureDays(progress.rows, progress.custom)}
           today={today}
+          every={client.measureEveryDays}
           ask={{
             text: renderTemplate(messageTemplates, "consentAsk", { ad: client.fullName }),
             phone: client.phone,
@@ -269,9 +272,9 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
         />
       )}
 
-      {tab === "program" && workout && (
+      {workout && (
         <ProgramPanel
-          kind="workout"
+          kind={workout.kind}
           clientId={client.id}
           firstName={firstName}
           archived={Boolean(client.archivedAt)}

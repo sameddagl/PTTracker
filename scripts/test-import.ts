@@ -13,6 +13,8 @@ import { createLessons, setAttendance } from "../src/db/lessons";
 import { recordPayment } from "../src/db/payments";
 import * as schema from "../src/db/schema";
 import { SHEET_NAMES, buildExportWorkbook, exportFileName } from "../src/lib/export";
+import { addNote, grantHealthConsent, saveMeasurements } from "../src/db/progress";
+import { createProgram } from "../src/db/programs";
 import {
   DEBT_PACKAGE_NAME,
   DEFAULT_PACKAGE_NAME,
@@ -389,6 +391,14 @@ async function dbChecks() {
     ]),
   );
   await as(OTHER, (tx) => tx.insert(schema.clients).values({ trainerId: OTHER, fullName: "Gizli Danışan" }));
+  // Progress data: a measurement, a note and a program line.
+  const aWho = { trainerId: T, clientId: ayse.id };
+  await as(T, (tx) => grantHealthConsent(tx, aWho));
+  await as(T, (tx) => saveMeasurements(tx, aWho, "2026-10-01", [{ metric: "weight", value: 61.5 }]));
+  await as(T, (tx) => addNote(tx, aWho, { body: "Diz hassas", visibleToClient: false }));
+  await as(T, (tx) =>
+    createProgram(tx, T, { kind: "workout", clientId: ayse.id, name: "Başlangıç", note: null, targets: {}, startsOn: null, days: [{ title: "Gün A", items: [{ exerciseId: null, name: "Squat", sets: 3, reps: "10", load: null, rest: null, note: null }] }] }),
+  );
 
   const data = await as(T, (tx) => loadExportData(tx, trainer));
   assert.equal(data.clients.length, 4, "only own clients");
@@ -464,8 +474,11 @@ async function dbChecks() {
     ["Ayşe Yılmaz", "Boy", "168 cm", "Evet"],
     ["Ayşe Yılmaz", "Uygun zaman", "Sabah, Akşam", "Hayır"],
   ]);
+  assert.deepEqual(values(SHEET_NAMES.measurements).slice(1).map((r) => [r[0], r[2], r[3], r[4], r[5]]), [["Ayşe Yılmaz", "Kilo", 61.5, "kg", "Sen"]]);
+  assert.deepEqual(values(SHEET_NAMES.notes).slice(1).map((r) => [r[0], r[3], r[4]]), [["Ayşe Yılmaz", "Diz hassas", "Hayır"]]);
+  assert.deepEqual(values(SHEET_NAMES.programs).slice(1).map((r) => r.slice(0, 6)), [["Ayşe Yılmaz", "Antrenman", "Başlangıç", "Gün A", "Squat", 3]]);
   assert.equal(exportFileName("2026-09-30"), "studyom-verileri-2026-09-30.xlsx");
-  console.log("export: all five sheets, own data only, local lesson times, balances from the view\n\nall import/export checks passed");
+  console.log("export: all eight sheets, own data only, local lesson times, balances from the view\n\nall import/export checks passed");
 }
 
 async function main() {

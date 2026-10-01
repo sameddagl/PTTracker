@@ -25,7 +25,11 @@ import {
   addNote,
   cleanNote,
   deleteMeasurements,
+  dueMeasurements,
   grantHealthConsent,
+  markMeasureReminded,
+  measureRemindersDue,
+  setMeasureInterval,
   listMeasurements,
   listNotes,
   portalProgress,
@@ -374,6 +378,24 @@ async function main() {
   assert.equal(cleanVideoUrl("http://x.com"), null);
   assert.equal(programInputSchema.safeParse({ name: "x", days: [] }).success, false, "a program needs a day");
   console.log("programs ok");
+
+  // ---- Periodic measurements ----
+  await as(A, (tx) => deleteMeasurements(tx, zP, day));
+  assert.equal((await as(A, (tx) => dueMeasurements(tx, trainer))).length, 0, "no interval, nothing due");
+  assert.equal(await as(A, (tx) => setMeasureInterval(tx, A, zeynep.id, 14)), true);
+  assert.equal(await as(B, (tx) => setMeasureInterval(tx, B, zeynep.id, 14)), false, "not another trainer's client");
+  assert.deepEqual((await as(A, (tx) => dueMeasurements(tx, trainer))).map((c) => [c.name, c.lastOn]), [["Zeynep Kaya", null]], "never measured → due");
+  const allDay = { hours: [0, 24] as [number, number] };
+  let remind = await owner((tx) => measureRemindersDue(tx, allDay));
+  assert.deepEqual(remind.map((r) => r.clientId), [zeynep.id]);
+  await owner((tx) => markMeasureReminded(tx, remind));
+  assert.equal((await owner((tx) => measureRemindersDue(tx, allDay))).length, 0, "reminded once per interval");
+  await as(A, (tx) => saveMeasurements(tx, zP, addDays(day, -3), [{ metric: "weight", value: 64 }]));
+  assert.equal((await as(A, (tx) => dueMeasurements(tx, trainer))).length, 0, "measured 3 days ago, not due for 14");
+  remind = await owner((tx) => measureRemindersDue(tx, allDay));
+  assert.equal(remind.length, 0);
+  await as(A, (tx) => setMeasureInterval(tx, A, zeynep.id, null));
+  console.log("periodic measurements ok");
 
   // ---- Notification choices ----
   assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");

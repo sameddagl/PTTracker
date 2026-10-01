@@ -199,3 +199,79 @@ export async function healthAlerts(tx: Tx, clientIds: string[]) {
     .where(and(inArray(clients.id, clientIds), sql`nullif(trim(${clients.healthNotes}), '') is not null`));
   return new Map(rows.map((r) => [r.id, r.note!]));
 }
+
+// ---- Periodic measurements ----
+
+/** Turns the reminder on (every N days) or off for one client. */
+export async function setMeasureInterval(tx: Tx, trainerId: string, clientId: string, days: number | null) {
+  const rows = await tx
+    .update(clients)
+    .set({ measureEveryDays: days, measureRemindedOn: null })
+    .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId)))
+    .returning({ id: clients.id });
+  return rows.length > 0;
+}
+
+const lastMeasured = sql<string | null>`(select max(${measurements.measuredOn}) from ${measurements} where ${measurements.clientId} = "clients"."id")`;
+
+/** Clients whose measurements are due (never measured, or the interval has passed), for Bugün. */
+export async function dueMeasurements(tx: Tx, trainer: { id: string; timezone: string }, limit = 10) {
+  const today = sql`(now() at time zone ${trainer.timezone})::date`;
+  const rows = await tx
+    .select({ clientId: clients.id, name: clients.fullName, phone: clients.phone, every: clients.measureEveryDays, last: lastMeasured })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.trainerId, trainer.id),
+        eq(clients.status, "active"),
+        isNull(clients.archivedAt),
+        sql`${clients.measureEveryDays} is not null`,
+        sql`(${lastMeasured} is null or ${lastMeasured} + ${clients.measureEveryDays} <= ${today})`,
+      ),
+    )
+    .orderBy(sql`${lastMeasured} asc nulls first`)
+    .limit(limit);
+  return rows.map((r) => ({ clientId: r.clientId, name: r.name, phone: r.phone, every: r.every!, lastOn: r.last }));
+}
+
+/**
+ * Cron: clients to remind now. Once when the interval is reached, again only
+ * after another full interval without a measurement; during the day (10–20h
+ * in the trainer's timezone) so nobody gets it at midnight.
+ */
+export async function measureRemindersDue(tx: Tx, { limit = 200, hours = [10, 19] as [number, number] } = {}) {
+  const today = sql`(now() at time zone ${trainers.timezone})::date`;
+  const every = clients.measureEveryDays;
+  const reminded = clients.measureRemindedOn;
+  return tx
+    .select({
+      clientId: clients.id,
+      trainerId: clients.trainerId,
+      clientName: clients.fullName,
+      trainerName: sql<string>`coalesce(nullif(${trainers.businessName}, ''), ${trainers.fullName})`,
+      templates: trainers.messageTemplates,
+      timezone: trainers.timezone,
+    })
+    .from(clients)
+    .innerJoin(trainers, eq(trainers.id, clients.trainerId))
+    .where(
+      and(
+        eq(clients.status, "active"),
+        isNull(clients.archivedAt),
+        sql`${every} is not null`,
+        sql`extract(hour from now() at time zone ${trainers.timezone}) between ${hours[0]} and ${hours[1]}`,
+        sql`(
+          (${lastMeasured} is null and (${reminded} is null or ${reminded} <= ${today} - ${every}))
+          or (${lastMeasured} + ${every} <= ${today}
+              and (${reminded} is null or ${reminded} < ${lastMeasured} + ${every} or ${reminded} <= ${today} - ${every}))
+        )`,
+      ),
+    )
+    .limit(limit);
+}
+
+export async function markMeasureReminded(tx: Tx, rows: { clientId: string; timezone: string }[]) {
+  for (const r of rows) {
+    await tx.update(clients).set({ measureRemindedOn: sql`(now() at time zone ${r.timezone})::date` }).where(eq(clients.id, r.clientId));
+  }
+}

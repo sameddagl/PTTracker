@@ -177,10 +177,15 @@ export const clients = pgTable(
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     status: clientStatusEnum("status").notNull().default("active"),
     source: clientSourceEnum("source").notNull().default("manual"),
+    // Periodic measurements: remind every N days after the last one (null = off);
+    // the day the last reminder went out keeps the cron to one per period.
+    measureEveryDays: smallint("measure_every_days"),
+    measureRemindedOn: date("measure_reminded_on"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
+    check("clients_measure_every_days", sql`${t.measureEveryDays} is null or ${t.measureEveryDays} between 7 and 180`),
     unique("clients_id_trainer_key").on(t.id, t.trainerId),
     index("clients_trainer_phone_idx").on(t.trainerId, t.phone),
     index("clients_trainer_idx").on(t.trainerId, t.archivedAt),
@@ -926,6 +931,22 @@ export const programCheckins = pgTable(
     index("program_checkins_client_idx").on(t.clientId, t.doneOn),
     ownRows("program_checkins_own", t.trainerId),
   ],
+);
+
+// A PDF attached to a nutrition plan (e.g. from the client's dietitian), stored like receipts.
+export const programAttachments = pgTable(
+  "program_attachments",
+  {
+    programId: uuid("program_id")
+      .primaryKey()
+      .references(() => programs.id, { onDelete: "cascade" }),
+    trainerId: uuid("trainer_id").notNull(),
+    fileName: text("file_name").notNull(),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("program_attachments_size", sql`${t.size} between 1 and 5242880`), ownRows("program_attachments_own", t.trainerId)],
 );
 
 export const consents = pgTable(

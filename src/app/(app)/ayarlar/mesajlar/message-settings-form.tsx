@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { BellRing, MessagesSquare, PackageCheck, RotateCcw } from "lucide-react";
+import { BellRing, MessagesSquare, PackageCheck, RotateCcw, Ruler } from "lucide-react";
 import { toast } from "sonner";
 import { Field, NativeSelect } from "@/components/field";
 import { FormSubmit } from "@/components/form-submit";
@@ -106,6 +106,23 @@ export function MessageSettingsForm({ initial }: { initial: Initial }) {
         ) : (
           <input type="hidden" name="renewal" value={initial.texts.renewal} />
         )}
+      </section>
+
+      <section aria-labelledby="measure-reminder-heading" className="flex flex-col gap-5 surface p-5">
+        <div className="flex items-start gap-3">
+          <SectionIcon>
+            <Ruler />
+          </SectionIcon>
+          <div className="min-w-0">
+            <h2 id="measure-reminder-heading" className="text-base font-semibold">
+              Ölçüm hatırlatması
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Danışanın Ölçümler sekmesinde sıklık seçersen (örneğin 4 haftada bir), zamanı gelince danışana bir kez bildirim gider.
+            </p>
+          </div>
+        </div>
+        <TemplateField name="measureReminder" initial={initial.texts.measureReminder} error={state.errors?.measureReminder} />
       </section>
 
       <section aria-labelledby="ready-heading" className="flex flex-col gap-5 surface p-5">

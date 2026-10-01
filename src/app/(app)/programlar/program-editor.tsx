@@ -77,7 +77,7 @@ export function ProgramEditor({
         }))
       : workout
         ? [{ key: key(), title: dayTitle(kind, 0), items: [blankItem()] }]
-        : DEFAULT_MEALS.slice(0, 4).map((t) => ({ key: key(), title: t, items: [blankItem()] })),
+        : ["Kahvaltı", "Öğle", "Ara öğün", "Akşam"].map((t) => ({ key: key(), title: t, items: [blankItem()] })),
   );
   const [pending, start] = useTransition();
   const byName = new Map(library.map((e) => [e.name.toLocaleLowerCase("tr"), e.id]));

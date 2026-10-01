@@ -76,6 +76,19 @@ export type ExportData = {
   /** Readings with the metric already named (built-in label or the trainer's own). */
   measurements?: { clientName: string; measuredOn: string; metric: string; unit: string; value: number; byClient: boolean }[];
   notes?: { clientName: string; createdAt: Date; lessonDate: string | null; body: string; visibleToClient: boolean }[];
+  /** One row per program line; clientName null = a template. */
+  programs?: {
+    clientName: string | null;
+    kind: "workout" | "nutrition";
+    program: string;
+    day: string;
+    item: string;
+    sets: number | null;
+    reps: string | null;
+    load: string | null;
+    rest: string | null;
+    note: string | null;
+  }[];
 };
 
 export const SHEET_NAMES = {
@@ -86,6 +99,7 @@ export const SHEET_NAMES = {
   answers: "Kayıt formu cevapları",
   measurements: "Ölçümler",
   notes: "Notlar",
+  programs: "Programlar",
 } as const;
 
 const CLIENT_STATUS = { applicant: "Başvuru", active: "Aktif" } as const;
@@ -269,6 +283,35 @@ export function buildExportWorkbook(data: ExportData) {
       { header: "Danışan görüyor", width: 14 },
     ],
     (data.notes ?? []).map((n) => [n.clientName, asDate(todayISO(data.timezone, n.createdAt)), asDate(n.lessonDate), n.body, yesNo(n.visibleToClient)]),
+  );
+
+  addSheet(
+    workbook,
+    SHEET_NAMES.programs,
+    [
+      { header: "Danışan", width: 22 },
+      { header: "Tür", width: 11 },
+      { header: "Program", width: 26 },
+      { header: "Gün / öğün", width: 14 },
+      { header: "Hareket / içerik", width: 36 },
+      { header: "Set", width: 6 },
+      { header: "Tekrar", width: 10 },
+      { header: "Ağırlık / yay", width: 14 },
+      { header: "Dinlenme", width: 10 },
+      { header: "Not", width: 30 },
+    ],
+    (data.programs ?? []).map((p) => [
+      p.clientName ?? "Şablon",
+      p.kind === "workout" ? "Antrenman" : "Beslenme",
+      p.program,
+      p.day,
+      p.item,
+      p.sets ?? "",
+      p.reps ?? "",
+      p.load ?? "",
+      p.rest ?? "",
+      p.note ?? "",
+    ]),
   );
 
   return workbook;

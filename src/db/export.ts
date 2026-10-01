@@ -1,8 +1,8 @@
 import "server-only";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import type { Tx } from "./index";
 import { listMeasurementTypes } from "./progress";
-import { clientNotes, clientPackageBalances, clientPackages, clients, intakeAnswers, lessonAttendees, lessons, measurements, payments } from "./schema";
+import { clientNotes, clientPackageBalances, clientPackages, clients, intakeAnswers, lessonAttendees, lessons, measurements, payments, programDays, programItems, programs } from "./schema";
 import { metricCatalog } from "@/lib/measurements";
 import type { ExportData } from "@/lib/export";
 
@@ -124,6 +124,26 @@ export async function loadExportData(tx: Tx, trainer: TrainerRef): Promise<Expor
     .where(eq(clientNotes.trainerId, trainerId))
     .orderBy(asc(clients.fullName), asc(clientNotes.createdAt));
 
+  const programRows = await tx
+    .select({
+      clientName: clients.fullName,
+      kind: programs.kind,
+      program: programs.name,
+      day: programDays.title,
+      item: programItems.name,
+      sets: programItems.sets,
+      reps: programItems.reps,
+      load: programItems.load,
+      rest: programItems.rest,
+      note: programItems.note,
+    })
+    .from(programItems)
+    .innerJoin(programDays, eq(programDays.id, programItems.dayId))
+    .innerJoin(programs, eq(programs.id, programDays.programId))
+    .leftJoin(clients, eq(clients.id, programs.clientId))
+    .where(and(eq(programs.trainerId, trainerId), isNull(programs.archivedAt)))
+    .orderBy(asc(clients.fullName), asc(programs.createdAt), asc(programDays.sortOrder), asc(programItems.sortOrder));
+
   return {
     timezone: tz,
     clients: clientRows,
@@ -136,5 +156,6 @@ export async function loadExportData(tx: Tx, trainer: TrainerRef): Promise<Expor
       return { clientName: m.clientName, measuredOn: m.measuredOn, metric: def?.label ?? m.metric, unit: def?.unit ?? "", value: Number(m.value), byClient: m.source === "client" };
     }),
     notes: noteRows,
+    programs: programRows,
   };
 }

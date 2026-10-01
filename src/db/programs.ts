@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { STARTER_EXERCISES, cleanVideoUrl, toInputDays, type ProgramInput } from "@/lib/programs";
 import type { Tx } from "./index";
-import { clients, exercises, programCheckins, programDays, programItems, programs } from "./schema";
+import { clients, exercises, programAttachments, programCheckins, programDays, programItems, programs } from "./schema";
 
 // Workout and nutrition programs. Trainer-side functions run under RLS;
 // the portal ones take a resolved { trainerId, clientId }.
@@ -85,6 +85,8 @@ export type Program = {
   startsOn: string | null;
   sentAt: Date | null;
   updatedAt: Date;
+  /** File name of the attached PDF (nutrition plans), if any. */
+  pdfName: string | null;
   days: ProgramDay[];
 };
 
@@ -98,6 +100,7 @@ const programCols = {
   startsOn: programs.startsOn,
   sentAt: programs.sentAt,
   updatedAt: programs.updatedAt,
+  pdfName: sql<string | null>`(select ${programAttachments.fileName} from ${programAttachments} where ${programAttachments.programId} = "programs"."id")`,
 };
 
 async function withDays(tx: Tx, rows: Omit<Program, "days">[]): Promise<Program[]> {
@@ -245,7 +248,7 @@ export async function updateProgram(tx: Tx, trainerId: string, id: string, input
 export async function copyProgram(tx: Tx, trainerId: string, sourceId: string, clientId: string, startsOn: string) {
   const src = await getProgram(tx, trainerId, sourceId);
   if (!src) return null;
-  return createProgram(tx, trainerId, {
+  const id = await createProgram(tx, trainerId, {
     kind: src.kind,
     clientId,
     name: src.name,
@@ -254,6 +257,10 @@ export async function copyProgram(tx: Tx, trainerId: string, sourceId: string, c
     startsOn,
     days: toInputDays(src.days),
   });
+  // A template's PDF comes along with the copy.
+  const pdf = id && src.pdfName ? await getAttachment(tx, src.id) : null;
+  if (id && pdf) await setAttachment(tx, trainerId, id, pdf);
+  return id;
 }
 
 export async function archiveProgram(tx: Tx, trainerId: string, id: string) {
@@ -331,4 +338,28 @@ export async function setCheckin(tx: Tx, who: Who, dayId: string, doneOn: string
     await tx.delete(programCheckins).where(and(eq(programCheckins.dayId, dayId), eq(programCheckins.doneOn, doneOn), eq(programCheckins.clientId, who.clientId)));
   }
   return true;
+}
+
+// ---- PDF attachment (nutrition plans) ----
+
+export const MAX_PLAN_PDF_BYTES = 1_500_000;
+
+export async function setAttachment(tx: Tx, trainerId: string, programId: string, file: { fileName: string; data: Buffer }) {
+  const [p] = await tx.select({ id: programs.id }).from(programs).where(and(eq(programs.id, programId), eq(programs.trainerId, trainerId)));
+  if (!p) return false;
+  const values = { trainerId, programId, fileName: file.fileName.slice(0, 120) || "plan.pdf", size: file.data.length, data: file.data };
+  await tx.insert(programAttachments).values(values).onConflictDoUpdate({ target: programAttachments.programId, set: { ...values, createdAt: new Date() } });
+  return true;
+}
+
+export async function deleteAttachment(tx: Tx, trainerId: string, programId: string) {
+  await tx.delete(programAttachments).where(and(eq(programAttachments.programId, programId), eq(programAttachments.trainerId, trainerId)));
+}
+
+export async function getAttachment(tx: Tx, programId: string) {
+  const [row] = await tx
+    .select({ fileName: programAttachments.fileName, data: programAttachments.data })
+    .from(programAttachments)
+    .where(eq(programAttachments.programId, programId));
+  return row ?? null;
 }

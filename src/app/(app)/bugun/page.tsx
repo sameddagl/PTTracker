@@ -10,6 +10,7 @@ import { withTrainer } from "@/db";
 import { ApplicationsBanner, AttendanceBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
 import { LOST_AFTER_DAYS, lostClients, tomorrowAttendees } from "@/db/engagement";
+import { dueMeasurements } from "@/db/progress";
 import { ensureGroupOccurrences } from "@/db/groups";
 import { countPendingAttendance, getLessons } from "@/db/lessons";
 import { countPendingPayments, getPaymentSummary } from "@/db/payments";
@@ -43,7 +44,7 @@ import { GettingStarted, GuideComplete } from "./getting-started";
 export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
@@ -52,16 +53,17 @@ export default async function TodayPage() {
     const alerts = await getPackageAlerts(tx, trainer);
     const tomorrow = await tomorrowAttendees(tx, trainer);
     const lost = await lostClients(tx, trainer, 5);
+    const measureDue = await dueMeasurements(tx, trainer, 5);
     const unmarked = await countPendingAttendance(tx, trainer);
     const portals = await getActivePortalTokens(tx, [
-      ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId), ...lost.map((c) => c.clientId)]),
+      ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId), ...lost.map((c) => c.clientId), ...measureDue.map((c) => c.clientId)]),
     ]);
     const pending = await countPendingApplications(tx, trainerId);
     const pendingPayments = await countPendingPayments(tx, trainerId);
     const money = await getPaymentSummary(tx, trainer);
     // Skip the checklist counts once the trainer has hidden it.
     const guideFacts = trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
-    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked };
+    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue };
   });
 
   const now = new Date();
@@ -271,6 +273,39 @@ export default async function TodayPage() {
           </ul>
         )}
       </section>
+
+      {measureDue.length > 0 && (
+        <section aria-labelledby="measure-due-heading" className="mt-8">
+          <h2 id="measure-due-heading" className="mb-3 text-base font-semibold">
+            Ölçüm zamanı gelenler
+          </h2>
+          <ul className="divide-y overflow-hidden surface">
+            {measureDue.map((c) => {
+              const token = portals.get(c.clientId);
+              return (
+                <li key={c.clientId} className="flex items-center gap-3 px-4 py-3">
+                  <Avatar name={c.name} />
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/danisanlar/${c.clientId}?sekme=olcumler`} className="block truncate font-medium hover:underline">
+                      {c.name}
+                    </Link>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {c.lastOn ? `Son ölçüm ${formatShortDate(c.lastOn)}` : "Henüz ölçüm yok"} · {c.every / 7} haftada bir
+                    </p>
+                  </div>
+                  <ContactButtons
+                    clientId={c.clientId}
+                    name={c.name}
+                    phone={c.phone}
+                    portal={token && portalUrl(token)}
+                    text={renderTemplate(trainer.messageTemplates, "measureDue", { ad: c.name })}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {lost.length > 0 && (
         <section aria-labelledby="lost-heading" className="mt-8">
