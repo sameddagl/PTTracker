@@ -780,7 +780,8 @@ async function main() {
     "stops at the package's expiry (6 Oct only; 29 Sep is Tuesday too)",
   );
 
-  // Booking against the real clock: open every day 00:00–24:00, no notice.
+  // Booking against the real clock: open every day 00:00–24:00, no notice. Slots are
+  // booked at 21:00 so they never meet the fixed-date lessons above (10:00 on 5–8 Oct).
   await asTrainer((tx) =>
     tx
       .update(schema.trainers)
@@ -796,12 +797,12 @@ async function main() {
   const bookerWho = { trainerId: T, clientId: booker.id };
   const own = (fn: (tx: Tx) => Promise<unknown>) => db.transaction((tx) => fn(tx as unknown as Tx));
 
-  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 })), { ok: false, reason: "no_credit" });
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 1260 })), { ok: false, reason: "no_credit" });
   // A duet package isn't bookable; a 2-lesson private one is.
   await asTrainer((tx) =>
     sellPackage(tx, T, { clientId: booker.id, templateId: null, name: "Düet", sessionType: "duet", totalSessions: 4, startsOn: todayTR, expiresOn: null, price: 0, makeupAllowance: 0, installments: 1, payment: null }),
   );
-  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 })), { ok: false, reason: "no_credit" });
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 1260 })), { ok: false, reason: "no_credit" });
   const bookerPkg = await asTrainer((tx) =>
     sellPackage(tx, T, { clientId: booker.id, templateId: null, name: "2 Ders", sessionType: "private", totalSessions: 2, startsOn: todayTR, expiresOn: null, price: 0, makeupAllowance: 1, installments: 1, payment: null }),
   );
@@ -810,12 +811,12 @@ async function main() {
   assert.equal(view?.packages.length, 1);
   assert.ok(view!.days.length >= 14, "two weeks of open days");
 
-  const b1 = (await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 }))) as { ok: boolean };
+  const b1 = (await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 1260 }))) as { ok: boolean };
   assert.equal(b1.ok, true);
-  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 })), { ok: false, reason: "slot_taken" });
-  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 630 })), { ok: false, reason: "slot_taken" }, "not a slot boundary");
-  assert.equal(((await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 4), minute: 600 }))) as { ok: boolean }).ok, true);
-  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 5), minute: 600 })), { ok: false, reason: "no_credit" }, "both credits reserved");
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 1260 })), { ok: false, reason: "slot_taken" });
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 1290 })), { ok: false, reason: "slot_taken" }, "not a slot boundary");
+  assert.equal(((await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 4), minute: 1260 }))) as { ok: boolean }).ok, true);
+  assert.deepEqual(await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 5), minute: 1260 })), { ok: false, reason: "no_credit" }, "both credits reserved");
   assert.equal((await balance(bookerPkg)).scheduledSessions, 2);
 
   // Cancel in time → credit back and slot free again.
@@ -825,7 +826,7 @@ async function main() {
   const c1 = (await own((tx) => cancelBooking(tx, bookerWho, upcomingBookings[0].attendeeId, { confirmLate: false }))) as { ok: boolean; late: boolean };
   assert.deepEqual([c1.ok, c1.late], [true, false]);
   assert.equal((await balance(bookerPkg)).scheduledSessions, 1);
-  assert.equal(((await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 600 }))) as { ok: boolean }).ok, true, "freed slot is bookable");
+  assert.equal(((await own((tx) => bookSlot(tx, bookerWho, { date: addDays(todayTR, 3), minute: 1260 }))) as { ok: boolean }).ok, true, "freed slot is bookable");
 
   // Another client can't cancel it.
   assert.deepEqual(await own((tx) => cancelBooking(tx, { trainerId: T, clientId: payer.id }, upcomingBookings[1].attendeeId, { confirmLate: true })), {

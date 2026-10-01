@@ -9,11 +9,7 @@ import { fieldErrors, readForm, type FormState } from "@/lib/forms";
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Adını yaz (en az 2 karakter).").max(120),
-  businessName: z
-    .string()
-    .trim()
-    .max(120)
-    .transform((v) => v || null),
+  businessName: z.string().trim().min(2, "Stüdyonun ya da işletmenin adını yaz (en az 2 karakter).").max(120),
   discipline: z.enum(["pt", "pilates", "both"], { error: "Bir branş seç." }),
 });
 

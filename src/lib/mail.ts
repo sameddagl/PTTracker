@@ -2,8 +2,7 @@ import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
 import { APP_NAME } from "./config";
 
-// Transactional email over SMTP (Gmail app password during the beta, a
-// proper provider with our own domain later). Without SMTP settings, emails
+// Transactional email over SMTP (the Hostinger mailbox on our domain). Without SMTP settings, emails
 // are logged instead of sent, so local development needs no mail setup.
 
 let transporter: Transporter | null | undefined;

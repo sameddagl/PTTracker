@@ -8,12 +8,12 @@ export const LEGAL = {
   address: null as string | null,
   email: "info@studyomapp.com",
   /** Version stamps stored with each consent (see consents.text_version); bump when a text changes. */
-  noticeVersion: "aydinlatma-2026-09-30",
+  noticeVersion: "aydinlatma-2026-10-01",
   healthConsentVersion: "saglik-rizasi-2026-09-29",
   termsVersion: "kosullar-2026-09-30b",
-  updatedOn: "30 Eylül 2026",
+  updatedOn: "1 Ekim 2026",
   /** Same date for the sitemap; keep it in step with updatedOn. */
-  updatedIso: "2026-09-30",
+  updatedIso: "2026-10-01",
 } as const;
 
 /** Processors we pass data to, listed in the notice. */
@@ -24,13 +24,8 @@ export const SUBPROCESSORS = [
     location: "Almanya (Frankfurt, AB) veri merkezi; şirket ABD merkezli",
   },
   {
-    name: "Google LLC (Gmail)",
-    purpose: "Giriş kodu ve bilgilendirme e-postalarının gönderilmesi",
-    location: "ABD ve Google'ın küresel veri merkezleri",
-  },
-  {
     name: "Hostinger",
-    purpose: "Uygulamanın çalıştığı sunucu",
+    purpose: "Uygulamanın çalıştığı sunucu; giriş kodu ve bilgilendirme e-postalarının gönderilmesi",
     location: "Avrupa veri merkezi; şirket Litvanya merkezli",
   },
   {

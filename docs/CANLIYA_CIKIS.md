@@ -63,7 +63,7 @@
 | `DATABASE_URL_DIRECT` | 5432 adresi | sadece migration |
 | `NEXT_PUBLIC_SITE_URL` | `https://studyomapp.com` | canonical, OG ve danışan linkleri bununla oluşur |
 | `PORTAL_SECRET` | **yeni, rastgele, uzun** bir değer | Geliştirmedekiyle aynı olmasın. Sonradan değiştirilirse danışanlara gönderilmiş bütün linkler bozulur |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | Gmail (şimdilik) | `MAIL_FROM="Stüdyom <adres@gmail.com>"` |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | Hostinger e-posta (smtp.hostinger.com, 465) | `MAIL_FROM="Stüdyom <info@studyomapp.com>"` |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | **canlı için yeni** anahtar çifti | Bildirimler için. `npx web-push generate-vapid-keys` ile üretilir; `VAPID_SUBJECT=mailto:destek@alanadi`. Sonradan değişirse herkesin bildirim aboneliği düşer, yeniden açmaları gerekir |
 | `CRON_SECRET` | uzun, rastgele bir değer | Zamanlanmış görevleri (aşağıda) korur |
 
@@ -80,18 +80,18 @@ Her görev bir kez işaretlendiği için kaçan ya da iki kez çalışan tetikle
 ## 5. Supabase Auth ayarları (canlı projede)
 
 - **URL Configuration:** Site URL = `https://studyomapp.com`; Redirect URLs'e `https://studyomapp.com/**` ekle.
-- **SMTP:** Custom SMTP'yi aç (Gmail + uygulama şifresi). Supabase'in kendi e-postası saatte birkaç e-postayla sınırlı, canlıda yetmez.
+- **SMTP:** Custom SMTP'yi aç (Hostinger e-posta hesabı). Supabase'in kendi e-postası saatte birkaç e-postayla sınırlı, canlıda yetmez.
 - **Şablonlar:** `supabase/templates/` içindeki dört şablonu yapıştır (README'de tablo var).
 - **Email OTP Expiration:** 3600 saniye.
-- **Rate limits:** "Emails sent per hour" değerini Gmail sınırına göre ayarla (örneğin saatte 30).
+- **Rate limits:** "Emails sent per hour" değerini Hostinger'ın gönderim sınırına göre ayarla (örneğin saatte 30).
 
 ## 6. KVKK ve hukuki
 
 1. **Veri sorumlusu bilgilerini doldur:** `src/lib/legal.ts` → ad soyad (şirket yoksa gerçek kişi), tebligat adresi, iletişim e-postası. Sonra `READY: true` yap; sayfalardaki "Taslak" uyarısı kalkar.
 2. **Yurt dışına aktarım (en önemli madde):**
-   - Supabase (AB'de sunucu, ABD şirketi), Google (Gmail) ve **Hostinger** (Litvanya merkezli, sunucu Avrupa'da) kişisel veri işliyor.
+   - Supabase (AB'de sunucu, ABD şirketi) ve **Hostinger** (sunucu ve e-posta; Litvanya merkezli, sunucu Avrupa'da) kişisel veri işliyor.
    - 1 Eylül 2024'ten beri sürekli aktarım açık rızayla yapılamıyor. Her biriyle Kurul'un yayımladığı **standart sözleşme** imzalanmalı ve imzadan sonra **5 iş günü içinde Kurum'a bildirilmeli**.
-   - Hostinger'ı da `SUBPROCESSORS` listesine eklemek gerekiyor; canlıya çıkarken ben eklerim. Kurumsal e-postaya geçilince Gmail listeden çıkar.
+   - Hostinger `SUBPROCESSORS` listesinde; e-posta Hostinger'a geçtiği için Gmail listeden çıkarıldı (1 Ekim 2026).
    - Alternatif: verileri Türkiye'de barındırmak.
 3. **VERBİS:** Küçük işletmeler genelde muaf, ama sağlık verisi işlendiği için muafiyet bir avukata sorulmalı.
 4. **Avukat incelemesi:** Aydınlatma, açık rıza ve kullanım koşulları metinlerine kısa bir inceleme.

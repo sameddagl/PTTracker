@@ -35,9 +35,18 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
         />
       </Field>
 
-      <Field id="businessName" label="Stüdyo / işletme adı" hint="isteğe bağlı" error={e.businessName}>
-        <Input id="businessName" name="businessName" defaultValue={v.businessName} maxLength={120} autoComplete="organization" />
-        <p className="text-xs text-muted-foreground">Danışanların kendi sayfalarında bu adı görür.</p>
+      <Field id="businessName" label="Stüdyo / işletme adı" error={e.businessName}>
+        <Input
+          id="businessName"
+          name="businessName"
+          defaultValue={v.businessName}
+          required
+          minLength={2}
+          maxLength={120}
+          autoComplete="organization"
+          data-missing-message="Stüdyonun ya da işletmenin adını yaz."
+        />
+        <p className="text-xs text-muted-foreground">Danışanların kendi sayfalarında bu adı görür. Stüdyon yoksa kendi adını da yazabilirsin.</p>
       </Field>
 
       <fieldset className="flex flex-col gap-2">
