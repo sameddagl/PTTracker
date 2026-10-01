@@ -1,7 +1,7 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
-import { Check, FileText, PlayCircle } from "lucide-react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { Check, FileText, PlayCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Program } from "@/db/programs";
@@ -41,6 +41,7 @@ export function ProgramTab({
   const doneToday = checkins.find((c) => c.doneOn === today)?.dayId;
   const initial = doneToday ?? program.days[lastIdx >= 0 ? (lastIdx + 1) % program.days.length : 0]?.id;
   const [selected, setSelected] = useState(initial);
+  const [openItem, setOpenItem] = useState<Program["days"][number]["items"][number] | null>(null);
   const [pending, start] = useTransition();
   const [marks, setMark] = useOptimistic(checkins, (list, m: { dayId: string; done: boolean }) =>
     m.done ? [{ dayId: m.dayId, doneOn: today }, ...list] : list.filter((c) => !(c.dayId === m.dayId && c.doneOn === today)),
@@ -113,27 +114,30 @@ export function ProgramTab({
       {day && (
         <ol className="flex flex-col gap-3" aria-label={day.title}>
           {day.items.map((i, n) => (
-            <li key={i.id} className="flex gap-3 surface p-4">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-lime text-sm font-semibold text-lime-foreground tabular-nums" aria-hidden>
-                {n + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">{i.name}</p>
-                {itemSummary(i) && <p className="text-sm text-muted-foreground tabular-nums">{itemSummary(i)}</p>}
-                {i.primary.length > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{i.primary.map((m) => MUSCLES[m]).join(" · ")}</p>}
-                {i.note && <p className="mt-1 text-sm">{i.note}</p>}
-                {i.videoUrl && (
-                  <a
-                    href={i.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline"
-                  >
-                    <PlayCircle className="size-4" aria-hidden />
-                    Videoyu izle
-                  </a>
-                )}
-              </div>
+            <li key={i.id}>
+              <button
+                type="button"
+                onClick={() => setOpenItem(i)}
+                className="flex w-full gap-3 surface p-4 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                aria-label={`${i.name}: ayrıntılar ve çalışan kaslar`}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-lime text-sm font-semibold text-lime-foreground tabular-nums" aria-hidden>
+                  {n + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">{i.name}</span>
+                  {itemSummary(i) && <span className="block text-sm text-muted-foreground tabular-nums">{itemSummary(i)}</span>}
+                  {i.primary.length > 0 && <span className="mt-0.5 block text-xs text-muted-foreground">{i.primary.map((m) => MUSCLES[m]).join(" · ")}</span>}
+                  {i.note && <span className="mt-1 block text-sm">{i.note}</span>}
+                  {i.videoUrl && (
+                    <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium">
+                      <PlayCircle className="size-4" aria-hidden />
+                      Video var
+                    </span>
+                  )}
+                </span>
+                {i.primary.length > 0 && <MuscleMap primary={i.primary} secondary={i.secondary} compact className="w-20 shrink-0 self-center" />}
+              </button>
             </li>
           ))}
         </ol>
@@ -162,7 +166,63 @@ export function ProgramTab({
         </section>
       )}
       <p className="text-center text-xs text-muted-foreground">Bir hareket ağrı yaparsa dur ve {trainerName} ile konuş.</p>
+      <ExerciseSheet item={openItem} onClose={() => setOpenItem(null)} />
     </div>
+  );
+}
+
+/** One exercise up close: the figure with its muscles, the numbers, the note and the video. */
+function ExerciseSheet({ item: i, onClose }: { item: Program["days"][number]["items"][number] | null; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (i && !el.open) el.showModal();
+    if (!i && el.open) el.close();
+  }, [i]);
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby="exercise-sheet-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => e.target === ref.current && onClose()}
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border bg-card p-0 text-foreground shadow-float backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+    >
+      {i && (
+        <div className="flex flex-col gap-4 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 id="exercise-sheet-title" className="text-lg leading-snug font-semibold">
+                {i.name}
+              </h2>
+              {itemSummary(i) && <p className="text-sm text-muted-foreground tabular-nums">{itemSummary(i)}</p>}
+            </div>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Kapat" onClick={onClose}>
+              <X />
+            </Button>
+          </div>
+          {i.primary.length > 0 ? (
+            <div className="rounded-2xl bg-muted/40 p-4">
+              <MuscleMap primary={i.primary} secondary={i.secondary} className="mx-auto max-w-xs" />
+            </div>
+          ) : (
+            <p className="rounded-2xl bg-muted/40 p-4 text-sm text-muted-foreground">Bu hareket için kas bilgisi girilmemiş.</p>
+          )}
+          {i.note && <p className="text-sm whitespace-pre-wrap">{i.note}</p>}
+          {i.videoUrl && (
+            <Button asChild variant="outline">
+              <a href={i.videoUrl} target="_blank" rel="noopener noreferrer">
+                <PlayCircle />
+                Videoyu izle
+              </a>
+            </Button>
+          )}
+        </div>
+      )}
+    </dialog>
   );
 }
 

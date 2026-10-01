@@ -16,31 +16,37 @@ import { cn } from "@/lib/utils";
 const owner = (r: Region, front: boolean): MuscleKey | null =>
   r === "left-soleus" || r === "right-soleus" ? "calves" : front && r === "neck" ? "trapezius" : r in MUSCLES ? (r as MuscleKey) : null;
 
+// The body in a faint tint of the text colour, so it reads on light and dark cards alike.
+const BASE = "color-mix(in oklab, var(--foreground) 16%, transparent)";
+const SECONDARY = "color-mix(in oklab, var(--lime) 50%, transparent)";
+
 function Figure({
   data,
   label,
   primary,
   secondary,
   onToggle,
+  compact,
 }: {
   data: typeof anteriorData;
   label: string;
+  compact?: boolean;
   primary: Set<MuscleKey>;
   secondary: Set<MuscleKey>;
   onToggle?: (m: MuscleKey) => void;
 }) {
   return (
     <figure className="flex min-w-0 flex-1 flex-col items-center gap-1">
-      <svg viewBox="0 0 100 200" className="h-auto w-full max-w-36" role="img" aria-label={label}>
+      <svg viewBox="0 0 100 200" className={cn("h-auto w-full", !compact && "max-w-36")} role="img" aria-label={label}>
         {data.map((shape) => {
           const m = owner(shape.muscle, data === anteriorData);
-          const fill = m && primary.has(m) ? "var(--lime)" : m && secondary.has(m) ? "color-mix(in oklab, var(--lime) 45%, var(--muted))" : "var(--muted)";
+          const fill = m && primary.has(m) ? "var(--lime)" : m && secondary.has(m) ? SECONDARY : BASE;
           return shape.svgPoints.map((points, i) => (
             <polygon
               key={`${shape.muscle}-${i}`}
               points={points}
               fill={fill}
-              stroke="var(--card)"
+              stroke="var(--background)"
               strokeWidth="0.6"
               strokeLinejoin="round"
               className={cn(onToggle && m && "cursor-pointer transition-opacity hover:opacity-80")}
@@ -51,7 +57,7 @@ function Figure({
           ));
         })}
       </svg>
-      <figcaption className="text-xs text-muted-foreground">{label}</figcaption>
+      {!compact && <figcaption className="text-xs text-muted-foreground">{label}</figcaption>}
     </figure>
   );
 }
@@ -61,12 +67,15 @@ export function MuscleMap({
   secondary = [],
   onToggle,
   legend = true,
+  compact = false,
   className,
 }: {
   primary: MuscleKey[];
   secondary?: MuscleKey[];
   onToggle?: (m: MuscleKey) => void;
   legend?: boolean;
+  /** Small figures without captions, for cards and list rows. */
+  compact?: boolean;
   className?: string;
 }) {
   const p = new Set(primary);
@@ -74,11 +83,11 @@ export function MuscleMap({
   const names = (list: MuscleKey[]) => list.map((m) => MUSCLES[m]).join(", ");
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="flex gap-4" aria-hidden={!onToggle}>
-        <Figure data={anteriorData} label="Ön" primary={p} secondary={s} onToggle={onToggle} />
-        <Figure data={posteriorData} label="Arka" primary={p} secondary={s} onToggle={onToggle} />
+      <div className={cn("flex", compact ? "gap-1" : "gap-4")} aria-hidden={!onToggle}>
+        <Figure data={anteriorData} label="Ön" primary={p} secondary={s} onToggle={onToggle} compact={compact} />
+        <Figure data={posteriorData} label="Arka" primary={p} secondary={s} onToggle={onToggle} compact={compact} />
       </div>
-      {legend && (primary.length > 0 || secondary.length > 0) && (
+      {legend && !compact && (primary.length > 0 || secondary.length > 0) && (
         <dl className="flex flex-col gap-1 text-xs">
           {primary.length > 0 && (
             <div className="flex gap-2">
@@ -92,7 +101,7 @@ export function MuscleMap({
           {secondary.length > 0 && (
             <div className="flex gap-2">
               <dt className="flex shrink-0 items-center gap-1.5 font-medium">
-                <span className="size-2.5 rounded-full bg-lime/45" aria-hidden />
+                <span className="size-2.5 rounded-full bg-lime/50" aria-hidden />
                 Yardımcı
               </dt>
               <dd className="text-muted-foreground">{names(secondary)}</dd>
