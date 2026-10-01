@@ -26,7 +26,9 @@ const INCLUDED = [
   "Grup dersleri, kontenjan ve sabit yer",
   "Danışanın kendi aldığı randevular",
   "Instagram'a koyacağınız sayfa ve kayıt formu",
-  "Ders hatırlatması, mesajlaşma ve bildirimler",
+  "Antrenman programı, beslenme planı ve hareket listesi",
+  "Ölçüm takibi ve gelişim grafikleri, ders notları",
+  "Ders, taksit ve ölçüm hatırlatması, mesajlaşma",
   "Taksit, havale bildirimi ve dekont onayı",
   "Excel'den aktarma ve Excel olarak indirme",
 ];

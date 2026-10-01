@@ -10,11 +10,14 @@ export function GET() {
 
 > ${APP_DESCRIPTION} Türkiye'de tek başına çalışan pilates eğitmenleri ve personal trainer'lar için web uygulaması. Beta süresince ücretsiz.
 
-${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yoklamayı ve ödemeleri tek yerde tutar. Her danışanın uygulama indirmeden açtığı kişisel bir sayfası olur; kalan derslerini görür, randevu alır, dersini onaylar ve eğitmenine mesaj yazar. Ödemeler eğitmenin IBAN'ına gider, ${APP_NAME} komisyon almaz.
+${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yoklamayı ve ödemeleri tek yerde tutar. Her danışanın uygulama indirmeden açtığı kişisel bir sayfası olur; kalan derslerini görür, randevu alır, dersini onaylar, antrenman programını ve ölçüm grafiklerini görür, eğitmenine mesaj yazar. Ödemeler eğitmenin IBAN'ına gider, ${APP_NAME} komisyon almaz.
 
 ## Sayfalar
 
 - [Ana sayfa](${base}/): özellikler, nasıl çalıştığı, sık sorulan sorular
+- [Pilates eğitmenleri](${base}/pilates-egitmenleri): reformer ve mat; paket, telafi hakkı, kontenjan, ev programı
+- [Personal trainer](${base}/personal-trainer): PT paketi, antrenman programı, ölçüm ve beslenme planı
+- [Fiyatlar](${base}/fiyatlar): beta süresince ücretsiz; ücretli plana geçmeden en az bir hafta önce haber
 - [KVKK aydınlatma metni](${base}/kvkk): hangi veriler, neden ve nerede işleniyor
 - [Sağlık verileri açık rıza metni](${base}/acik-riza)
 - [Kullanım koşulları](${base}/kosullar)
@@ -25,6 +28,10 @@ ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yokla
 - Seans paketleri: peşin, taksitli ve indirimli fiyat; deneme dersi; paket biterken yenileme teklifi.
 - Dersten önce "Geliyor musun?" hatırlatması ve tek dokunuşla onay.
 - Eğitmene özel herkese açık sayfa ve online kayıt formu; grup derslerinde kontenjan ve sabit yer.
+- Antrenman programı: hazır hareket listesi (salon, reformer, mat), şablondan kopyalama, set/tekrar/ağırlık, danışanın "yaptım" işareti.
+- Ölçüm takibi: kilo, kas, yağ oranı, çevre ölçüleri; danışanın sayfasında gelişim grafikleri; periyodik ölçüm hatırlatması.
+- Beslenme planı: öğün öğün öneriler, günlük hedefler, PDF ekleme; kalori hesabı ve diyet listesi yok.
+- Ders notları ve sağlık uyarısı; taksit hatırlatması; hatırlatma ve hazır mesaj metinleri eğitmenin kendi cümleleriyle.
 - Excel'den danışan aktarma ve bütün verileri Excel olarak indirme.
 - Veriler Frankfurt'taki (AB) sunucularda; sağlık bilgisi yalnızca açık rızayla.
 

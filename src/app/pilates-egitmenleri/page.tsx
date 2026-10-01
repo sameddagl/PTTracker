@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarClock, Check, Gift, Minus, Package, RotateCcw, UsersRound } from "lucide-react";
+import { ArrowRight, BellRing, CalendarClock, Check, Gift, Minus, Package, RotateCcw, StickyNote, TrendingUp, UsersRound } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Reveal } from "@/components/landing/reveal";
 import { stagger } from "@/lib/motion";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const PATH = "/pilates-egitmenleri";
 const TITLE = "Pilates Eğitmenleri İçin Seans Paketi ve Yoklama Takibi";
 const DESCRIPTION =
-  "Reformer ve mat pilates eğitmenleri için seans paketi, yoklama, telafi hakkı, grup dersi kontenjanı ve randevu takibi. Danışanlar uygulama indirmez. Beta süresince ücretsiz.";
+  "Reformer ve mat pilates eğitmenleri için seans paketi, yoklama, telafi hakkı, grup dersi kontenjanı, randevu, ders notları, ev programı ve ölçüm takibi. Danışanlar uygulama indirmez. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -49,6 +49,16 @@ const FEATURES = [
     text: "Dersten önce, sizin seçtiğiniz saatte danışana hatırlatma gider. “Geliyorum” derse yoklama listenizde görürsünüz; gelemeyecekse yerini başkasına açarsınız.",
   },
   {
+    icon: StickyNote,
+    title: "Ders notları ve uyarı notu",
+    text: "Yoklamayı alırken derse not düşün: hangi yay, hangi hareket, neye dikkat edildi. Bel fıtığı gibi bir uyarı varsa ders listesinde danışanın adının yanında görünür.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Ev programı ve gelişim",
+    text: "Reformer ve mat hareketleriyle ev programı hazırlayıp danışanın sayfasına gönderin. Ölçümleri girin, danışan değişimi grafikte görsün.",
+  },
+  {
     icon: Gift,
     title: "Deneme dersi",
     text: "Sayfanızda ilk kez gelenlere deneme dersi gösterin. Aynı telefon numarası deneme dersini bir kez alabilir.",
@@ -64,6 +74,9 @@ const CHECKLIST: { item: string; ours: string; has: boolean }[] = [
   { item: "Danışanın kendi randevusunu alması", ours: "Çalışma saatlerinize göre", has: true },
   { item: "Taksitli paket ve ödeme takibi", ours: "Danışan havaleyi ve dekontu kendisi bildirir", has: true },
   { item: "Sağlık formu ve açık rıza", ours: "Kayıt formunda, KVKK'ya uygun onayla", has: true },
+  { item: "Ders notları ve sağlık uyarısı", ours: "Yoklamadan not; uyarı ders listesinde görünür", has: true },
+  { item: "Ev egzersiz programı", ours: "Hazır reformer ve mat hareketleriyle, şablondan", has: true },
+  { item: "Ölçüm ve gelişim grafikleri", ours: "Danışan kendi sayfasında görür", has: true },
   { item: "Excel'den danışan aktarma", ours: "Kalan seans ve borçlarla birlikte", has: true },
   { item: "Danışan için uygulama", ours: "Gerekmez; kişisel link tarayıcıda açılır", has: true },
   { item: "Birden fazla eğitmen, ortak takvim", ours: "Şimdilik yok", has: false },
@@ -90,6 +103,10 @@ const FAQ: Faq[] = [
   {
     q: "Paket bitince ne oluyor?",
     a: "Pakette 2 ders kaldığında ya da son tarihe 7 gün kaldığında danışanın sayfasında “Paketi yenile” butonu çıkar. Danışan aynı paketi tek tıkla ister, siz onaylarsınız.",
+  },
+  {
+    q: "Danışanlarıma ev egzersizi verebilir miyim?",
+    a: "Evet. Hazır listedeki reformer ve mat hareketlerinden (ya da kendi eklediklerinizden) bir program hazırlar, danışana gönderirsiniz. Danışan programı kendi sayfasında görür, harekete video linki eklediyseniz izler ve yaptığı günleri işaretler.",
   },
   {
     q: "Danışanlarımın sağlık bilgilerini nasıl alırım?",

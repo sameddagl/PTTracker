@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, MessagesSquare, Package, Smartphone, Wallet, X } from "lucide-react";
+import { ArrowRight, CalendarClock, Dumbbell, Package, Salad, Smartphone, TrendingUp, Wallet, X } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Reveal } from "@/components/landing/reveal";
 import { stagger } from "@/lib/motion";
-import { MessagesDemo, PaymentDemo } from "@/components/landing/feature-demos";
+import { ProgramDemo, ProgressDemo } from "@/components/landing/feature-demos";
 import { Breadcrumbs, CtaBand, FaqSection, JsonLd, SectionHeading, SiteFooter, SiteHeader, card, pageJsonLd, type Faq } from "@/components/landing/site-chrome";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 const PATH = "/personal-trainer";
-const TITLE = "Personal Trainer Uygulaması: Danışan, Paket ve Ödeme Takibi";
+const TITLE = "Personal Trainer Uygulaması: Danışan, Program ve Ödeme Takibi";
 const DESCRIPTION =
-  "Serbest çalışan personal trainer'lar için PT paketi, ders, randevu ve ödeme takibi. Danışanlar uygulama indirmeden kendi sayfasından randevu alır, mesaj yazar. Beta süresince ücretsiz.";
+  "Serbest çalışan personal trainer'lar için PT paketi, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm takibi. Danışan programını ve gelişimini kendi sayfasında görür. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -24,6 +24,21 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   {
+    icon: Dumbbell,
+    title: "Antrenman programı",
+    text: "Hazır hareket listesinden programı gün gün kurun: set, tekrar, ağırlık, dinlenme, not. Şablonu bir kez hazırlayın, her danışana kopyalayıp düzenleyin. Danışan yaptığı günü işaretler, kimin programa uyduğunu görürsünüz.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Ölçüm ve gelişim grafikleri",
+    text: "Kilo, kas, yağ oranı, bel, göğüs, kol… Ölçümleri girin, danışan değişimi kendi sayfasında grafikle görsün. Ölçüm zamanı gelenler listenize düşer; isterseniz danışan kilosunu kendisi de girer.",
+  },
+  {
+    icon: Salad,
+    title: "Beslenme planı",
+    text: "Öğün öğün öneriler ve günlük su, protein, adım hedefi. Danışanın diyetisyeni varsa onun listesini PDF olarak plana ekleyebilirsiniz.",
+  },
+  {
     icon: Package,
     title: "PT paketleri",
     text: "10 derslik PT paketi, 2 taksit; 20 derslik paket peşin indirimli. Fiyatları siz koyarsınız, danışan ödeme şeklini kendisi seçer. İlk kez gelenler için deneme dersi de ekleyebilirsiniz.",
@@ -31,24 +46,19 @@ const FEATURES = [
   {
     icon: Wallet,
     title: "Kim ne kadar ödedi",
-    text: "Danışan parayı IBAN'ınıza gönderir, dekontu yükler; siz onaylarsınız. Nakit aldığınız ödemeyi de girersiniz. Vadesi gelen taksitler ayrı listede durur.",
+    text: "Taksit gününden bir gün önce danışana hatırlatma gider. Danışan parayı IBAN'ınıza gönderir, dekontu yükler; siz onaylarsınız. Nakit aldığınız ödemeyi de girersiniz.",
   },
   {
     icon: CalendarClock,
     title: "Randevuyu danışan alır",
     text: "Salonda hangi saatlerde olduğunuzu girin. Danışan boş saatlerden birini kendi seçer; iptal kuralınız ve kalan dersi randevuda da geçerli.",
   },
-  {
-    icon: MessagesSquare,
-    title: "Mesajlar kişisel numaranıza değil uygulamaya",
-    text: "Ders değişikliği, soru, hatırlatma… Danışan kendi sayfasından yazar, size bildirim gelir. Numaranızı her danışanla paylaşmak zorunda kalmazsınız.",
-  },
 ];
 
 const NOT_DOING = [
-  "Antrenman programı yazmak",
-  "Beslenme ve kalori takibi",
-  "Vücut ölçümü ve gelişim grafikleri",
+  "Kalori sayımı ve besin veritabanı",
+  "Kişiye özel diyet listesi (bu diyetisyenin işi)",
+  "Kartla online tahsilat",
   "Salon üyeliği, turnike ya da kart okuyucu",
 ];
 
@@ -59,7 +69,15 @@ const FAQ: Faq[] = [
   },
   {
     q: "Antrenman programı yazabiliyor muyum?",
-    a: `Hayır. ${APP_NAME} program yazma aracı değil; paket, ders, randevu ve ödeme işini üstleniyor. Programı alıştığınız yöntemle yazmaya devam edebilir, danışana mesajla gönderebilirsiniz.`,
+    a: "Evet. Hazır hareket listesinden (salon, reformer ve mat hareketleri) gün gün program kurarsınız; set, tekrar, ağırlık, dinlenme ve not yazarsınız, harekete video linki eklersiniz. Programı şablon olarak kaydedip başka danışanlara kopyalarsınız. Danışan programını kendi sayfasında görür ve antrenmanı yaptığı günleri işaretler.",
+  },
+  {
+    q: "Beslenme planı verebilir miyim?",
+    a: "Evet. Öğün öğün önerilerinizi ve günlük hedefleri (su, protein, adım) yazarsınız. Kalori hesabı ya da besin veritabanı yok; kişiye özel diyet listesi diyetisyenin işi olduğu için her planın altında bunu belirten bir not çıkar. Danışanın diyetisyen listesini PDF olarak plana ekleyebilirsiniz.",
+  },
+  {
+    q: "Danışanım ölçümlerini ve gelişimini görebiliyor mu?",
+    a: "Evet. Girdiğiniz ölçümler danışanın sayfasında grafikle görünür; ilk ölçümden bu yana ne kadar değiştiğini görür. Ölçümler sağlık verisi sayıldığı için danışanın açık rızasıyla kaydedilir.",
   },
   {
     q: "Danışanım bir uygulama indirmek zorunda mı?",
@@ -90,11 +108,11 @@ export default function PersonalTrainerPage() {
             <div>
               <p className="anim-rise eyebrow mb-4">Personal trainer&apos;lar için</p>
               <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-                Personal trainer&apos;lar için danışan, PT paketi ve ödeme takibi
+                Personal trainer&apos;lar için danışan, program ve ödeme takibi
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-                10 derslik paketten kaç ders kaldı, kim ne kadar ödedi, yarın kim geliyor; hepsi telefonunuzda. Serbest çalışan
-                PT&apos;ler için hazırlandı.
+                Antrenman programı, ölçümler ve beslenme planı danışanın kendi sayfasında. Paketten kaç ders kaldı, kim ne kadar
+                ödedi, yarın kim geliyor; hepsi telefonunuzda.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -109,8 +127,8 @@ export default function PersonalTrainerPage() {
               </div>
             </div>
             <div aria-hidden className="flex flex-col gap-3 rounded-[1.75rem] bg-card p-4 shadow-card sm:p-5">
-              <PaymentDemo />
-              <MessagesDemo />
+              <ProgramDemo />
+              <ProgressDemo />
             </div>
           </div>
         </section>
@@ -121,16 +139,17 @@ export default function PersonalTrainerPage() {
               Salonda ders veren serbest PT&apos;nin günü
             </h2>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-              Sabah üç danışan, akşam iki. Biri dersi son anda iptal ediyor, biri taksitini gönderdiğini söylüyor, bir diğerinin
-              paketi bitmek üzere. {APP_NAME} bunların hepsini tek listede toplar: yoklamayı aldığınızda ders paketten düşer, geç
-              iptal kuralınız uygulanır, dekontu gelen ödeme onayınızı bekler, paketi biten danışana yenileme teklifi gider.
+              Sabah üç danışan, akşam iki. Biri dersi son anda iptal ediyor, biri taksitini gönderdiğini söylüyor, bir diğeri
+              programını bu hafta yaptı mı belli değil. {APP_NAME} bunların hepsini tek yerde toplar: yoklamayı aldığınızda ders
+              paketten düşer, dekontu gelen ödeme onayınızı bekler, danışan yaptığı antrenmanı işaretler, ölçümleri grafikte
+              görürsünüz.
             </p>
           </div>
         </section>
 
         <section aria-labelledby="features-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
-          <SectionHeading id="features-heading" eyebrow="Neler var" lead="Satıştan tahsilata PT işiniz tek yerde." />
-          <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2">
+          <SectionHeading id="features-heading" eyebrow="Neler var" lead="Programdan tahsilata PT işiniz tek yerde." />
+          <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, text }, i) => (
               <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col gap-3 p-6")}>
                 <span className="flex size-10 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
@@ -167,8 +186,8 @@ export default function PersonalTrainerPage() {
               </span>
               <h2 className="mt-3 text-xl font-semibold tracking-[-0.02em]">Danışanınız mağazadan bir şey indirmez</h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Her danışanın kişisel bir linki olur. Linki açınca kalan derslerini, randevularını ve ödemelerini görür; randevu
-                alır, dersini onaylar, size yazar. Sayfayı ana ekranına ekleyen danışana hatırlatmalar bildirim olarak gelir.
+                Her danışanın kişisel bir linki olur. Linki açınca kalan derslerini, programını, ölçümlerini ve ödemelerini görür;
+                randevu alır, dersini onaylar, size yazar. Sayfayı ana ekranına ekleyen danışana hatırlatmalar bildirim olarak gelir.
               </p>
             </div>
           </div>
@@ -178,7 +197,7 @@ export default function PersonalTrainerPage() {
 
         <CtaBand
           page="pt"
-          title="Paketlerinizi girin, yarınki dersleri telefondan takip edin."
+          title="Programı yazın, gelişimi grafikte görün, ödemeleri telefondan takip edin."
           text="Beta süresince ücretsiz, kart bilgisi istemiyoruz."
         />
       </main>

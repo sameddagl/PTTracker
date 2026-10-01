@@ -315,3 +315,136 @@ export function ImportDemo() {
   );
 }
 
+
+/** Metric tiles and a weight line with a lime fill, like the İlerlemem tab. */
+export function ProgressDemo() {
+  const pts = [
+    [8, 18],
+    [62, 30],
+    [116, 44],
+    [170, 52],
+    [224, 66],
+  ];
+  const line = `M${pts.map((p) => p.join(",")).join(" L")}`;
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          ["Kilo", "62,2", "kg", "−2,6 kg"],
+          ["Bel", "72,5", "cm", "−5,5 cm"],
+        ].map(([label, v, unit, d], i) => (
+          <div key={label} className={cn(panel, "p-3", i === 0 && "ring-2 ring-lime")}>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-1 text-lg leading-none font-semibold tabular-nums">
+              {v} <span className="text-xs font-medium text-muted-foreground">{unit}</span>
+            </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground tabular-nums">{d}</span> · 3 ayda
+            </p>
+          </div>
+        ))}
+      </div>
+      <div className={cn(panel, "p-3")}>
+        <svg viewBox="0 0 232 76" className="h-20 w-full text-foreground">
+          <defs>
+            <linearGradient id="demo-progress" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="var(--lime)" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="var(--lime)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={`${line} L224,76 L8,76 Z`} fill="url(#demo-progress)" />
+          <path d={line} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {pts.map(([x, y], i) => (
+            <circle key={x} cx={x} cy={y} r={i === pts.length - 1 ? 5 : 3} fill={i === pts.length - 1 ? "var(--lime)" : "var(--card)"} stroke="currentColor" strokeWidth="2" />
+          ))}
+        </svg>
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+          <span>8 Tem</span>
+          <span>19 Ağu</span>
+          <span>30 Eyl</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** One day of a workout program on the client's page, with "yaptım". */
+export function ProgramDemo() {
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex gap-1.5 text-xs font-medium">
+        <span className="rounded-full bg-foreground px-3 py-1.5 text-background">Gün A</span>
+        <span className="rounded-full bg-card px-3 py-1.5 text-muted-foreground shadow-card">Gün B</span>
+      </div>
+      {[
+        ["Goblet squat", "3 × 10–12 · 12 kg"],
+        ["Hip thrust", "3 × 12 · 30 kg"],
+        ["Plank", "3 × 45 sn"],
+      ].map(([name, sum], i) => (
+        <div key={name} className={cn(panel, "flex items-center gap-3 p-2.5")}>
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-lime text-xs font-semibold text-lime-foreground tabular-nums">{i + 1}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{name}</p>
+            <p className="text-xs text-muted-foreground tabular-nums">{sum}</p>
+          </div>
+        </div>
+      ))}
+      <span className="flex items-center justify-center gap-1.5 rounded-full bg-primary py-2 text-xs font-medium text-primary-foreground">
+        <Check className="size-3.5" strokeWidth={3} />
+        Bugünkü antrenmanı yaptım
+      </span>
+    </div>
+  );
+}
+
+/** A nutrition plan: daily targets and a meal. */
+export function NutritionDemo() {
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          ["Su", "2,5 lt"],
+          ["Protein", "90 g"],
+          ["Adım", "8.000"],
+        ].map(([l, v]) => (
+          <div key={l} className={cn(panel, "p-2.5")}>
+            <p className="text-xs text-muted-foreground">{l}</p>
+            <p className="text-sm font-semibold tabular-nums">{v}</p>
+          </div>
+        ))}
+      </div>
+      {[
+        ["Kahvaltı", ["2 haşlanmış yumurta, beyaz peynir", "Domates, salatalık"]],
+        ["Öğle", ["Izgara tavuk, bulgur pilavı, salata"]],
+      ].map(([meal, lines]) => (
+        <div key={meal as string} className={cn(panel, "p-3")}>
+          <p className="text-sm font-semibold">{meal}</p>
+          {(lines as string[]).map((l) => (
+            <p key={l} className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="size-1.5 shrink-0 rounded-full bg-lime" />
+              {l}
+            </p>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The installment reminder as it lands on the phone, and the box at the top of the client's page. */
+export function InstallmentDemo() {
+  return (
+    <div className="flex w-full flex-col gap-3">
+      <Notification title="Reform Pilates" body="Yarın 12 Ders Özel paketinin 2. taksidi var: ₺8.000." time="10:00" />
+      <div className="flex items-center gap-3 rounded-2xl bg-lime p-3 text-lime-foreground">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime-foreground text-lime">
+          <FileText className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold tabular-nums">2. taksit bugün · ₺8.000</p>
+          <p className="text-xs opacity-80">Havale bilgileri ve “Ödedim” için dokun</p>
+        </div>
+      </div>
+    </div>
+  );
+}

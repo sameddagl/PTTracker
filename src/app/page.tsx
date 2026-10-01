@@ -7,7 +7,9 @@ import {
   CalendarCheck,
   Check,
   ClipboardCheck,
+  MessageSquareText,
   Smartphone,
+  StickyNote,
   UserPlus,
   UserRoundSearch,
 } from "lucide-react";
@@ -17,9 +19,13 @@ import {
   ConfirmDemo,
   GroupDemo,
   ImportDemo,
+  InstallmentDemo,
   MessagesDemo,
+  NutritionDemo,
   PaymentDemo,
   PricingDemo,
+  ProgramDemo,
+  ProgressDemo,
   PublicPageDemo,
 } from "@/components/landing/feature-demos";
 import { Analytics } from "@/components/analytics";
@@ -34,7 +40,7 @@ import { cn } from "@/lib/utils";
 
 const TITLE = `${APP_NAME} · Pilates ve PT için Danışan ve Seans Takibi`;
 const DESCRIPTION =
-  "Pilates ve PT eğitmenleri için danışan takip programı. Seans paketi, yoklama, randevu, ders hatırlatma, mesaj ve ödeme takibi tek yerde. Beta süresince ücretsiz.";
+  "Pilates ve PT eğitmenleri için danışan takip programı. Seans paketi, yoklama, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm takibi tek yerde. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -51,6 +57,9 @@ export const metadata: Metadata = {
     "grup dersi kontenjan",
     "ders hatırlatma",
     "deneme dersi",
+    "antrenman programı",
+    "beslenme planı",
+    "vücut ölçüsü takibi",
   ],
   openGraph: { title: TITLE, description: DESCRIPTION, url: "/", type: "website", siteName: APP_NAME, locale: "tr_TR" },
 };
@@ -94,14 +103,20 @@ const FEATURES = [
   },
   {
     title: "Danışanlarınızla uygulamadan yazışın",
-    text: "Saat değişikliği, soru, hatırlatma… Mesajlar kişisel numaranıza değil uygulamaya gelir. Yeni mesajda ikinizin de telefonuna bildirim düşer.",
+    text: "Saat değişikliği, soru, hatırlatma… Mesajlar kişisel numaranıza değil uygulamaya gelir, yeni mesajda ikinizin de telefonuna bildirim düşer. İsterseniz aynı hazır metinle WhatsApp'tan da yazarsınız.",
     chips: ["Mesajlaşma", "Anlık bildirim", "Görüldü"],
     Demo: MessagesDemo,
   },
   {
-    title: "Havale, dekont ve ödeme hatırlatması",
-    text: "Danışan IBAN'ınıza havale yapıp dekontu yükler, siz onaylarsınız. Paketi bitmek üzere olanlara WhatsApp'tan hazır mesajla hatırlatın.",
-    chips: ["IBAN", "Dekont", "WhatsApp", "Hatırlatma"],
+    title: "Taksit günü gelince hatırlatma gider",
+    text: "Taksit gününden bir gün önce danışana bildirim gider, sayfasının en üstünde de görünür. Danışan IBAN'ınıza havale yapıp dekontu yükler, siz onaylarsınız.",
+    chips: ["Taksit hatırlatması", "IBAN", "Dekont", "Onay"],
+    Demo: InstallmentDemo,
+  },
+  {
+    title: "Ödeme bekleyenlere hazır mesaj",
+    text: "Kimin ne kadar borcu olduğunu tek listede görün. Paketi bitmek üzere olanlara ve ödemesi gecikenlere hazır metinle yazın.",
+    chips: ["Bekleyen ödeme", "Hazır mesaj", "WhatsApp"],
     Demo: PaymentDemo,
   },
   {
@@ -113,10 +128,33 @@ const FEATURES = [
 ];
 
 const MORE = [
+  { icon: StickyNote, title: "Danışan notları", text: "Ders notlarını yoklamadan yazın. Sakatlık gibi bir uyarı varsa ders listesinde adının yanında görünür." },
+  { icon: MessageSquareText, title: "Kendi cümlelerinizle", text: "Hatırlatmaların ne zaman gideceğini ve hazır mesajların metnini siz belirlersiniz." },
   { icon: CalendarCheck, title: "Her pazartesi haftalık özet", text: "Geçen hafta kaç ders verdiniz, kimler geldi, ne kadar tahsil ettiniz; tek bildirimde." },
   { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanları bir listede görün, WhatsApp'tan hemen yazın." },
   { icon: ClipboardCheck, title: "Yoklama ekranı", text: "Almayı unuttuğunuz yoklamalar burada birikir. Grup dersinde “Hepsi geldi” deyip geçin." },
   { icon: Smartphone, title: "Mağazadan indirmeden ana ekranda", text: "Siz de danışanlarınız da ana ekrana ekleyin; hatırlatmalar ve mesajlar telefona bildirim olarak gelsin." },
+];
+
+const PROGRESS = [
+  {
+    title: "Ölçümler ve grafikler",
+    text: "Kilo, kas, yağ oranı, bel, göğüs… Hangi ölçüleri tuttuğunuzu siz seçersiniz, kendi ölçünüzü de eklersiniz. Danışan değişimi kendi sayfasında grafikle görür, isterse kilosunu kendisi girer.",
+    chips: ["Vücut ölçüleri", "Grafik", "Ölçüm hatırlatması"],
+    Demo: ProgressDemo,
+  },
+  {
+    title: "Antrenman programı",
+    text: "Hazır hareket listesinden programı gün gün kurun; set, tekrar, ağırlık ya da yay ayarını yazın. Şablonu bir kez hazırlayıp danışana kopyalarsınız. Danışan yaptığı günü işaretler, kimin programa uyduğunu görürsünüz.",
+    chips: ["Hareket listesi", "Şablon", "Video linki", "Yaptım"],
+    Demo: ProgramDemo,
+  },
+  {
+    title: "Beslenme planı",
+    text: "Öğün öğün öneriler; günlük su, protein ve adım hedefi. Diyetisyenin hazırladığı listeyi PDF olarak da ekleyebilirsiniz.",
+    chips: ["Öğünler", "Günlük hedef", "PDF"],
+    Demo: NutritionDemo,
+  },
 ];
 
 const STATS = [
@@ -154,8 +192,8 @@ const REASONS = [
     text: "Ödemeler bizden geçmez, komisyon almayız. Danışan havale yapar, dekontu yükler, siz onaylarsınız.",
   },
   {
-    title: "Sağlık bilgisi rıza olmadan alınmaz",
-    text: "Sağlık soruları yalnızca danışan açık rıza verirse sorulur. Her eğitmen sadece kendi danışanlarını görür.",
+    title: "Sağlık bilgisi rıza olmadan tutulmaz",
+    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her eğitmen yalnızca kendi danışanlarını görür.",
   },
 ];
 
@@ -179,6 +217,14 @@ const FAQ = [
   {
     q: "Bildirimler nasıl geliyor?",
     a: `${APP_NAME}'u telefonunuzun ana ekranına ekleyin; yeni başvuru, randevu, iptal, havale ya da mesaj geldiğinde telefonunuza bildirim düşer. Hangi bildirimleri ve e-postaları almak istediğinizi ayarlardan seçersiniz. iPhone'da iOS 16.4 ya da üstü gerekir.`,
+  },
+  {
+    q: "Danışanlarıma antrenman programı ve beslenme planı verebilir miyim?",
+    a: "Evet. Hazır hareket listesinden gün gün antrenman programı kurarsınız: set, tekrar, ağırlık, dinlenme ve not. Beslenme planında öğünleri ve günlük hedefleri yazarsınız, isterseniz PDF eklersiniz. Şablon olarak kaydettiğiniz programı başka danışanlara kopyalayıp kişiye göre düzenlersiniz. Danışan programını kendi sayfasında görür, antrenmanı yaptığı günleri işaretler.",
+  },
+  {
+    q: "Danışanım ölçümlerini görebiliyor mu?",
+    a: "Evet. Girdiğiniz ölçümler danışanın sayfasındaki İlerlemem sekmesinde grafikle görünür. İzin verirseniz danışan kilosunu kendisi de girer. Ölçümler sağlık verisi sayıldığı için danışanın açık rızasıyla kaydedilir.",
   },
   {
     q: `Ödemeler ${APP_NAME} üzerinden mi geçiyor?`,
@@ -270,6 +316,17 @@ const JSON_LD = {
       name: APP_NAME,
       applicationCategory: "BusinessApplication",
       applicationSubCategory: "Danışan ve seans takip programı",
+      featureList: [
+        "Seans paketi ve kalan ders takibi",
+        "Yoklama, telafi hakkı ve geç iptal kuralı",
+        "Online randevu ve grup dersi kontenjanı",
+        "Ders, taksit ve ölçüm hatırlatması",
+        "IBAN'a havale ve dekont onayı",
+        "Antrenman programı ve hareket listesi",
+        "Beslenme planı",
+        "Vücut ölçüsü takibi ve grafikler",
+        "Danışanla mesajlaşma",
+      ],
       // A web app; it can be added to the home screen, but there is no store app.
       operatingSystem: "Web",
       inLanguage: "tr-TR",
@@ -321,8 +378,9 @@ export default function Home() {
               style={{ "--delay": "180ms" } as React.CSSProperties}
               className="anim-rise mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg"
             >
-              Kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer&apos;lar için seans paketi, yoklama, randevu ve
-              ödeme takibi. Yoklamayı aldığınızda kalan seans paketten düşer, kimin ne kadar borcu olduğunu her an görürsünüz.
+              Kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer&apos;lar için seans paketi, yoklama, randevu, ödeme,
+              antrenman programı ve ölçüm takibi. Yoklamayı aldığınızda kalan seans paketten düşer; danışanınız gelişimini kendi
+              sayfasında görür.
             </p>
             <div
               style={{ "--delay": "280ms" } as React.CSSProperties}
@@ -412,6 +470,32 @@ export default function Home() {
           </ul>
         </section>
 
+        {/* Progress: measurements, workout programs and nutrition plans */}
+        <section id="gelisim" aria-labelledby="progress-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
+          <SectionHeading
+            id="progress-heading"
+            eyebrow="Gelişim takibi"
+            lead="Ölçüm, antrenman ve beslenme de burada."
+            rest="Danışanınız programını ve ilerlemesini kendi sayfasında görür."
+          />
+          <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-3">
+            {PROGRESS.map(({ title, text, chips, Demo }, i) => (
+              <li key={title} data-reveal style={stagger(i, 3)} className={cn(card, "hover-lift flex flex-col p-2 ring-1 ring-lime/40")}>
+                <div aria-hidden className="flex min-h-64 items-center justify-center rounded-[1.35rem] bg-canvas p-4 sm:p-5">
+                  <Demo />
+                </div>
+                <div className="flex flex-1 flex-col gap-3 px-4 pt-5 pb-4">
+                  <h3 className="text-lg leading-snug font-semibold tracking-[-0.02em]">{title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
+                  <div className="mt-auto pt-2">
+                    <Chips items={chips} />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {/* Features */}
         <section id="ozellikler" aria-labelledby="features-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
           <SectionHeading
@@ -436,9 +520,9 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          <ul className="mx-auto mt-4 grid max-w-6xl gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+          <ul className="mx-auto mt-4 grid max-w-6xl gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {MORE.map(({ icon: Icon, title, text }, i) => (
-              <li key={title} data-reveal style={stagger(i, 4)} className={cn(card, "hover-lift flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
+              <li key={title} data-reveal style={stagger(i, 3)} className={cn(card, "hover-lift flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                   <Icon className="size-5" />
                 </span>

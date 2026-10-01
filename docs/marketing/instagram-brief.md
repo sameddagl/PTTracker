@@ -25,10 +25,16 @@ Eğitmen tarafı:
 - **Excel'den aktarma ve Excel olarak indirme.**
 - **Bildirimler:** push; e-posta sadece önemli olaylarda. Pazartesi haftalık özet.
 
+- **Antrenman programı:** hazır hareket listesi (salon, reformer, mat), gün gün set/tekrar/ağırlık, şablondan kopyalama, video linki; danışan "Bugünkü antrenmanı yaptım" der, eğitmen uyumu görür.
+- **Ölçüm ve gelişim grafikleri:** kilo, kas, yağ oranı, çevre ölçüleri; periyodik ölçüm hatırlatması.
+- **Beslenme planı:** öğünler, günlük su/protein/adım hedefi, PDF ekleme. Kalori hesabı ve kişiye özel diyet listesi yok; "diyet" değil "beslenme önerisi" denir.
+- **Ders notları ve uyarı notu**, **taksit hatırlatması**, hatırlatma ve hazır mesaj metinlerini eğitmen kendisi yazar.
+
 Danışan tarafı (kendi linki, şifre yok):
 - Kalan dersleri görür, ders alır, iptal eder.
 - Dersten önce "Geliyor musun?" sorusuna "Geliyorum" der.
 - Havale bildirir, eğitmenine mesaj yazar, paket bitince yenileme teklifi alır.
+- Programını, beslenme planını ve ölçüm grafiklerini görür; kilosunu kendisi girebilir.
 
 **Olmayan / iddia etme:** paket dondurma ekranı, online kartla ödeme, mağaza uygulaması, çok eğitmenli stüdyo yönetimi, yapay zekâ özellikleri, kullanıcı sayısı veya yorumlar (henüz gerçek alıntı yok).
 
