@@ -166,6 +166,7 @@ export async function getLessons(
       clientId: clients.id,
       clientName: clients.fullName,
       clientPhone: clients.phone,
+      clientAlert: sql<string | null>`nullif(trim(${clients.healthNotes}), '')`,
       attendance: lessonAttendees.status,
       makeupUsed: lessonAttendees.makeupUsed,
       confirmedAt: lessonAttendees.confirmedAt,
@@ -199,17 +200,19 @@ export async function getLessons(
     confirmed: boolean;
     packageName: string | null;
     remaining: number | null;
+    /** The client's health warning note (⚠ next to the name). */
+    alert: string | null;
   };
   type Lesson = Omit<
     Row,
-    "attendeeId" | "clientId" | "clientName" | "clientPhone" | "attendance" | "makeupUsed" | "confirmedAt" | "packageName" | "remaining"
+    "attendeeId" | "clientId" | "clientName" | "clientPhone" | "clientAlert" | "attendance" | "makeupUsed" | "confirmedAt" | "packageName" | "remaining"
   > & {
     attendees: Attendee[];
   };
 
   const byLesson = new Map<string, Lesson>();
   for (const r of rows) {
-    const { attendeeId, clientId, clientName, clientPhone, attendance, makeupUsed, confirmedAt, packageName, remaining, ...lesson } = r;
+    const { attendeeId, clientId, clientName, clientPhone, clientAlert, attendance, makeupUsed, confirmedAt, packageName, remaining, ...lesson } = r;
     const entry = byLesson.get(r.lessonId) ?? { ...lesson, attendees: [] };
     if (attendeeId && clientId && attendance) {
       entry.attendees.push({
@@ -222,6 +225,7 @@ export async function getLessons(
         confirmed: confirmedAt !== null,
         packageName,
         remaining,
+        alert: clientAlert,
       });
     }
     byLesson.set(r.lessonId, entry);

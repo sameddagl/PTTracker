@@ -1,7 +1,9 @@
 import "server-only";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Tx } from "./index";
-import { clientPackageBalances, clientPackages, clients, intakeAnswers, lessonAttendees, lessons, payments } from "./schema";
+import { listMeasurementTypes } from "./progress";
+import { clientNotes, clientPackageBalances, clientPackages, clients, intakeAnswers, lessonAttendees, lessons, measurements, payments } from "./schema";
+import { metricCatalog } from "@/lib/measurements";
 import type { ExportData } from "@/lib/export";
 
 type TrainerRef = { id: string; timezone: string };
@@ -100,5 +102,39 @@ export async function loadExportData(tx: Tx, trainer: TrainerRef): Promise<Expor
     .where(eq(intakeAnswers.trainerId, trainerId))
     .orderBy(asc(clients.fullName), asc(intakeAnswers.sortOrder), asc(intakeAnswers.createdAt));
 
-  return { timezone: tz, clients: clientRows, packages: packageRows, lessons: lessonRows, payments: paymentRows, answers: answerRows };
+  const catalog = metricCatalog(await listMeasurementTypes(tx, trainerId));
+  const measureRows = await tx
+    .select({ clientName: clients.fullName, measuredOn: measurements.measuredOn, metric: measurements.metric, value: measurements.value, source: measurements.source })
+    .from(measurements)
+    .innerJoin(clients, eq(clients.id, measurements.clientId))
+    .where(eq(measurements.trainerId, trainerId))
+    .orderBy(asc(clients.fullName), asc(measurements.measuredOn));
+
+  const noteRows = await tx
+    .select({
+      clientName: clients.fullName,
+      createdAt: clientNotes.createdAt,
+      lessonDate: sql<string | null>`to_char(${lessons.startsAt} at time zone ${tz}, 'YYYY-MM-DD')`,
+      body: clientNotes.body,
+      visibleToClient: clientNotes.visibleToClient,
+    })
+    .from(clientNotes)
+    .innerJoin(clients, eq(clients.id, clientNotes.clientId))
+    .leftJoin(lessons, eq(lessons.id, clientNotes.lessonId))
+    .where(eq(clientNotes.trainerId, trainerId))
+    .orderBy(asc(clients.fullName), asc(clientNotes.createdAt));
+
+  return {
+    timezone: tz,
+    clients: clientRows,
+    packages: packageRows,
+    lessons: lessonRows,
+    payments: paymentRows,
+    answers: answerRows,
+    measurements: measureRows.map((m) => {
+      const def = catalog.get(m.metric);
+      return { clientName: m.clientName, measuredOn: m.measuredOn, metric: def?.label ?? m.metric, unit: def?.unit ?? "", value: Number(m.value), byClient: m.source === "client" };
+    }),
+    notes: noteRows,
+  };
 }

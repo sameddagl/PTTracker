@@ -19,12 +19,15 @@ export function ContactButtons({
   phone,
   text,
   portal,
+  label,
 }: {
   clientId: string;
   name: string;
   phone: string | null;
   text: string;
   portal?: string | null;
+  /** Shows the message button with this text instead of the icon alone. */
+  label?: string;
 }) {
   const wa = whatsappLink(phone, withPortal(text, portal));
   return (
@@ -36,9 +39,10 @@ export function ContactButtons({
           </a>
         </Button>
       )}
-      <Button asChild size="icon" variant="outline" aria-label={`${name} için mesaj yaz`}>
+      <Button asChild size={label ? "default" : "icon"} variant="outline" aria-label={label ? undefined : `${name} için mesaj yaz`}>
         <Link href={messageHref(clientId, text)}>
           <MessagesSquare />
+          {label}
         </Link>
       </Button>
     </span>

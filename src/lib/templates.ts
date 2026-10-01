@@ -78,6 +78,13 @@ export const TEMPLATES = {
     vars: ["ad"],
     text: "Merhaba {ad}, bir süredir görüşemedik. Bu hafta bir ders planlayalım mı? 🙂",
   },
+  consentAsk: {
+    label: "Ölçüm onayı isteme",
+    hint: "Danışan → Ölçümler",
+    auto: false,
+    vars: ["ad"],
+    text: "Merhaba {ad}, ölçümlerini birlikte takip edebilmemiz için sayfandaki İlerlemem sekmesinden onay vermen gerekiyor.",
+  },
   portalInvite: {
     label: "Sayfa linkini gönderme",
     hint: "Danışan sayfası → WhatsApp'ta gönder. {link} yazmazsan link sona eklenir.",

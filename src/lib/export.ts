@@ -73,6 +73,9 @@ export type ExportData = {
     valueOptions: string[] | null;
     valueBool: boolean | null;
   }[];
+  /** Readings with the metric already named (built-in label or the trainer's own). */
+  measurements?: { clientName: string; measuredOn: string; metric: string; unit: string; value: number; byClient: boolean }[];
+  notes?: { clientName: string; createdAt: Date; lessonDate: string | null; body: string; visibleToClient: boolean }[];
 };
 
 export const SHEET_NAMES = {
@@ -81,6 +84,8 @@ export const SHEET_NAMES = {
   lessons: "Dersler",
   payments: "Ödemeler",
   answers: "Kayıt formu cevapları",
+  measurements: "Ölçümler",
+  notes: "Notlar",
 } as const;
 
 const CLIENT_STATUS = { applicant: "Başvuru", active: "Aktif" } as const;
@@ -237,6 +242,33 @@ export function buildExportWorkbook(data: ExportData) {
       { header: "Sağlık", width: 8 },
     ],
     data.answers.map((a) => [a.clientName, a.label, formatAnswer(a), yesNo(a.isHealth)]),
+  );
+
+  addSheet(
+    workbook,
+    SHEET_NAMES.measurements,
+    [
+      { header: "Danışan", width: 24 },
+      { header: "Tarih", width: 12, numFmt: DATE_FMT },
+      { header: "Ölçü", width: 22 },
+      { header: "Değer", width: 10 },
+      { header: "Birim", width: 10 },
+      { header: "Giren", width: 10 },
+    ],
+    (data.measurements ?? []).map((m) => [m.clientName, asDate(m.measuredOn), m.metric, m.value, m.unit, m.byClient ? "Danışan" : "Sen"]),
+  );
+
+  addSheet(
+    workbook,
+    SHEET_NAMES.notes,
+    [
+      { header: "Danışan", width: 24 },
+      { header: "Tarih", width: 12, numFmt: DATE_FMT },
+      { header: "Ders", width: 12, numFmt: DATE_FMT },
+      { header: "Not", width: 60 },
+      { header: "Danışan görüyor", width: 14 },
+    ],
+    (data.notes ?? []).map((n) => [n.clientName, asDate(todayISO(data.timezone, n.createdAt)), asDate(n.lessonDate), n.body, yesNo(n.visibleToClient)]),
   );
 
   return workbook;

@@ -47,6 +47,7 @@ export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank_transfe
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "confirmed", "rejected"]);
 export const paymentReporterEnum = pgEnum("payment_reporter", ["trainer", "client"]);
 export const consentKindEnum = pgEnum("consent_kind", ["kvkk_notice", "health_data"]);
+export const measurementSourceEnum = pgEnum("measurement_source", ["trainer", "client"]);
 // "applicant": signed up on the trainer's public page, not approved yet.
 export const clientStatusEnum = pgEnum("client_status", ["applicant", "active"]);
 export const clientSourceEnum = pgEnum("client_source", ["manual", "public_page"]);
@@ -134,6 +135,12 @@ export const trainers = pgTable(
     reminderHours: smallint("reminder_hours").notNull().default(24),
     renewalOffersEnabled: boolean("renewal_offers_enabled").notNull().default(true),
     messageTemplates: jsonb("message_templates").$type<MessageTemplates>().notNull().default({}),
+
+    // Progress tracking (src/lib/measurements.ts): the metrics on the trainer's
+    // forms (null = the default set for their discipline) and whether clients
+    // may log their own weight from their page.
+    measureMetrics: text("measure_metrics").array(),
+    clientsSelfWeigh: boolean("clients_self_weigh").notNull().default(true),
     ...timestamps,
   },
   (t) => [
@@ -724,6 +731,77 @@ export const pushSubscriptions = pgTable(
     ),
     index("push_subscriptions_owner_idx").on(t.trainerId, t.clientId),
     ownRows("push_subscriptions_own", t.trainerId),
+  ],
+);
+
+// Dated notes on a client: general, or about one lesson (written from the
+// attendance list). Private unless the trainer lets the client see it.
+export const clientNotes = pgTable(
+  "client_notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: "set null" }),
+    body: text("body").notNull(),
+    visibleToClient: boolean("visible_to_client").notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [
+    check("client_notes_body_length", sql`char_length(${t.body}) between 1 and 2000`),
+    foreignKey({ name: "client_notes_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    index("client_notes_client_idx").on(t.clientId, t.createdAt),
+    ownRows("client_notes_own", t.trainerId),
+  ],
+);
+
+// The trainer's own metrics next to the built-in ones (e.g. "Plank süresi", sn).
+export const measurementTypes = pgTable(
+  "measurement_types",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    unit: text("unit").notNull().default(""),
+    decimals: smallint("decimals").notNull().default(1),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("measurement_types_label_length", sql`char_length(${t.label}) between 1 and 40`),
+    check("measurement_types_unit_length", sql`char_length(${t.unit}) <= 12`),
+    check("measurement_types_decimals", sql`${t.decimals} between 0 and 2`),
+    ownRows("measurement_types_own", t.trainerId),
+  ],
+);
+
+// Body measurements and other tracked values. Health data under KVKK: only
+// written for clients with a health_data consent. `metric` is a built-in key
+// (src/lib/measurements.ts) or a measurement_types id. One value per metric per day.
+export const measurements = pgTable(
+  "measurements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id").notNull(),
+    clientId: uuid("client_id").notNull(),
+    metric: text("metric").notNull(),
+    measuredOn: date("measured_on").notNull(),
+    value: numeric("value", { precision: 8, scale: 2 }).notNull(),
+    source: measurementSourceEnum("source").notNull().default("trainer"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("measurements_metric_length", sql`char_length(${t.metric}) between 1 and 40`),
+    foreignKey({ name: "measurements_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
+      "cascade",
+    ),
+    unique("measurements_one_per_day").on(t.clientId, t.metric, t.measuredOn),
+    index("measurements_client_idx").on(t.clientId, t.measuredOn),
+    ownRows("measurements_own", t.trainerId),
   ],
 );
 

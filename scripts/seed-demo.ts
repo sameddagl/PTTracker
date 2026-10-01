@@ -31,6 +31,7 @@ import {
 } from "../src/db/packages";
 import { recordClientPayment, recordPayment } from "../src/db/payments";
 import { createPortalLink } from "../src/db/portal";
+import { addNote, grantHealthConsent, saveMeasurements } from "../src/db/progress";
 import * as schema from "../src/db/schema";
 import { clients, groupClasses, lessonAttendees, lessonSeries, lessons, messages, packageTemplates, trainers } from "../src/db/schema";
 import { addDays, recurringDates, startOfWeek } from "../src/lib/dates";
@@ -569,6 +570,27 @@ async function main() {
     await markReadByClient(tx, deniz);
     await at(mustSend(await sendClientMessage(tx, deniz, "Yarınki dersi 18:30'a alabilir miyiz? İşten erken çıkabilirsem yetişirim.")), 40);
     log("messages: 2 threads, 1 unread");
+
+    // Progress: consent, a few months of measurements and notes for three clients.
+    const series: { key: ClientKey; every: number; values: Record<string, number[]> }[] = [
+      { key: "selin", every: 21, values: { weight: [64.8, 64.1, 63.4, 62.9, 62.2], waist: [78, 76.5, 75, 74, 72.5], flexibility: [8, 10, 13, 15, 18], pain: [4, 3, 3, 2, 1] } },
+      { key: "zeynep", every: 14, values: { weight: [71.5, 71.2, 70.4, 70.1, 69.6, 69.0], waist: [86, 85, 84, 83.5, 82, 81], pain: [6, 5, 5, 4, 3, 2] } },
+      { key: "deniz", every: 28, values: { weight: [82.4, 81.0, 79.8, 79.1], bodyFat: [24.5, 23.1, 22.0, 21.2], waist: [92, 90, 88.5, 87] } },
+    ];
+    for (const sr of series) {
+      const who = { trainerId, clientId: ids[sr.key] };
+      await grantHealthConsent(tx, who);
+      const n = Object.values(sr.values)[0].length;
+      for (let i = 0; i < n; i++) {
+        const on = addDays(today, -(n - 1 - i) * sr.every);
+        const res = await saveMeasurements(tx, who, on, Object.entries(sr.values).map(([metric, v]) => ({ metric, value: v[i] })));
+        if (!res.ok) throw new Error(`measurements ${sr.key}: ${res.reason}`);
+      }
+    }
+    await addNote(tx, selin, { body: "Omuz açma hareketini evde günde bir kez tekrarla. Haftaya köprüye geçiyoruz.", visibleToClient: true });
+    await addNote(tx, selin, { body: "Sağ omuzda hafif sıkışma var; yan plank kısa tutuldu.", visibleToClient: false });
+    await addNote(tx, { trainerId, clientId: ids.zeynep }, { body: "Bel ağrısı 6'dan 2'ye indi. Core çalışmasına devam.", visibleToClient: true });
+    log("progress: measurements for Selin, Zeynep and Deniz; 3 notes");
 
     return { portalFor: "Selin Aydın", token: tokens.selin };
   });

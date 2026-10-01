@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
 import {
+  AlertTriangle,
   CalendarPlus,
   ChevronLeft,
   History,
@@ -16,7 +17,6 @@ import {
 import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listRecentPayments } from "@/db/payments";
@@ -40,7 +40,12 @@ import { installmentPlan, installmentStates, nextPayable } from "@/lib/installme
 import { portalUrl } from "@/lib/portal";
 import { formatPhone, whatsappLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
+import { hasHealthConsent, listMeasurementTypes, listMeasurements, listNotes, toSeries, type MeasurementRow } from "@/db/progress";
+import { activeMetrics, metricCatalog, type CustomType } from "@/lib/measurements";
+import { renderTemplate } from "@/lib/templates";
 import { ArchivedBanner } from "./archived-banner";
+import { MeasurePanel, type MeasureDay } from "./measure-panel";
+import { NotesPanel } from "./notes-panel";
 import { PortalCard } from "./portal-card";
 
 export const metadata: Metadata = { title: "Danışan" };
@@ -53,8 +58,17 @@ const STATE_LABELS: Record<string, string> = {
   cancelled: "İptal",
 };
 
-export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]">) {
+const TABS = [
+  { key: "genel", label: "Genel" },
+  { key: "notlar", label: "Notlar" },
+  { key: "olcumler", label: "Ölçümler" },
+] as const;
+type Tab = (typeof TABS)[number]["key"];
+
+export default async function ClientPage({ params, searchParams }: PageProps<"/danisanlar/[id]">) {
   const { id } = await params;
+  const { sekme } = await searchParams;
+  const tab: Tab = TABS.some((t) => t.key === sekme) ? (sekme as Tab) : "genel";
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const data = await withTrainer(async (tx, trainerId) => {
@@ -110,12 +124,25 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
     const paymentHistory = await listRecentPayments(tx, trainerId, { clientId: id, limit: 10 });
     const portal = await getActivePortalLink(tx, id);
     const intake = await listIntakeAnswers(tx, { clientId: id });
-    const { timezone, messageTemplates } = await getTrainer(tx, trainerId);
-    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates };
+    const trainer = await getTrainer(tx, trainerId);
+    const { timezone, messageTemplates } = trainer;
+    // The other tabs load only what they show.
+    const notes = tab === "notlar" ? await listNotes(tx, id) : [];
+    const progress =
+      tab === "olcumler"
+        ? await (async () => {
+            const custom = await listMeasurementTypes(tx, trainerId);
+            const consented = await hasHealthConsent(tx, id);
+            const rows = consented ? await listMeasurements(tx, id) : [];
+            return { custom, consented, rows, metrics: activeMetrics(trainer.measureMetrics, trainer.discipline, custom) };
+          })()
+        : null;
+    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress };
   });
   if (!data) notFound();
 
-  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress } = data;
+  const firstName = client.fullName.split(" ")[0];
   const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
   const latestAnswers = [...new Map(intake.map((a) => [a.fieldId ?? a.label, a])).values()].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -169,185 +196,234 @@ export default async function ClientPage({ params }: PageProps<"/danisanlar/[id]
         <ArchivedBanner clientId={client.id} name={client.fullName} archivedOn={formatDayMonth(client.archivedAt, timezone)} />
       )}
 
-      <section aria-labelledby="packages-heading" className="mb-8">
-        <h2 id="packages-heading" className="mb-3 text-base font-semibold">
-          Paketler
-        </h2>
-        {packages.length === 0 ? (
-          <EmptyState icon={<Package />} title="Paket yok">
-            Paket sattığında kalan dersleri burada görürsün.
-          </EmptyState>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {packages.map((p) => (
-              <li key={p.id} className="surface p-4">
-                <div className="flex items-start gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {SESSION_TYPE_LABELS[p.sessionType]} · {formatShortDate(p.startsOn)}
-                      {p.expiresOn && ` → ${formatShortDate(p.expiresOn)}`}
-                    </p>
-                  </div>
-                  <Badge variant={p.state === "active" ? "lime" : "secondary"}>{STATE_LABELS[p.state]}</Badge>
-                </div>
-                <div className="mt-4 flex items-end justify-between gap-4">
-                  <p>
-                    <span className="text-3xl font-semibold tracking-tight tabular-nums">{p.remaining}</span>
-                    <span className="text-sm text-muted-foreground"> / {p.total} ders kaldı</span>
-                  </p>
-                  {Number(p.overdue) > 0 ? (
-                    <span className="text-sm font-medium text-destructive-strong">{formatTRY(p.overdue)} vadesi geldi</span>
-                  ) : (
-                    Number(p.due) > 0 && <span className="text-sm text-muted-foreground">{formatTRY(p.due)} kalan</span>
-                  )}
-                </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-                  <div className="h-full rounded-full bg-lime" style={{ width: `${p.total > 0 ? (p.remaining / p.total) * 100 : 0}%` }} />
-                </div>
-                {p.installments > 1 && (
-                  <div className="mt-3">
-                    <InstallmentSummary pkg={p} today={today} />
-                  </div>
-                )}
-                {Number(p.due) > 0 && p.state !== "cancelled" && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Havale açıklama kodu <span className="font-mono font-medium text-foreground">{paymentCode(client.fullName, p.id)}</span>
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {!client.archivedAt && (
-        <div className="mb-8">
-          <PortalCard
-            clientId={client.id}
-            clientName={client.fullName}
-            phone={client.phone}
-            templates={messageTemplates}
-            url={portal ? portalUrl(portal.token) : null}
-            lastOpened={
-              portal?.lastUsedAt
-                ? `${formatDayMonth(portal.lastUsedAt, timezone)} ${formatTime(portal.lastUsedAt, timezone)}`
-                : null
-            }
-          />
-        </div>
+      {client.healthNotes?.trim() && (
+        <p className="mb-6 flex items-start gap-3 rounded-2xl bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" aria-hidden />
+          <span className="min-w-0 whitespace-pre-wrap">{client.healthNotes}</span>
+        </p>
       )}
 
-      {upcoming.length > 0 && (
-        <section aria-labelledby="upcoming-heading" className="mb-8">
-          <h2 id="upcoming-heading" className="mb-3 text-base font-semibold">
-            Sıradaki dersler
-          </h2>
-          <ul className="divide-y overflow-hidden surface">
-            {upcoming.map((h) => (
-              <li key={h.id}>
-                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
-                  <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
-                  <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
-                  <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section aria-labelledby="history-heading" className="mb-8">
-        <h2 id="history-heading" className="mb-3 text-base font-semibold">
-          Son dersler
-        </h2>
-        {history.length === 0 ? (
-          <EmptyState icon={<History />} title="Henüz ders yok" />
-        ) : (
-          <ul className="divide-y overflow-hidden surface">
-            {history.map((h) => (
-              <li key={h.id}>
-                <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
-                  <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
-                  <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
-                  <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
-                  <Badge variant={h.status === "attended" ? "default" : h.status === "scheduled" ? "outline" : "secondary"}>
-                    {ATTENDANCE_LABELS[h.status]}
-                    {h.makeupUsed && " · telafi"}
-                  </Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {paymentHistory.length > 0 && (
-        <section aria-labelledby="payments-heading" className="mb-8">
-          <h2 id="payments-heading" className="mb-3 text-base font-semibold">
-            Ödemeler
-          </h2>
-          <ul className="divide-y overflow-hidden surface">
-            {paymentHistory.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-3 text-sm">
-                <span className="w-16 shrink-0 tabular-nums">{formatShortDate(p.paidOn)}</span>
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                  {PAYMENT_METHOD_LABELS[p.method]}
-                  {p.packageName && ` · ${p.packageName}`}
-                </span>
-                <span className="font-medium tabular-nums">{formatTRY(p.amount)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section aria-labelledby="answers-heading" className="mb-8 surface p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 id="answers-heading" className="text-base font-semibold">
-            Kayıt bilgileri
-          </h2>
-          {!client.archivedAt && (
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/danisanlar/${client.id}/kayit-bilgileri`}>
-                <Pencil />
-                {latestAnswers.length > 0 ? "Düzenle" : "Bilgi ekle"}
+      <nav aria-label="Danışan bölümleri" className="-mx-4 mb-6 overflow-x-auto px-4 md:mx-0 md:px-0">
+        <ul className="flex w-max gap-1 rounded-full bg-muted p-1">
+          {TABS.map((t) => (
+            <li key={t.key}>
+              <Link
+                href={t.key === "genel" ? `/danisanlar/${client.id}` : `/danisanlar/${client.id}?sekme=${t.key}`}
+                aria-current={tab === t.key ? "page" : undefined}
+                scroll={false}
+                className={`flex min-h-10 items-center rounded-full px-4 text-sm font-medium transition-colors ${
+                  tab === t.key ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
               </Link>
-            </Button>
-          )}
-        </div>
-        {latestAnswers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Boy, kilo, hedef gibi kayıt formu cevapları burada görünür.</p>
-        ) : (
-          <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
-            {latestAnswers.map((a) => (
-              <div key={a.id}>
-                <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {a.label}
-                  {a.isHealth && <ShieldCheck className="size-3.5" aria-label="Sağlık bilgisi" />}
-                </dt>
-                <dd className="mt-0.5 font-medium whitespace-pre-wrap">{formatAnswer(a)}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-      </section>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
-      {(client.notes || client.healthNotes) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Notlar</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm">
-            {client.notes && <p className="whitespace-pre-wrap">{client.notes}</p>}
-            {client.healthNotes && (
-              <p className="whitespace-pre-wrap rounded-md bg-warning/10 px-3 py-2">
-                <span className="font-medium">Sağlık: </span>
-                {client.healthNotes}
-              </p>
+      {tab === "notlar" && (
+        <NotesPanel
+          clientId={client.id}
+          firstName={firstName}
+          archived={Boolean(client.archivedAt)}
+          profileNote={client.notes?.trim() || null}
+          healthNote={client.healthNotes?.trim() || null}
+          editHref={`/danisanlar/${client.id}/duzenle`}
+          notes={notes.map((n) => ({
+            id: n.id,
+            body: n.body,
+            visibleToClient: n.visibleToClient,
+            when: `${formatDayMonth(n.createdAt, timezone)} ${formatTime(n.createdAt, timezone)}`,
+            lesson: n.lessonStartsAt ? `${formatDayMonth(n.lessonStartsAt, timezone)} dersi` : null,
+          }))}
+        />
+      )}
+
+      {tab === "olcumler" && progress && (
+        <MeasurePanel
+          clientId={client.id}
+          firstName={firstName}
+          archived={Boolean(client.archivedAt)}
+          consented={progress.consented}
+          metrics={progress.metrics}
+          series={toSeries(progress.rows, progress.custom)}
+          days={measureDays(progress.rows, progress.custom)}
+          today={today}
+          ask={{
+            text: renderTemplate(messageTemplates, "consentAsk", { ad: client.fullName }),
+            phone: client.phone,
+            portal: portal ? portalUrl(portal.token) : null,
+          }}
+        />
+      )}
+
+      {tab === "genel" && (
+        <>
+      <section aria-labelledby="packages-heading" className="mb-8">
+            <h2 id="packages-heading" className="mb-3 text-base font-semibold">
+              Paketler
+            </h2>
+            {packages.length === 0 ? (
+              <EmptyState icon={<Package />} title="Paket yok">
+                Paket sattığında kalan dersleri burada görürsün.
+              </EmptyState>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {packages.map((p) => (
+                  <li key={p.id} className="surface p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {SESSION_TYPE_LABELS[p.sessionType]} · {formatShortDate(p.startsOn)}
+                          {p.expiresOn && ` → ${formatShortDate(p.expiresOn)}`}
+                        </p>
+                      </div>
+                      <Badge variant={p.state === "active" ? "lime" : "secondary"}>{STATE_LABELS[p.state]}</Badge>
+                    </div>
+                    <div className="mt-4 flex items-end justify-between gap-4">
+                      <p>
+                        <span className="text-3xl font-semibold tracking-tight tabular-nums">{p.remaining}</span>
+                        <span className="text-sm text-muted-foreground"> / {p.total} ders kaldı</span>
+                      </p>
+                      {Number(p.overdue) > 0 ? (
+                        <span className="text-sm font-medium text-destructive-strong">{formatTRY(p.overdue)} vadesi geldi</span>
+                      ) : (
+                        Number(p.due) > 0 && <span className="text-sm text-muted-foreground">{formatTRY(p.due)} kalan</span>
+                      )}
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+                      <div className="h-full rounded-full bg-lime" style={{ width: `${p.total > 0 ? (p.remaining / p.total) * 100 : 0}%` }} />
+                    </div>
+                    {p.installments > 1 && (
+                      <div className="mt-3">
+                        <InstallmentSummary pkg={p} today={today} />
+                      </div>
+                    )}
+                    {Number(p.due) > 0 && p.state !== "cancelled" && (
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Havale açıklama kodu <span className="font-mono font-medium text-foreground">{paymentCode(client.fullName, p.id)}</span>
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
-          </CardContent>
-        </Card>
+          </section>
+
+          {!client.archivedAt && (
+            <div className="mb-8">
+              <PortalCard
+                clientId={client.id}
+                clientName={client.fullName}
+                phone={client.phone}
+                templates={messageTemplates}
+                url={portal ? portalUrl(portal.token) : null}
+                lastOpened={
+                  portal?.lastUsedAt
+                    ? `${formatDayMonth(portal.lastUsedAt, timezone)} ${formatTime(portal.lastUsedAt, timezone)}`
+                    : null
+                }
+              />
+            </div>
+          )}
+
+          {upcoming.length > 0 && (
+            <section aria-labelledby="upcoming-heading" className="mb-8">
+              <h2 id="upcoming-heading" className="mb-3 text-base font-semibold">
+                Sıradaki dersler
+              </h2>
+              <ul className="divide-y overflow-hidden surface">
+                {upcoming.map((h) => (
+                  <li key={h.id}>
+                    <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
+                      <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
+                      <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
+                      <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section aria-labelledby="history-heading" className="mb-8">
+            <h2 id="history-heading" className="mb-3 text-base font-semibold">
+              Son dersler
+            </h2>
+            {history.length === 0 ? (
+              <EmptyState icon={<History />} title="Henüz ders yok" />
+            ) : (
+              <ul className="divide-y overflow-hidden surface">
+                {history.map((h) => (
+                  <li key={h.id}>
+                    <Link href={`/ders/${h.lessonId}`} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
+                      <span className="w-16 shrink-0 tabular-nums">{formatDayMonth(h.startsAt, timezone)}</span>
+                      <span className="w-12 shrink-0 text-muted-foreground tabular-nums">{formatTime(h.startsAt, timezone)}</span>
+                      <span className="flex-1 text-muted-foreground">{SESSION_TYPE_LABELS[h.sessionType]}</span>
+                      <Badge variant={h.status === "attended" ? "default" : h.status === "scheduled" ? "outline" : "secondary"}>
+                        {ATTENDANCE_LABELS[h.status]}
+                        {h.makeupUsed && " · telafi"}
+                      </Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {paymentHistory.length > 0 && (
+            <section aria-labelledby="payments-heading" className="mb-8">
+              <h2 id="payments-heading" className="mb-3 text-base font-semibold">
+                Ödemeler
+              </h2>
+              <ul className="divide-y overflow-hidden surface">
+                {paymentHistory.map((p) => (
+                  <li key={p.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                    <span className="w-16 shrink-0 tabular-nums">{formatShortDate(p.paidOn)}</span>
+                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                      {PAYMENT_METHOD_LABELS[p.method]}
+                      {p.packageName && ` · ${p.packageName}`}
+                    </span>
+                    <span className="font-medium tabular-nums">{formatTRY(p.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section aria-labelledby="answers-heading" className="mb-8 surface p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 id="answers-heading" className="text-base font-semibold">
+                Kayıt bilgileri
+              </h2>
+              {!client.archivedAt && (
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/danisanlar/${client.id}/kayit-bilgileri`}>
+                    <Pencil />
+                    {latestAnswers.length > 0 ? "Düzenle" : "Bilgi ekle"}
+                  </Link>
+                </Button>
+              )}
+            </div>
+            {latestAnswers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Boy, kilo, hedef gibi kayıt formu cevapları burada görünür.</p>
+            ) : (
+              <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                {latestAnswers.map((a) => (
+                  <div key={a.id}>
+                    <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {a.label}
+                      {a.isHealth && <ShieldCheck className="size-3.5" aria-label="Sağlık bilgisi" />}
+                    </dt>
+                    <dd className="mt-0.5 font-medium whitespace-pre-wrap">{formatAnswer(a)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+        </>
       )}
     </>
   );
@@ -406,4 +482,20 @@ function QuickAction({
       {content}
     </Link>
   );
+}
+
+const dayLabel = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Readings grouped by day, newest first, for the history list under the charts. */
+function measureDays(rows: MeasurementRow[], custom: CustomType[]): MeasureDay[] {
+  const catalog = metricCatalog(custom);
+  const by = new Map<string, MeasureDay>();
+  for (const r of rows) {
+    const metric = catalog.get(r.metric);
+    if (!metric) continue;
+    const d = by.get(r.measuredOn) ?? { date: r.measuredOn, label: dayLabel.format(new Date(`${r.measuredOn}T00:00:00Z`)), items: [] };
+    d.items.push({ metric, value: r.value, byClient: r.source === "client" });
+    by.set(r.measuredOn, d);
+  }
+  return [...by.values()].sort((a, b) => b.date.localeCompare(a.date));
 }

@@ -74,7 +74,8 @@ export default function KvkkPage() {
         <p>
           <strong>İşlenen veriler:</strong> ad soyad, telefon, e-posta; kayıt formunda eğitmenin sorduğu bilgiler (örneğin doğum
           tarihi, hedefler, uygun olduğunuz saatler); seçtiğiniz paket, ders ve katılım kayıtları; ödeme kayıtları ve
-          yüklediğiniz dekontlar; kişisel sayfanızı son açtığınız zaman. <strong>Sağlık bilgileri</strong> (boy, kilo,
+          yüklediğiniz dekontlar; eğitmeninizin sizinle ilgili notları ve size hazırladığı antrenman ve beslenme programları;
+          kişisel sayfanızı son açtığınız zaman. <strong>Sağlık bilgileri ve vücut ölçümleri</strong> (boy, kilo, yağ oranı,
           sakatlık, hamilelik gibi) yalnızca ayrıca açık rıza verirseniz işlenir; ayrıntılar{" "}
           <Link href="/acik-riza">Açık Rıza Metni</Link>&apos;ndedir.
         </p>

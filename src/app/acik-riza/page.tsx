@@ -15,15 +15,16 @@ export default function HealthConsentPage() {
   return (
     <LegalPage eyebrow="Özel nitelikli kişisel veri" title="Sağlık Verileri Açık Rıza Metni" current="/acik-riza">
       <p className="text-foreground">
-        Kayıt formundaki sağlık sorularını yanıtlamak isteğe bağlıdır. Yanıtlamak isterseniz formdaki onay kutusunu
-        işaretleyerek aşağıdaki açık rızayı vermiş olursunuz.
+        Kayıt formundaki sağlık sorularını yanıtlamak ve ölçümlerinizin kaydedilmesi isteğe bağlıdır. Formdaki onay kutusunu
+        işaretleyerek ya da kişisel sayfanızdaki “İlerlemem” sekmesinden onay vererek aşağıdaki açık rızayı vermiş olursunuz.
       </p>
 
       <Section title="Neye rıza veriyorsunuz?">
         <p>
-          Boy, kilo, sakatlık ve ameliyat geçmişi, kronik rahatsızlıklar, hamilelik gibi <strong>sağlık ve vücut ölçüsü
-          bilgilerimin</strong>; derslerimin güvenli ve bana uygun planlanması amacıyla, kayıt olduğum eğitmen tarafından
-          işlenmesine ve bu amaçla {APP_NAME} altyapısında saklanmasına açık rıza veriyorum.
+          Boy, kilo, sakatlık ve ameliyat geçmişi, kronik rahatsızlıklar, hamilelik gibi <strong>sağlık bilgilerimin</strong> ve
+          kilo, yağ oranı, çevre ölçüleri gibi zaman içinde alınan <strong>vücut ölçümlerimin</strong>; derslerimin güvenli ve
+          bana uygun planlanması ve gelişimimin takip edilmesi amacıyla, kayıt olduğum eğitmen tarafından işlenmesine ve bu
+          amaçla {APP_NAME} altyapısında saklanmasına açık rıza veriyorum.
         </p>
       </Section>
 
@@ -35,7 +36,7 @@ export default function HealthConsentPage() {
           <li>
             Rızanızı dilediğiniz zaman geri alabilirsiniz. Eğitmeninize ya da <Link href="/kvkk#haklar">Aydınlatma Metni</Link>
             &apos;nde yazan adrese bildirmeniz yeterlidir; sağlık bilgileriniz silinir. Geri alma, o zamana kadar yapılan işlemeyi
-            geçersiz kılmaz.
+            geçersiz kılmaz. Ölçümlerinizi eğitmeniniz ve siz kişisel sayfanızda görürsünüz.
           </li>
           <li>
             Veri sorumlusu kayıt olduğunuz eğitmendir; ayrıntılar ve haklarınız için <Link href="/kvkk#danisanlar">Aydınlatma

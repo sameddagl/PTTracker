@@ -22,6 +22,8 @@ import { prefsView } from "@/lib/notify-prefs";
 import { getPortalData, portalUrl } from "@/lib/portal";
 import { applicationOption, optionLabel } from "@/lib/pricing";
 import { NextLessonPrompt, UpcomingLessons } from "./booking-panel";
+import { PortalTabs } from "./portal-tabs";
+import { ProgressTab } from "./progress-tab";
 import { LessonPicker } from "./lesson-picker";
 import { PackageShop } from "./package-shop";
 import { MessageThread } from "./message-thread";
@@ -56,7 +58,8 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups } = data;
+  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups, progress } = data;
+  const unreadFromTrainer = messages.filter((m) => m.sender === "trainer" && !m.readAt).length;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
   const url = portalUrl(token);
@@ -112,7 +115,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
 
   return (
     <div className="min-h-dvh bg-canvas">
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-8 px-4 pt-6 pb-8">
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-8 px-4 pt-6 pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <header className="flex flex-col gap-5">
           <div className="flex items-center gap-3">
             <Avatar name={trainerName} size="md" />
@@ -134,221 +137,248 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
           />
         )}
 
-        <InstallCard
-          storageKey="install-card-client"
-          title="Bu sayfayı telefonuna ekle"
-          description="Linki her seferinde aramadan ana ekrandan aç. Ders hatırlatmaları ve eğitmeninin mesajları telefonuna bildirim olarak düşsün."
-          appName="Derslerim"
-          url={url}
-          notifyWhere="sayfanın altındaki “Bildirim ayarları” bölümünde"
-          push={{
-            subscribe: subscribeClientAction.bind(null, token),
-            unsubscribe: unsubscribeClientAction.bind(null, token),
-            description: "Ders hatırlatmaları, ödeme onayları ve eğitmeninin mesajları bu telefona gelsin.",
+        <PortalTabs
+          tabs={[
+            { id: "dersler", label: "Derslerim", anchors: ["dersler", "paketler", "odeme"] },
+            { id: "ilerleme", label: "İlerlemem" },
+            { id: "mesajlar", label: "Mesajlar", badge: unreadFromTrainer },
+            { id: "bildirimler", label: "Bildirimler" },
+          ]}
+          panels={{
+            dersler: (
+              <>
+                <InstallCard
+                  storageKey="install-card-client"
+                  title="Bu sayfayı telefonuna ekle"
+                  description="Linki her seferinde aramadan ana ekrandan aç. Ders hatırlatmaları ve eğitmeninin mesajları telefonuna bildirim olarak düşsün."
+                  appName="Derslerim"
+                  url={url}
+                  notifyWhere="alttaki “Bildirimler” sekmesinde"
+                  push={{
+                    subscribe: subscribeClientAction.bind(null, token),
+                    unsubscribe: unsubscribeClientAction.bind(null, token),
+                    description: "Ders hatırlatmaları, ödeme onayları ve eğitmeninin mesajları bu telefona gelsin.",
+                  }}
+                />
+
+                {yeni && (
+                  <div className="flex flex-col gap-3 rounded-2xl bg-lime p-5 text-lime-foreground">
+                    <p className="flex items-center gap-2 text-base font-semibold">
+                      <CheckCircle2 className="size-5" aria-hidden />
+                      Başvurun alındı
+                    </p>
+                    <p className="text-sm opacity-80">
+                      Bu sayfa sana özel. Paketini, derslerini ve ödemelerini buradan görürsün. Linki kaybetmemek için kendine kaydet ya da
+                      eğitmenine gönder.
+                    </p>
+                    {toTrainer && (
+                      <Button asChild className="h-auto min-h-11 bg-[#1d1d1f] py-2.5 whitespace-normal text-white hover:bg-[#1d1d1f]/85">
+                        <a href={toTrainer} target="_blank" rel="noopener noreferrer">
+                          <WhatsAppIcon />
+                          Linki WhatsApp&apos;tan eğitmenine gönder
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {pendingApplications.map((app) => {
+                  const option = applicationOption(app);
+                  return (
+                    <div key={app.id} className="flex items-center gap-4 surface p-4">
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning-strong">
+                        <Hourglass className="size-5" aria-hidden />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{app.packageName}</p>
+                        <p className="text-sm text-muted-foreground">Eğitmenin onayladığında sana haber vereceğiz.</p>
+                      </div>
+                      {option && (
+                        <span className="shrink-0 text-right">
+                          <span className="block font-semibold tabular-nums">{formatTRY(option.total)}</span>
+                          <span className="block text-xs text-muted-foreground">{optionLabel(option)}</span>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {turnedDown && (
+                  <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                    Başvurun şimdilik onaylanmadı. Nedenini eğitmenine sorabilirsin.
+                  </p>
+                )}
+
+                {turnedDown || (pendingApplications.length > 0 && packages.length === 0) ? null : packages.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
+                    Şu an aktif paketin yok.
+                  </p>
+                ) : (
+                  <section id="paketler" aria-label="Paketlerin" className="flex scroll-mt-6 flex-col gap-3">
+                    {packages.map((p) => {
+                      const renew = renewable.find((r) => r.clientPackageId === p.id);
+                      const renewPending = renew && pendingApplications.some((a) => a.templateId === renew.templateId);
+                      return (
+                      <article key={p.id} className="flex flex-col gap-5 surface p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="eyebrow">Paketin</p>
+                            <h2 className="truncate text-base font-semibold">{p.name}</h2>
+                          </div>
+                          {p.state === "frozen" && <Badge variant="secondary">Donduruldu</Badge>}
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <span className="text-6xl leading-none font-semibold tracking-tight tabular-nums">{p.remaining}</span>
+                          <span className="pb-1 text-sm text-muted-foreground">
+                            / {p.total} ders
+                            <br />
+                            kaldı
+                          </span>
+                        </div>
+                        <div
+                          className="h-2.5 overflow-hidden rounded-full bg-muted"
+                          role="progressbar"
+                          aria-valuemin={0}
+                          aria-valuemax={p.total}
+                          aria-valuenow={p.remaining}
+                          aria-label="Kalan ders"
+                        >
+                          <div
+                            className="h-full rounded-full bg-lime"
+                            style={{ width: `${p.total > 0 ? (p.remaining / p.total) * 100 : 0}%` }}
+                          />
+                        </div>
+                        {(p.expiresOn || Number(p.due) > 0) && (
+                          <dl className="grid grid-cols-2 gap-3 text-sm">
+                            {p.expiresOn && (
+                              <div className="rounded-xl bg-muted/60 px-3 py-2.5">
+                                <dt className="text-xs text-muted-foreground">Son tarih</dt>
+                                <dd className="mt-0.5 font-semibold">{formatShortDate(p.expiresOn)}</dd>
+                              </div>
+                            )}
+                            {Number(p.due) > 0 && (
+                              <div className="rounded-xl bg-muted/60 px-3 py-2.5">
+                                <dt className="text-xs text-muted-foreground">Kalan ödeme</dt>
+                                <dd className="mt-0.5 font-semibold tabular-nums">{formatTRY(p.due)}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        )}
+                        {renew &&
+                          (renewPending ? (
+                            <p className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">
+                              <Hourglass className="size-4 shrink-0" aria-hidden />
+                              Yenileme isteğin eğitmeninin onayını bekliyor.
+                            </p>
+                          ) : (
+                            <RenewalOffer
+                              token={token}
+                              templateId={renew.templateId}
+                              installments={renew.installments}
+                              reason={renew.remaining <= 0 ? "Paketindeki dersler bitti." : renew.remaining <= 2 ? `${renew.remaining} dersin kaldı.` : "Paketinin süresi bitiyor."}
+                            />
+                          ))}
+                      </article>
+                      );
+                    })}
+                  </section>
+                )}
+
+                {(plans.length > 0 || rejected.length > 0) &&
+                  (client.iban && client.ibanHolder ? (
+                    <PaymentPanel
+                      token={token}
+                      plans={plans}
+                      iban={client.iban}
+                      ibanDisplay={formatIban(client.iban)}
+                      holder={client.ibanHolder}
+                      rejected={rejected}
+                    />
+                  ) : (
+                    plans.length > 0 && (
+                      <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-4 text-sm text-muted-foreground">
+                        Havale bilgilerini eğitmenine sorabilirsin.
+                      </p>
+                    )
+                  ))}
+
+                {(priv || group) && <LessonPicker token={token} priv={priv} group={group} />}
+
+                <PackageShop
+                  token={token}
+                  offers={offers}
+                  pendingIds={pendingApplications.map((a) => a.templateId)}
+                  hasPackage={packages.length > 0 || pendingApplications.length > 0}
+                />
+
+                {(packages.length > 0 || upcoming.length > 0) && (
+                  <UpcomingLessons token={token} lessons={bookable} timezone={tz} lateCancelHours={client.lateCancelHours} />
+                )}
+
+                {recent.length > 0 && (
+                  <section aria-labelledby="recent-heading">
+                    <h2 id="recent-heading" className="mb-3 text-base font-semibold">
+                      Son derslerin
+                    </h2>
+                    <ul className="divide-y overflow-hidden surface text-sm">
+                      {recent.map((l) => {
+                        const attended = l.status === "attended";
+                        return (
+                          <li key={l.id} className="flex items-center gap-3 px-4 py-3">
+                            <span
+                              className={cn(
+                                "flex size-8 shrink-0 items-center justify-center rounded-full",
+                                attended ? "bg-success/10 text-success-strong" : "bg-muted text-muted-foreground",
+                              )}
+                              aria-hidden
+                            >
+                              {attended ? <Check className="size-4" /> : <Minus className="size-4" />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-medium tabular-nums">{formatDayMonth(l.startsAt, tz)}</span>
+                              <span className="block text-xs text-muted-foreground tabular-nums">{formatTime(l.startsAt, tz)}</span>
+                            </span>
+                            <span className={cn("text-right text-sm", attended ? "font-medium" : "text-muted-foreground")}>
+                              {l.makeupUsed ? "Geç iptal (telafi)" : ATTENDANCE_LABELS[l.status]}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                )}
+              </>
+            ),
+            ilerleme: (
+              <ProgressTab
+                token={token}
+                consented={progress.consented}
+                selfWeigh={progress.selfWeigh}
+                series={progress.series}
+                today={todayISO(tz)}
+                trainerName={trainerName}
+                notes={progress.notes.map((n) => ({ id: n.id, body: n.body, when: formatDayMonth(n.createdAt, tz) }))}
+              />
+            ),
+            mesajlar: (
+              <MessageThread token={token} initial={messages} trainerName={trainerName} timeZone={tz} />
+            ),
+            bildirimler: (
+              <section aria-labelledby="notify-heading" className="flex flex-col gap-3">
+                <h2 id="notify-heading" className="text-base font-semibold">
+                  Bildirim ayarları
+                </h2>
+                <PushToggle
+                  subscribe={subscribeClientAction.bind(null, token)}
+                  unsubscribe={unsubscribeClientAction.bind(null, token)}
+                  description="Ders hatırlatmaları, ödeme onayları ve eğitmeninin mesajları bu telefona gelsin."
+                />
+                <NotifyPrefsForm rows={prefsView("client", client.notifyPrefs)} save={saveClientPrefsAction.bind(null, token)} />
+                <p className="text-xs text-muted-foreground">Başvuru ve onay e-postaları her zaman gelir, çünkü içlerinde bu sayfanın linki var.</p>
+              </section>
+            ),
           }}
         />
-
-        {yeni && (
-          <div className="flex flex-col gap-3 rounded-2xl bg-lime p-5 text-lime-foreground">
-            <p className="flex items-center gap-2 text-base font-semibold">
-              <CheckCircle2 className="size-5" aria-hidden />
-              Başvurun alındı
-            </p>
-            <p className="text-sm opacity-80">
-              Bu sayfa sana özel. Paketini, derslerini ve ödemelerini buradan görürsün. Linki kaybetmemek için kendine kaydet ya da
-              eğitmenine gönder.
-            </p>
-            {toTrainer && (
-              <Button asChild className="h-auto min-h-11 bg-[#1d1d1f] py-2.5 whitespace-normal text-white hover:bg-[#1d1d1f]/85">
-                <a href={toTrainer} target="_blank" rel="noopener noreferrer">
-                  <WhatsAppIcon />
-                  Linki WhatsApp&apos;tan eğitmenine gönder
-                </a>
-              </Button>
-            )}
-          </div>
-        )}
-
-        {pendingApplications.map((app) => {
-          const option = applicationOption(app);
-          return (
-            <div key={app.id} className="flex items-center gap-4 surface p-4">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning-strong">
-                <Hourglass className="size-5" aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">{app.packageName}</p>
-                <p className="text-sm text-muted-foreground">Eğitmenin onayladığında sana haber vereceğiz.</p>
-              </div>
-              {option && (
-                <span className="shrink-0 text-right">
-                  <span className="block font-semibold tabular-nums">{formatTRY(option.total)}</span>
-                  <span className="block text-xs text-muted-foreground">{optionLabel(option)}</span>
-                </span>
-              )}
-            </div>
-          );
-        })}
-
-        {turnedDown && (
-          <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
-            Başvurun şimdilik onaylanmadı. Nedenini eğitmenine sorabilirsin.
-          </p>
-        )}
-
-        {turnedDown || (pendingApplications.length > 0 && packages.length === 0) ? null : packages.length === 0 ? (
-          <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
-            Şu an aktif paketin yok.
-          </p>
-        ) : (
-          <section id="paketler" aria-label="Paketlerin" className="flex scroll-mt-6 flex-col gap-3">
-            {packages.map((p) => {
-              const renew = renewable.find((r) => r.clientPackageId === p.id);
-              const renewPending = renew && pendingApplications.some((a) => a.templateId === renew.templateId);
-              return (
-              <article key={p.id} className="flex flex-col gap-5 surface p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="eyebrow">Paketin</p>
-                    <h2 className="truncate text-base font-semibold">{p.name}</h2>
-                  </div>
-                  {p.state === "frozen" && <Badge variant="secondary">Donduruldu</Badge>}
-                </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-6xl leading-none font-semibold tracking-tight tabular-nums">{p.remaining}</span>
-                  <span className="pb-1 text-sm text-muted-foreground">
-                    / {p.total} ders
-                    <br />
-                    kaldı
-                  </span>
-                </div>
-                <div
-                  className="h-2.5 overflow-hidden rounded-full bg-muted"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={p.total}
-                  aria-valuenow={p.remaining}
-                  aria-label="Kalan ders"
-                >
-                  <div
-                    className="h-full rounded-full bg-lime"
-                    style={{ width: `${p.total > 0 ? (p.remaining / p.total) * 100 : 0}%` }}
-                  />
-                </div>
-                {(p.expiresOn || Number(p.due) > 0) && (
-                  <dl className="grid grid-cols-2 gap-3 text-sm">
-                    {p.expiresOn && (
-                      <div className="rounded-xl bg-muted/60 px-3 py-2.5">
-                        <dt className="text-xs text-muted-foreground">Son tarih</dt>
-                        <dd className="mt-0.5 font-semibold">{formatShortDate(p.expiresOn)}</dd>
-                      </div>
-                    )}
-                    {Number(p.due) > 0 && (
-                      <div className="rounded-xl bg-muted/60 px-3 py-2.5">
-                        <dt className="text-xs text-muted-foreground">Kalan ödeme</dt>
-                        <dd className="mt-0.5 font-semibold tabular-nums">{formatTRY(p.due)}</dd>
-                      </div>
-                    )}
-                  </dl>
-                )}
-                {renew &&
-                  (renewPending ? (
-                    <p className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">
-                      <Hourglass className="size-4 shrink-0" aria-hidden />
-                      Yenileme isteğin eğitmeninin onayını bekliyor.
-                    </p>
-                  ) : (
-                    <RenewalOffer
-                      token={token}
-                      templateId={renew.templateId}
-                      installments={renew.installments}
-                      reason={renew.remaining <= 0 ? "Paketindeki dersler bitti." : renew.remaining <= 2 ? `${renew.remaining} dersin kaldı.` : "Paketinin süresi bitiyor."}
-                    />
-                  ))}
-              </article>
-              );
-            })}
-          </section>
-        )}
-
-        {(plans.length > 0 || rejected.length > 0) &&
-          (client.iban && client.ibanHolder ? (
-            <PaymentPanel
-              token={token}
-              plans={plans}
-              iban={client.iban}
-              ibanDisplay={formatIban(client.iban)}
-              holder={client.ibanHolder}
-              rejected={rejected}
-            />
-          ) : (
-            plans.length > 0 && (
-              <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-4 text-sm text-muted-foreground">
-                Havale bilgilerini eğitmenine sorabilirsin.
-              </p>
-            )
-          ))}
-
-        {(priv || group) && <LessonPicker token={token} priv={priv} group={group} />}
-
-        <PackageShop
-          token={token}
-          offers={offers}
-          pendingIds={pendingApplications.map((a) => a.templateId)}
-          hasPackage={packages.length > 0 || pendingApplications.length > 0}
-        />
-
-        {(packages.length > 0 || upcoming.length > 0) && (
-          <UpcomingLessons token={token} lessons={bookable} timezone={tz} lateCancelHours={client.lateCancelHours} />
-        )}
-
-        {recent.length > 0 && (
-          <section aria-labelledby="recent-heading">
-            <h2 id="recent-heading" className="mb-3 text-base font-semibold">
-              Son derslerin
-            </h2>
-            <ul className="divide-y overflow-hidden surface text-sm">
-              {recent.map((l) => {
-                const attended = l.status === "attended";
-                return (
-                  <li key={l.id} className="flex items-center gap-3 px-4 py-3">
-                    <span
-                      className={cn(
-                        "flex size-8 shrink-0 items-center justify-center rounded-full",
-                        attended ? "bg-success/10 text-success-strong" : "bg-muted text-muted-foreground",
-                      )}
-                      aria-hidden
-                    >
-                      {attended ? <Check className="size-4" /> : <Minus className="size-4" />}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-medium tabular-nums">{formatDayMonth(l.startsAt, tz)}</span>
-                      <span className="block text-xs text-muted-foreground tabular-nums">{formatTime(l.startsAt, tz)}</span>
-                    </span>
-                    <span className={cn("text-right text-sm", attended ? "font-medium" : "text-muted-foreground")}>
-                      {l.makeupUsed ? "Geç iptal (telafi)" : ATTENDANCE_LABELS[l.status]}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-
-        <MessageThread token={token} initial={messages} trainerName={trainerName} timeZone={tz} />
-
-        <section aria-labelledby="notify-heading" className="flex flex-col gap-3">
-          <h2 id="notify-heading" className="text-base font-semibold">
-            Bildirim ayarları
-          </h2>
-          <PushToggle
-            subscribe={subscribeClientAction.bind(null, token)}
-            unsubscribe={unsubscribeClientAction.bind(null, token)}
-            description="Ders hatırlatmaları, ödeme onayları ve eğitmeninin mesajları bu telefona gelsin."
-          />
-          <NotifyPrefsForm rows={prefsView("client", client.notifyPrefs)} save={saveClientPrefsAction.bind(null, token)} />
-          <p className="text-xs text-muted-foreground">Başvuru ve onay e-postaları her zaman gelir, çünkü içlerinde bu sayfanın linki var.</p>
-        </section>
 
         <footer className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-center text-xs text-muted-foreground">
           <Lock className="size-3.5 shrink-0" aria-hidden />

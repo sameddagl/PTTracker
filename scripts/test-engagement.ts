@@ -4,6 +4,19 @@
 // Run with: npx tsx --conditions=react-server scripts/test-engagement.ts
 import assert from "node:assert/strict";
 import { TEMPLATES, cleanTemplates, renderTemplate } from "../src/lib/templates";
+import { BUILTIN_METRICS, activeMetrics, formatMetric, parseMetricValue, seriesChange, spanPhrase } from "../src/lib/measurements";
+import {
+  addNote,
+  cleanNote,
+  deleteMeasurements,
+  grantHealthConsent,
+  listMeasurements,
+  listNotes,
+  portalProgress,
+  saveMeasurements,
+  setNoteVisibility,
+  toSeries,
+} from "../src/db/progress";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import type { Tx } from "../src/db";
@@ -244,6 +257,60 @@ async function main() {
   assert.equal(renderTemplate({ portalInvite: "Sayfan hazır {ad}" }, "portalInvite", { ad: "Ali", link: "https://x/p/1" }), "Sayfan hazır Ali\nhttps://x/p/1");
   assert.deepEqual(cleanTemplates({ missYou: "  Selam {ad}  ", lowBalance: TEMPLATES.lowBalance.text, bogus: "x", paymentDue: "" }), { missYou: "Selam {ad}" });
   console.log("templates ok");
+
+  // ---- Notes and measurements ----
+  const zP = { trainerId: A, clientId: zeynep.id };
+  const noteId = await as(A, (tx) => addNote(tx, zP, { body: "Diz hassas, derin squat yok", visibleToClient: false }));
+  assert.ok(noteId);
+  assert.equal(await as(B, (tx) => addNote(tx, { trainerId: B, clientId: zeynep.id }, { body: "x", visibleToClient: true })), null, "not another trainer's client");
+  await as(A, (tx) => addNote(tx, zP, { body: "Harika ilerliyorsun!", visibleToClient: true }));
+  assert.equal((await as(A, (tx) => listNotes(tx, zeynep.id))).length, 2);
+  assert.deepEqual((await owner((tx) => listNotes(tx, zeynep.id, { visibleOnly: true }))).map((n) => n.body), ["Harika ilerliyorsun!"], "the client sees shared notes only");
+  assert.equal((await as(B, (tx) => listNotes(tx, zeynep.id))).length, 0, "RLS hides notes");
+  assert.equal(await as(B, (tx) => setNoteVisibility(tx, B, noteId!, true)), null);
+  assert.equal(cleanNote("   "), null);
+
+  const day = todayISO(TZ);
+  assert.deepEqual(await as(A, (tx) => saveMeasurements(tx, zP, day, [{ metric: "weight", value: 64.5 }])), { ok: false, reason: "consent" }, "no consent, no health data");
+  await as(A, (tx) => grantHealthConsent(tx, zP));
+  await as(A, (tx) => grantHealthConsent(tx, zP));
+  assert.equal(
+    (await db.select().from(schema.consents).where(eq(schema.consents.clientId, zeynep.id))).filter((c) => c.kind === "health_data").length,
+    1,
+    "consent recorded once",
+  );
+  assert.deepEqual(await as(A, (tx) => saveMeasurements(tx, zP, addDays(day, -14), [{ metric: "weight", value: 66 }, { metric: "waist", value: 80 }])), { ok: true, saved: 2 });
+  await as(A, (tx) => saveMeasurements(tx, zP, day, [{ metric: "weight", value: 64.5 }]));
+  // Same day again replaces the value (the client logging her own weight).
+  await owner((tx) => saveMeasurements(tx, zP, day, [{ metric: "weight", value: 64.2 }], "client"));
+  const rows = await as(A, (tx) => listMeasurements(tx, zeynep.id));
+  assert.deepEqual(
+    rows.filter((r) => r.metric === "weight").map((r) => [r.value, r.source]),
+    [
+      [66, "trainer"],
+      [64.2, "client"],
+    ],
+  );
+  assert.equal((await as(B, (tx) => listMeasurements(tx, zeynep.id))).length, 0, "RLS hides measurements");
+  const series = toSeries(rows, []);
+  assert.deepEqual(series.map((x) => x.metric.key), ["weight", "waist"]);
+  const change = seriesChange(series[0].points)!;
+  assert.equal(Math.round(change.delta * 10) / 10, -1.8);
+  assert.equal(change.days, 14);
+  assert.equal(spanPhrase(change.days), "2 haftada");
+  const prog = await owner((tx) => portalProgress(tx, zP));
+  assert.equal(prog.consented, true);
+  assert.equal(prog.selfWeigh, true);
+  assert.deepEqual(prog.notes.map((n) => n.body), ["Harika ilerliyorsun!"]);
+  assert.equal(await as(A, (tx) => deleteMeasurements(tx, zP, addDays(day, -14))), 2);
+
+  assert.deepEqual(parseMetricValue("72,5", BUILTIN_METRICS[0]), { value: 72.5 });
+  assert.deepEqual(parseMetricValue("", BUILTIN_METRICS[0]), { value: null });
+  assert.ok("error" in parseMetricValue("750", BUILTIN_METRICS[0]), "out of range");
+  assert.equal(formatMetric(-1.8, { unit: "kg", decimals: 1 }, { sign: true }), "−1,8 kg");
+  assert.deepEqual(activeMetrics(null, "pilates", []).map((m) => m.key), ["weight", "waist", "flexibility", "pain"]);
+  assert.deepEqual(activeMetrics(["waist", "c1"], "pt", [{ id: "c1", label: "Plank", unit: "sn", decimals: 0 }]).map((m) => m.label), ["Bel", "Plank"]);
+  console.log("notes and measurements ok");
 
   // ---- Notification choices ----
   assert.equal(trainerWants({}, "application", "email"), true, "new applications e-mail by default");

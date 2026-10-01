@@ -2,13 +2,15 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { AlertTriangle, Check, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import type { CalendarAttendee } from "@/db/lessons";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { markAttendanceAction } from "@/app/(app)/bugun/actions";
+import { addLessonNoteAction } from "@/app/(app)/danisanlar/[id]/progress-actions";
+import { useConfirm } from "@/components/confirm-dialog";
 
 type Status = CalendarAttendee["status"];
 
@@ -25,6 +27,22 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
   // Updated from the action result, so the count changes without waiting for the page refresh.
   const [remaining, setRemaining] = useState(attendee.remaining);
   const [makeupUsed, setMakeupUsed] = useState(attendee.makeupUsed);
+  const [noting, startNote] = useTransition();
+  const { ask, dialog } = useConfirm();
+
+  async function note() {
+    const body = await ask({
+      title: `${attendee.name} · ders notu`,
+      input: { label: "Not", placeholder: "Bugün neler yaptınız, dikkat edilecek bir şey…", maxLength: 2000 },
+      confirmLabel: "Kaydet",
+    });
+    if (!body) return;
+    startNote(async () => {
+      const res = await addLessonNoteAction(attendee.id, body);
+      if (res.ok) toast.success("Not kaydedildi", { description: "Danışanın Notlar sekmesinde görünür." });
+      else toast.error(res.error);
+    });
+  }
 
   function mark(status: Status) {
     // Tapping the active option again undoes it.
@@ -50,6 +68,7 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
 
   return (
     <div className="flex flex-col gap-2">
+      {dialog}
       <div className="flex items-center justify-between gap-3">
         <Link href={`/danisanlar/${attendee.clientId}`} className="flex min-w-0 items-center gap-2 font-medium hover:underline">
           <Avatar name={attendee.name} size="sm" />
@@ -61,8 +80,27 @@ export function AttendanceRow({ attendee }: { attendee: CalendarAttendee }) {
             </Badge>
           )}
         </Link>
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-          {remaining === null ? "Paketsiz" : `${remaining} ders kaldı`}
+        {attendee.alert && (
+          <button
+            type="button"
+            onClick={() => toast.warning(attendee.name, { description: attendee.alert, duration: 10000 })}
+            aria-label={`${attendee.name} için uyarı notu: ${attendee.alert}`}
+            className="-ml-2 flex size-8 shrink-0 items-center justify-center rounded-full text-warning-strong hover:bg-warning/10"
+          >
+            <AlertTriangle className="size-4" aria-hidden />
+          </button>
+        )}
+        <span className="ml-auto flex shrink-0 items-center gap-1">
+          <span className="text-xs text-muted-foreground tabular-nums">{remaining === null ? "Paketsiz" : `${remaining} ders kaldı`}</span>
+          <button
+            type="button"
+            onClick={note}
+            disabled={noting}
+            aria-label={`${attendee.name} için ders notu ekle`}
+            className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
+          >
+            <StickyNote className="size-4" aria-hidden />
+          </button>
         </span>
       </div>
       <div role="group" aria-label={`${attendee.name} yoklama`} className="grid grid-cols-4 gap-2">
