@@ -28,10 +28,10 @@ Sonra **Actions → Database backup → Run workflow** ile bir kez elle çalış
    pg_restore --list studyom.dump | head
    ```
 
-4. Geri yükleme hedefi **boş, yeni bir Supabase projesi** olmalı; çalışan production veritabanının üzerine yükleme. Yeni projede `pnpm db:migrate` çalıştırmadan, verileri yükle:
+4. Geri yükleme hedefi **boş, yeni bir Supabase projesi** olmalı; çalışan production veritabanının üzerine yükleme. Yeni projede `pnpm db:migrate` çalıştırmadan verileri yükle. `auth` şemasından sadece kullanıcılar ve giriş kimlikleri alınır; Supabase'in kendi tabloları (`schema_migrations` vb.) yeni projede zaten var:
 
    ```bash
-   pg_restore --dbname "<yeni projenin session pooler adresi>" --no-owner --no-privileges --data-only --schema=auth studyom.dump
+   pg_restore --dbname "<yeni projenin session pooler adresi>" --no-owner --no-privileges --data-only --schema=auth --table=users --table=identities studyom.dump
    pg_restore --dbname "<yeni projenin session pooler adresi>" --no-owner --no-privileges --schema=public studyom.dump
    ```
 
