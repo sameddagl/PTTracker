@@ -15,11 +15,20 @@ export type ProgramKind = "workout" | "nutrition";
 
 export type Exercise = { id: string; name: string; category: string | null; videoUrl: string | null; note: string | null; primary: MuscleKey[]; secondary: MuscleKey[] };
 
-/** Fills an empty library with the starter list, once. */
+/**
+ * Adds the starter exercises this trainer doesn't have yet: all of them for a
+ * new library, and the ones added to the starter list later for an existing one.
+ * A name the trainer already has (even one they deleted) is left alone.
+ */
 export async function ensureExerciseLibrary(tx: Tx, trainerId: string) {
-  const [any] = await tx.select({ id: exercises.id }).from(exercises).where(eq(exercises.trainerId, trainerId)).limit(1);
-  if (any) return;
-  await tx.insert(exercises).values(STARTER_EXERCISES.map((e) => ({ trainerId, name: e.name, category: e.category, primaryMuscles: e.primary, secondaryMuscles: e.secondary })));
+  const have = new Set(
+    (await tx.select({ name: exercises.name }).from(exercises).where(eq(exercises.trainerId, trainerId))).map((r) => r.name.toLocaleLowerCase("tr")),
+  );
+  const missing = STARTER_EXERCISES.filter((e) => !have.has(e.name.toLocaleLowerCase("tr")));
+  if (missing.length === 0) return;
+  await tx
+    .insert(exercises)
+    .values(missing.map((e) => ({ trainerId, name: e.name, category: e.category, primaryMuscles: e.primary, secondaryMuscles: e.secondary })));
 }
 
 export async function listExercises(tx: Tx, trainerId: string): Promise<Exercise[]> {

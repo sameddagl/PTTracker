@@ -7,6 +7,7 @@ import { TEMPLATES, cleanTemplates, renderTemplate } from "../src/lib/templates"
 import { STARTER_EXERCISES, cleanVideoUrl, itemSummary, programInputSchema } from "../src/lib/programs";
 import { MUSCLE_KEYS, cleanMuscles, combineMuscles, isMuscle } from "../src/lib/muscles";
 import {
+  archiveExercise,
   archiveProgram,
   clientPrograms,
   copyProgram,
@@ -345,6 +346,14 @@ async function main() {
   const lib = await as(A, (tx) => listExercises(tx, A));
   assert.equal(lib.length, STARTER_EXERCISES.length, "starter library once");
   assert.equal((await as(B, (tx) => listExercises(tx, A))).length, 0, "RLS hides the library");
+  // An existing library gets later additions, but not what the trainer deleted.
+  const lowRow = lib.find((e) => e.name === "Low row")!;
+  await as(A, (tx) => archiveExercise(tx, A, lowRow.id));
+  await db.delete(schema.exercises).where(eq(schema.exercises.name, "Pec deck (pectoral)"));
+  await as(A, (tx) => ensureExerciseLibrary(tx, A));
+  const relib = await as(A, (tx) => listExercises(tx, A));
+  assert.ok(relib.some((e) => e.name === "Pec deck (pectoral)"), "a missing starter exercise is added");
+  assert.ok(!relib.some((e) => e.name === "Low row"), "a deleted one stays deleted");
   const squat = lib.find((e) => e.name === "Squat")!;
   const days = [
     { title: "Gün A", items: [{ exerciseId: squat.id, name: "Squat", sets: 3, reps: "10", load: "20 kg", rest: "60 sn", note: null }, { exerciseId: null, name: "Ters lunge", sets: 3, reps: "12", load: null, rest: null, note: null }] },
