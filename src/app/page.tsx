@@ -246,7 +246,7 @@ const FAQ = [
   },
   {
     q: `${APP_NAME} ücretli mi?`,
-    a: "Beta süresince eğitmenler için ücretsiz, kart bilgisi de istemiyoruz. Ücretli plana geçmeden en az bir hafta önce haber veririz; beta kullanıcılarına ilk abonelikte indirim yapacağız. Devam edip etmemek size kalır, verilerinizi istediğiniz an Excel olarak indirebilirsiniz.",
+    a: "Beta süresince eğitmenler için ücretsiz, kart bilgisi de istemiyoruz. Ücretli plana geçmeden en az bir hafta önce haber veririz; beta döneminde kayıt olan eğitmenler, ücretli plana geçildiğinde 6 ay ücretsiz kullanır. Devam edip etmemek size kalır, verilerinizi istediğiniz an Excel olarak indirebilirsiniz.",
   },
   {
     q: "Verilerim nerede saklanıyor?",

@@ -208,7 +208,7 @@ const GROUPS: Group[] = [
 const FAQ: Faq[] = [
   {
     q: "Bu özelliklerin hepsi ücretsiz mi?",
-    a: "Beta süresince evet, hepsi açık ve ücretsiz. Ücretli plana geçmeden en az bir hafta önce haber veririz; beta kullanıcılarına ilk abonelikte indirim yapacağız.",
+    a: "Beta süresince evet, hepsi açık ve ücretsiz. Ücretli plana geçmeden en az bir hafta önce haber veririz; beta döneminde kayıt olan eğitmenler, ücretli plana geçildiğinde 6 ay ücretsiz kullanır.",
   },
   {
     q: "Hepsini kullanmak zorunda mıyım?",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check, Download, Percent, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Download, Gift, ShieldCheck } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Reveal } from "@/components/landing/reveal";
 import { stagger } from "@/lib/motion";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const PATH = "/fiyatlar";
 const TITLE = "Fiyatlar: Beta Süresince Ücretsiz";
-const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri ve personal trainer'lar için ücretsiz. Kart bilgisi yok, komisyon yok. Ücretli plana geçmeden en az bir hafta önce haber veririz.`;
+const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri ve personal trainer'lar için ücretsiz. Kart bilgisi yok, komisyon yok. Beta döneminde kayıt olanlara ücretli plana geçildiğinde 6 ay ücretsiz.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -40,9 +40,9 @@ const PROMISES = [
     text: "Ücretli plana geçmeden en az bir hafta önce e-postayla haber veririz. Devam edip etmemek size kalır.",
   },
   {
-    icon: Percent,
-    title: "Beta kullanıcılarına ilk abonelikte indirim",
-    text: "Beta sırasında başlayan eğitmenler ücretli plana geçerken ilk aboneliklerini indirimli alır.",
+    icon: Gift,
+    title: "Beta'da kayıt olana 6 ay ücretsiz",
+    text: "Beta döneminde kayıt olan eğitmenlere, ücretli plana geçildiğinde 6 aylık ücretsiz abonelik tanımlanır.",
   },
   {
     icon: Download,
@@ -54,7 +54,7 @@ const PROMISES = [
 const FAQ: Faq[] = [
   {
     q: "Beta ne zaman bitecek?",
-    a: "Kesin bir tarih yok. Ücretli plana geçmeden en az bir hafta önce haber veririz; o zamana kadar bütün özellikler ücretsiz.",
+    a: "Kesin bir tarih yok. Ücretli plana geçmeden en az bir hafta önce haber veririz; o zamana kadar bütün özellikler ücretsiz. Beta döneminde kayıt olduysanız ücretli plana geçildiğinde 6 ay daha ücretsiz kullanırsınız.",
   },
   {
     q: "Danışan sayısında sınır var mı?",

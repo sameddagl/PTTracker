@@ -112,7 +112,8 @@
   </div>
 </div>
 <script>
-  if (new URLSearchParams(location.search).get("n") === "2") document.body.classList.add("n2");
+  window.show = (n) => document.body.classList.toggle("n2", n === 2);
+  show(Number(new URLSearchParams(location.search).get("n") ?? 1));
 </script>
 </body>
 </html>

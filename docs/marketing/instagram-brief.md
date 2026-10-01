@@ -8,7 +8,7 @@ Bu dosya yeni bir sohbette Instagram görsellerini hazırlamak için gereken her
 - **Tek cümle:** Pilates eğitmenleri ve personal trainer'lar için danışan, seans paketi, randevu ve ödeme takibi.
 - **Kime:** Tek başına çalışan pilates eğitmenleri (reformer, mat, özel ders, düet, grup) ve personal trainer'lar. Çok eğitmenli stüdyolar şimdilik hedef değil.
 - **Durum:** Beta, ücretsiz. Kart bilgisi istenmiyor, ödemelerden komisyon alınmıyor.
-- **Fiyat sözü (aynen bu):** "Ücretli plana geçmeden en az bir hafta önce haber veririz; beta kullanıcılarına ilk abonelikte indirim."
+- **Fiyat sözü (aynen bu):** "Ücretli plana geçmeden en az bir hafta önce haber veririz; beta döneminde kayıt olanlara ücretli plana geçildiğinde 6 ay ücretsiz."
 - **Uygulama mağazada değil.** Tarayıcıdan açılan web uygulaması; iPhone ve Android'de ana ekrana eklenip uygulama gibi açılıyor, bildirim gönderebiliyor. Görsellerde **App Store / Google Play rozeti kullanma**; yerine "studyomapp.com" ya da "Link profilde" yaz.
 
 ## Gerçekten olan özellikler (sadece bunları anlat)

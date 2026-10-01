@@ -18,7 +18,7 @@ ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yokla
 - [Özellikler](${base}/ozellikler): bütün özellikler konu konu (profil, randevu, paket ve ödeme, antrenman ve beslenme, gelişim, mesaj, danışanın sayfası, veriler)
 - [Pilates eğitmenleri](${base}/pilates-egitmenleri): reformer ve mat; paket, telafi hakkı, kontenjan, ev programı
 - [Personal trainer](${base}/personal-trainer): PT paketi, antrenman programı, ölçüm ve beslenme planı
-- [Fiyatlar](${base}/fiyatlar): beta süresince ücretsiz; ücretli plana geçmeden en az bir hafta önce haber
+- [Fiyatlar](${base}/fiyatlar): beta süresince ücretsiz; ücretli plana geçmeden en az bir hafta önce haber, beta'da kayıt olanlara 6 ay ücretsiz
 - [KVKK aydınlatma metni](${base}/kvkk): hangi veriler, neden ve nerede işleniyor
 - [Sağlık verileri açık rıza metni](${base}/acik-riza)
 - [Kullanım koşulları](${base}/kosullar)

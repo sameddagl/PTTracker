@@ -217,7 +217,7 @@ Instagram günlük DM limitini açıklamıyor. Yardım sayfası sadece istenmeye
 Kısa tut. Tartışma. Karşı taraf haklıysa "haklısınız" de.
 
 **"Ücretli mi?"**
-> Beta süresince tamamen ücretsiz, kart bilgisi de istemiyorum. İleride ücretli olursa önceden haber veririm, beta'da olan hocalara ayrıca indirim yapacağım. Hiçbir zaman danışan başına ücret ya da komisyon olmayacak.
+> Beta süresince tamamen ücretsiz, kart bilgisi de istemiyorum. İleride ücretli olursa önceden haber veririm, beta'da kayıt olan hocalar ücretli plana geçince de 6 ay ücretsiz kullanacak. Hiçbir zaman danışan başına ücret ya da komisyon olmayacak.
 
 (Kurucu indirimi için net bir söz verme; `PAZAR_ARASTIRMASI.md` 7.1'deki "ömür boyu %50" gibi bir teklife karar verdiysen onu söyle, vermediysen "ayrıca indirim" de kal.)
 
