@@ -137,7 +137,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
             const custom = await listMeasurementTypes(tx, trainerId);
             const consented = await hasHealthConsent(tx, id);
             const rows = consented ? await listMeasurements(tx, id) : [];
-            return { custom, consented, rows, metrics: activeMetrics(trainer.measureMetrics, trainer.discipline, custom) };
+            return { custom, consented, rows, metrics: activeMetrics(trainer.measureMetrics, custom) };
           })()
         : null;
     const kind: "workout" | "nutrition" | null = tab === "program" ? "workout" : tab === "beslenme" ? "nutrition" : null;

@@ -89,6 +89,14 @@ export function MeasurePanel({
               Tarih
               <Input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="max-w-48" aria-invalid={error?.field === "date"} />
             </label>
+            {metrics.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Formda ölçü yok.{" "}
+                <Link href="/ayarlar/olcumler" className="underline underline-offset-4">
+                  Ölçü ekle
+                </Link>
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {metrics.map((m) => (
                 <label key={m.key} className="flex min-w-0 flex-col gap-1.5 text-sm font-medium">
@@ -125,7 +133,7 @@ export function MeasurePanel({
               <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
                 <Link href="/ayarlar/olcumler">
                   <Settings2 />
-                  Ölçüleri seç
+                  Ölçüleri düzenle
                 </Link>
               </Button>
               <Button type="button" onClick={save} loading={saving} disabled={!Object.values(values).some((v) => v.trim()) || (!consented && !attest)}>

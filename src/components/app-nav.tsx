@@ -121,7 +121,7 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
 /** Phones only: the app name, and the trainer's avatar that opens Ayarlar. */
 export function MobileTopBar({ name, appName }: { name: string; appName: string }) {
   const { isActive, onTap } = useActiveTab();
-  const active = isActive("/ayarlar") || isActive("/paketler") || isActive("/yardim");
+  const active = isActive("/ayarlar") || isActive("/paketler") || isActive("/programlar") || isActive("/yardim");
   return (
     <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
       <Link href="/bugun" className="flex items-center gap-2 text-base font-semibold tracking-tight">

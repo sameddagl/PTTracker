@@ -1,19 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { NativeSelect } from "@/components/field";
 import { Switch } from "@/components/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { addCustomMetricAction, archiveCustomMetricAction, saveMetricSetAction, setSelfWeighAction } from "./actions";
 
-type Item = { key: string; label: string; unit: string };
+type Item = { key: string; label: string; unit: string; custom: boolean };
 
-export function MetricSettings({ builtin, custom, selected: initial, selfWeigh: initialSelf }: { builtin: Item[]; custom: Item[]; selected: string[]; selfWeigh: boolean }) {
+export function MetricSettings({ catalog, selected: initial, selfWeigh: initialSelf }: { catalog: Item[]; selected: string[]; selfWeigh: boolean }) {
   const [selected, setSelected] = useState(initial);
   const [selfWeigh, setSelfWeigh] = useState(initialSelf);
   const [pending, start] = useTransition();
@@ -22,11 +21,12 @@ export function MetricSettings({ builtin, custom, selected: initial, selfWeigh: 
   const [unit, setUnit] = useState("");
   const [decimals, setDecimals] = useState(1);
   const { confirm, dialog } = useConfirm();
+  const byKey = new Map(catalog.map((m) => [m.key, m]));
+  const onForm = selected.map((k) => byKey.get(k)).filter((m): m is Item => Boolean(m));
+  const offForm = catalog.filter((m) => !selected.includes(m.key));
 
-  function toggle(key: string) {
+  function saveSet(next: string[]) {
     const before = selected;
-    const next = selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key];
-    if (next.length === 0) return void toast("En az bir ölçü seçili kalmalı.");
     setSelected(next);
     start(async () => {
       const res = await saveMetricSetAction(next);
@@ -37,54 +37,24 @@ export function MetricSettings({ builtin, custom, selected: initial, selfWeigh: 
     });
   }
 
-  const row = (m: Item, removable = false) => {
-    const on = selected.includes(m.key);
-    return (
-      <li key={m.key} className="flex items-center gap-2 pr-2">
-        <button
-          type="button"
-          onClick={() => toggle(m.key)}
-          aria-pressed={on}
-          disabled={pending}
-          className="flex min-h-12 flex-1 items-center gap-3 px-4 text-left text-sm outline-none focus-visible:bg-muted/60"
-        >
-          <span
-            className={cn("flex size-5 shrink-0 items-center justify-center rounded-md border", on ? "border-primary bg-primary text-primary-foreground" : "bg-card")}
-            aria-hidden
-          >
-            {on && <Check className="size-3.5" strokeWidth={3} />}
-          </span>
-          <span className="flex-1 font-medium">{m.label}</span>
-          {m.unit && <span className="text-muted-foreground">{m.unit}</span>}
-        </button>
-        {removable && (
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            className="text-muted-foreground"
-            aria-label={`${m.label} ölçüsünü kaldır`}
-            onClick={async () => {
-              const ok = await confirm({
-                title: `“${m.label}” kaldırılsın mı?`,
-                body: "Formlardan çıkar. Daha önce girilen değerler grafiklerde kalır.",
-                confirmLabel: "Kaldır",
-                destructive: true,
-              });
-              if (!ok) return;
-              start(async () => {
-                const res = await archiveCustomMetricAction(m.key);
-                if (!res.ok) toast.error(res.error);
-                else setSelected((s) => s.filter((k) => k !== m.key));
-              });
-            }}
-          >
-            <Trash2 />
-          </Button>
-        )}
-      </li>
-    );
-  };
+  async function remove(m: Item) {
+    if (m.custom) {
+      const ok = await confirm({
+        title: `“${m.label}” silinsin mi?`,
+        body: "Formdan ve listeden çıkar. Daha önce girilen değerler grafiklerde kalır.",
+        confirmLabel: "Sil",
+        destructive: true,
+      });
+      if (!ok) return;
+      start(async () => {
+        const res = await archiveCustomMetricAction(m.key);
+        if (!res.ok) toast.error(res.error);
+        else setSelected((s) => s.filter((k) => k !== m.key));
+      });
+      return;
+    }
+    saveSet(selected.filter((k) => k !== m.key));
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -93,15 +63,45 @@ export function MetricSettings({ builtin, custom, selected: initial, selfWeigh: 
         <h2 id="metrics-heading" className="mb-3 text-base font-semibold">
           Formdaki ölçüler
         </h2>
-        <ul className="divide-y overflow-hidden surface">{builtin.map((m) => row(m))}</ul>
+        {onForm.length === 0 ? (
+          <p className="rounded-2xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">Formda ölçü yok. Aşağıdan ekle.</p>
+        ) : (
+          <ul className="divide-y overflow-hidden surface">
+            {onForm.map((m) => (
+              <li key={m.key} className="flex min-h-12 items-center gap-3 py-1 pr-2 pl-4 text-sm">
+                <span className="flex-1 font-medium">{m.label}</span>
+                {m.unit && <span className="text-muted-foreground">{m.unit}</span>}
+                <Button type="button" size="icon-sm" variant="ghost" className="text-muted-foreground" aria-label={`${m.label} ölçüsünü kaldır`} disabled={pending} onClick={() => remove(m)}>
+                  <Trash2 />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-2 text-xs text-muted-foreground">Kaldırdığın ölçünün eski değerleri danışanın grafiklerinde kalır.</p>
       </section>
 
-      <section aria-labelledby="custom-heading">
-        <h2 id="custom-heading" className="mb-1 text-base font-semibold">
-          Kendi ölçülerin
+      <section aria-labelledby="add-heading" className="flex flex-col gap-3">
+        <h2 id="add-heading" className="text-base font-semibold">
+          Ölçü ekle
         </h2>
-        <p className="mb-3 text-sm text-muted-foreground">Örneğin plank süresi, squat ağırlığı ya da omuz esnekliği.</p>
-        {custom.length > 0 && <ul className="mb-3 divide-y overflow-hidden surface">{custom.map((m) => row(m, true))}</ul>}
+        {offForm.length > 0 && (
+          <ul className="flex flex-wrap gap-2" aria-label="Eklenebilecek ölçüler">
+            {offForm.map((m) => (
+              <li key={m.key}>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => saveSet([...selected, m.key])}
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-card px-4 text-sm font-medium shadow-card hover:bg-muted/60 disabled:opacity-60"
+                >
+                  <Plus className="size-4" aria-hidden />
+                  {m.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <form
           className="flex flex-col gap-3 surface p-4 sm:flex-row sm:items-end"
           onSubmit={(e) => {
@@ -116,7 +116,7 @@ export function MetricSettings({ builtin, custom, selected: initial, selfWeigh: 
           }}
         >
           <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-medium">
-            Ölçünün adı
+            Kendi ölçün
             <Input value={label} onChange={(e) => setLabel(e.target.value)} maxLength={40} placeholder="Plank süresi" required />
           </label>
           <div className="grid grid-cols-2 gap-3 sm:flex">
@@ -145,9 +145,7 @@ export function MetricSettings({ builtin, custom, selected: initial, selfWeigh: 
           <h2 id="self-heading" className="text-base font-semibold">
             Danışan kendi kilosunu girebilsin
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Danışan sayfasındaki İlerlemem sekmesinden kilosunu yazar; grafikte “kendisi” diye görünür.
-          </p>
+          <p className="text-sm text-muted-foreground">Danışan sayfasındaki İlerlemem sekmesinden kilosunu yazar; grafikte “kendisi” diye görünür.</p>
         </div>
         <Switch
           on={selfWeigh}

@@ -23,12 +23,8 @@ export type BuiltinMetric = (typeof BUILTIN_METRICS)[number]["key"];
 
 const BUILTIN = new Map<string, MetricDef>(BUILTIN_METRICS.map((m) => [m.key, m]));
 
-/** The forms' metrics when the trainer hasn't picked any, by discipline. */
-export const DEFAULT_METRICS: Record<"pt" | "pilates" | "both", BuiltinMetric[]> = {
-  pt: ["weight", "bodyFat", "muscle", "waist", "hip"],
-  pilates: ["weight", "waist", "flexibility", "pain"],
-  both: ["weight", "bodyFat", "waist", "hip", "flexibility"],
-};
+/** The form's metrics until the trainer changes them: weight, body composition and the usual tape measurements. */
+export const DEFAULT_METRICS: BuiltinMetric[] = ["weight", "muscle", "bodyFat", "waist", "chest", "hip", "arm", "thigh"];
 
 /** The metric the client may log from their page. */
 export const SELF_METRIC: BuiltinMetric = "weight";
@@ -53,9 +49,9 @@ export function metricCatalog(custom: CustomType[]) {
 }
 
 /** The metrics shown on the trainer's "Ölçüm ekle" form, in order. */
-export function activeMetrics(selected: string[] | null | undefined, discipline: "pt" | "pilates" | "both", custom: CustomType[]): MetricDef[] {
+export function activeMetrics(selected: string[] | null | undefined, custom: CustomType[]): MetricDef[] {
   const catalog = metricCatalog(custom.filter((t) => !t.archivedAt));
-  const keys = selected && selected.length > 0 ? selected : DEFAULT_METRICS[discipline];
+  const keys = selected ?? DEFAULT_METRICS;
   return keys.map((k) => catalog.get(k)).filter((m): m is MetricDef => Boolean(m));
 }
 

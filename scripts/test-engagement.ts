@@ -328,8 +328,9 @@ async function main() {
   assert.deepEqual(parseMetricValue("", BUILTIN_METRICS[0]), { value: null });
   assert.ok("error" in parseMetricValue("750", BUILTIN_METRICS[0]), "out of range");
   assert.equal(formatMetric(-1.8, { unit: "kg", decimals: 1 }, { sign: true }), "−1,8 kg");
-  assert.deepEqual(activeMetrics(null, "pilates", []).map((m) => m.key), ["weight", "waist", "flexibility", "pain"]);
-  assert.deepEqual(activeMetrics(["waist", "c1"], "pt", [{ id: "c1", label: "Plank", unit: "sn", decimals: 0 }]).map((m) => m.label), ["Bel", "Plank"]);
+  assert.deepEqual(activeMetrics(null, []).map((m) => m.key), ["weight", "muscle", "bodyFat", "waist", "chest", "hip", "arm", "thigh"]);
+  assert.deepEqual(activeMetrics(["waist", "c1"], [{ id: "c1", label: "Plank", unit: "sn", decimals: 0 }]).map((m) => m.label), ["Bel", "Plank"]);
+  assert.deepEqual(activeMetrics([], []), [], "the trainer may remove every metric");
   console.log("notes and measurements ok");
 
   // ---- Programs ----

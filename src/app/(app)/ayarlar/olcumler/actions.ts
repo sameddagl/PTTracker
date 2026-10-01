@@ -14,7 +14,6 @@ const FAIL = "Bir sorun oldu. Sayfayı yenileyip tekrar dene.";
 /** The metrics on the "Ölçüm ekle" form, in the given order. */
 export async function saveMetricSetAction(keys: string[]): Promise<Result> {
   if (!Array.isArray(keys) || keys.length > 30) return { ok: false, error: FAIL };
-  if (keys.length === 0) return { ok: false, error: "En az bir ölçü seç." };
   await withTrainer(async (tx, trainerId) => {
     const custom = new Set((await listMeasurementTypes(tx, trainerId)).filter((t) => !t.archivedAt).map((t) => t.id));
     const builtin = new Set<string>(BUILTIN_METRICS.map((m) => m.key));
@@ -43,8 +42,8 @@ export async function addCustomMetricAction(input: { label: string; unit: string
   await withTrainer(async (tx, trainerId) => {
     const [row] = await tx.insert(measurementTypes).values({ trainerId, ...parsed.data }).returning({ id: measurementTypes.id });
     // A new metric goes straight onto the form.
-    const [t] = await tx.select({ keys: trainers.measureMetrics, discipline: trainers.discipline }).from(trainers).where(eq(trainers.id, trainerId));
-    const keys = t.keys && t.keys.length > 0 ? t.keys : DEFAULT_METRICS[t.discipline];
+    const [t] = await tx.select({ keys: trainers.measureMetrics }).from(trainers).where(eq(trainers.id, trainerId));
+    const keys = t.keys ?? DEFAULT_METRICS;
     await tx.update(trainers).set({ measureMetrics: [...keys, row.id] }).where(eq(trainers.id, trainerId));
   });
   revalidatePath("/", "layout");
