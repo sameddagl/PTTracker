@@ -338,6 +338,7 @@ export function InstallTutorial({
               <span className="text-muted-foreground">Kendine mesajla gönder ya da kopyalayıp telefonunda yapıştır, sonra bu adımları izle.</span>
             </p>
             <CopyButton text={url} variant="outline" size="sm" className="self-start" />
+            <p className="truncate text-xs text-muted-foreground select-all">{url}</p>
           </div>
         )}
 

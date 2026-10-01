@@ -16,7 +16,10 @@ export async function copyText(text: string): Promise<boolean> {
   ta.value = text;
   ta.setAttribute("readonly", "");
   ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
-  document.body.appendChild(ta);
+  // Inside an open modal <dialog> the rest of the page is inert, so the textarea goes into the dialog.
+  const host = document.activeElement?.closest("dialog[open]") ?? document.querySelector("dialog[open]") ?? document.body;
+  host.appendChild(ta);
+  ta.focus();
   ta.select();
   ta.setSelectionRange(0, text.length);
   let ok = false;
