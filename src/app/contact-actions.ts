@@ -5,7 +5,7 @@ import { z } from "zod";
 import { adminDb, type Tx } from "@/db";
 import { createLandingThread, SUPPORT_MAX_LENGTH } from "@/db/support";
 import { LEGAL } from "@/lib/legal";
-import { mailTeamAboutSupport } from "@/lib/support-mail";
+import { mailTeamAboutContact } from "@/lib/support-mail";
 import { normalizePhone } from "@/lib/whatsapp";
 
 export type ContactState = { ok?: boolean; error?: string; errors?: Partial<Record<"name" | "email" | "phone" | "message", string>> };
@@ -41,6 +41,6 @@ export async function sendContactAction(_prev: ContactState, formData: FormData)
     createLandingThread(tx as unknown as Tx, { name, email, phone: phone && normalizePhone(phone), body: message }),
   );
   if (!res.ok) return { error: `Bugün birkaç mesaj gönderdiniz. Acil bir durumsa ${LEGAL.email} adresine yazın.` };
-  after(() => mailTeamAboutSupport({ threadId: res.id, from: name, contact: [email, phone].filter(Boolean).join(" · "), body: message, source: "landing" }));
+  after(() => mailTeamAboutContact({ threadId: res.id, from: name, contact: [email, phone].filter(Boolean).join(" · "), body: message }));
   return { ok: true };
 }
