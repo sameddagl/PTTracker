@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
     // Clients attach transfer receipts (capped at 1.5 MB in the action).
     serverActions: { bodySizeLimit: "2mb" },
   },
+  // Browsers and crawlers still ask for /favicon.ico; serve the PNG favicon there.
+  rewrites: async () => [{ source: "/favicon.ico", destination: "/pwa-icon/48" }],
   // Packages moved out of settings.
   redirects: async () => [
     // One host for search engines: www → apex, path and query kept.

@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 
-const SIZES = [180, 192, 512] as const;
+/** 48 and 96 are the favicon (rounded like icon.svg); the rest are full-bleed for the manifest and iOS. */
+const SIZES = [48, 96, 180, 192, 512] as const;
+const FAVICON = new Set<number>([48, 96]);
 
 export function generateStaticParams() {
   return SIZES.map((size) => ({ size: String(size) }));
@@ -15,7 +17,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/pwa-icon/[size]">) 
   const stroke = size * 0.075;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: "#c6f24e" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#c6f24e", borderRadius: FAVICON.has(size) ? size / 4 : 0 }}>
         <svg viewBox="0 0 64 64" width={size} height={size}>
           <path
             d="M12 32h8l6-18 12 36 6-18h8"

@@ -19,7 +19,15 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
   appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
   formatDetection: { telephone: false },
-  icons: { apple: "/pwa-icon/180" },
+  // Setting icons here replaces the file-based app/icon.svg link, so list it too.
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/pwa-icon/48", sizes: "48x48", type: "image/png" },
+      { url: "/pwa-icon/96", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/pwa-icon/180",
+  },
   manifest: "/manifest.webmanifest",
 };
 
