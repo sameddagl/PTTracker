@@ -31,12 +31,14 @@ import {
 } from "../src/db/packages";
 import { recordClientPayment, recordPayment } from "../src/db/payments";
 import { createPortalLink } from "../src/db/portal";
+import { copyProgram, createProgram, ensureExerciseLibrary, getProgram, sendProgram, setCheckin } from "../src/db/programs";
 import { addNote, grantHealthConsent, saveMeasurements } from "../src/db/progress";
 import * as schema from "../src/db/schema";
-import { clients, groupClasses, lessonAttendees, lessonSeries, lessons, messages, packageTemplates, trainers } from "../src/db/schema";
+import { clients, groupClasses, lessonAttendees, lessonSeries, lessons, messages, packageTemplates, programs, trainers } from "../src/db/schema";
 import { addDays, recurringDates, startOfWeek } from "../src/lib/dates";
 import { todayISO } from "../src/lib/format";
 import { installmentPlan } from "../src/lib/installments";
+import { programInputSchema, type ProgramInput } from "../src/lib/programs";
 import { recordSignup, validateSignup } from "../src/lib/signup-core";
 import { normalizePhone } from "../src/lib/whatsapp";
 
@@ -167,7 +169,7 @@ const CLIENTS: ClientSpec[] = [
   { key: "deniz", name: "Deniz Arslan", phone: phone(4), sales: [{ template: "private8", daysAgo: 40, pay: { kind: "cash", method: "cash" } }] },
   { key: "burak", name: "Burak Şahin", phone: phone(5), sales: [{ template: "duet4", daysAgo: 12, pay: { kind: "cash", method: "card" } }] },
   { key: "ece", name: "Ece Şahin", phone: phone(6), sales: [{ template: "duet4", daysAgo: 12, pay: { kind: "cash", method: "card" } }] },
-  { key: "cem", name: "Cem Öztürk", phone: phone(7), goals: "Esneklik", sales: [{ template: "private8", daysAgo: 10, pay: { kind: "plan", paid: 1, method: "cash" } }] },
+  { key: "cem", name: "Cem Öztürk", phone: phone(7), goals: "Esneklik", sales: [{ template: "private8", daysAgo: 14, pay: { kind: "plan", paid: 1, method: "cash" } }] },
   {
     key: "merve",
     name: "Merve Çelik",
@@ -240,6 +242,66 @@ const GROUP_OVERRIDES: Partial<Record<ClientKey, Record<number, AttendanceStatus
   nazli: { 2: "no_show" },
 };
 
+// ---- Workout programs ----
+
+type Item = [name: string, sets: number | null, reps: string | null, load?: string | null, rest?: string | null, note?: string | null];
+const day = (title: string, items: Item[]) => ({
+  title,
+  items: items.map(([name, sets, reps, load = null, rest = null, note = null]) => ({ name, sets, reps, load, rest, note })),
+});
+
+/** A gym template the trainer copies to clients; Deniz gets a copy. */
+const GYM_TEMPLATE = {
+  name: "Tüm vücut başlangıç · haftada 3",
+  note: "Her hareketten önce 1 hafif ısınma seti. Son 2 tekrar zorlamalı ama form bozulmamalı.",
+  days: [
+    day("Gün A", [
+      ["Goblet squat", 3, "12", "12 kg", "60 sn"],
+      ["Lat pulldown", 3, "10–12", "35 kg", "60 sn"],
+      ["Dumbbell bench press", 3, "10", "2 × 10 kg", "90 sn"],
+      ["Glute bridge", 3, "15", null, "45 sn"],
+      ["Plank", 3, "40 sn", null, "30 sn"],
+    ]),
+    day("Gün B", [
+      ["Romanian deadlift", 3, "10", "20 kg", "90 sn", "Sırt düz, kalçayı geriye it."],
+      ["Seated cable row", 3, "12", "30 kg", "60 sn"],
+      ["Dumbbell shoulder press", 3, "10", "2 × 6 kg", "60 sn"],
+      ["Reverse lunge", 3, "10 / bacak", null, "60 sn"],
+      ["Dead bug", 3, "10", null, "30 sn"],
+    ]),
+    day("Gün C", [
+      ["Leg press", 3, "12", "60 kg", "90 sn"],
+      ["Hip thrust", 3, "12", "30 kg", "60 sn"],
+      ["Şınav", 3, "8", null, "60 sn", "Zorlanırsan dizden yap."],
+      ["Face pull", 3, "15", "15 kg", "45 sn"],
+      ["Yan plank", 3, "30 sn", null, "30 sn"],
+    ]),
+  ],
+};
+
+/** Selin's reformer plan, written for her directly. */
+const REFORMER_PROGRAM = {
+  name: "Reformer · haftada 2",
+  note: "Omuzu zorlarsa kol hareketlerinde yayı bir azalt.",
+  days: [
+    day("Salı", [
+      ["Footwork", 1, "10 × 4 pozisyon", "3 kırmızı", null, "Topuk, parmak ucu, V, geniş."],
+      ["Hundred", 1, "100 vuruş", "1 kırmızı + 1 mavi"],
+      ["Bridging", 2, "8", "2 kırmızı"],
+      ["Feet in straps", 1, "8 / seri", "1 kırmızı + 1 mavi"],
+      ["Mermaid", 1, "4 / taraf", "1 mavi"],
+    ]),
+    day("Cuma", [
+      ["Knee stretches", 2, "10", "2 kırmızı"],
+      ["Long box pulling straps", 2, "8", "1 kırmızı"],
+      ["Elephant", 2, "8", "2 kırmızı"],
+      ["Side splits", 1, "8", "1 kırmızı"],
+      ["Kedi-deve", 1, "8", null, null, "Dersten sonra evde de yap."],
+    ]),
+  ],
+};
+const DEMO_TEMPLATE_PROGRAMS = [GYM_TEMPLATE.name];
+
 const BIO =
   "Ataşehir'deki stüdyomda reformer ve mat pilates dersleri veriyorum. Birebir derslerde duruşuna ve hedeflerine göre bir program kuruyoruz; " +
   "grup derslerinde en fazla sekiz kişiyle çalışıyoruz. Hamilelik ve doğum sonrası dönem için de ders planlayabiliriz.";
@@ -308,6 +370,8 @@ async function main() {
         and(eq(lessonSeries.trainerId, trainerId), notExists(tx.select({ id: lessons.id }).from(lessons).where(eq(lessons.seriesId, lessonSeries.id)))),
       );
       await tx.delete(packageTemplates).where(and(eq(packageTemplates.trainerId, trainerId), inArray(packageTemplates.name, CREATED_TEMPLATE_NAMES)));
+      // Clients' programs went with the clients; the demo template stays unless removed here.
+      await tx.delete(programs).where(and(eq(programs.trainerId, trainerId), isNull(programs.clientId), inArray(programs.name, DEMO_TEMPLATE_PROGRAMS)));
       log(`reset: removed ${ids.length} clients and the demo templates`);
     }
 
@@ -592,10 +656,30 @@ async function main() {
     await addNote(tx, { trainerId, clientId: ids.zeynep }, { body: "Bel ağrısı 6'dan 2'ye indi. Core çalışmasına devam.", visibleToClient: true });
     log("progress: measurements for Selin, Zeynep and Deniz; 3 notes");
 
-    return { portalFor: "Selin Aydın", token: tokens.selin };
+    // Programs: a gym template copied to Deniz, a reformer plan for Selin; both sent, with a few "Yaptım".
+    await ensureExerciseLibrary(tx, trainerId);
+    const input = (p: { name: string; note: string; days: ReturnType<typeof day>[] }, startsOn: string | null): ProgramInput =>
+      programInputSchema.parse({ name: p.name, note: p.note, startsOn, targets: {}, days: p.days });
+    const templateId = await createProgram(tx, trainerId, { ...input(GYM_TEMPLATE, null), kind: "workout", clientId: null });
+    const denizProgram = await copyProgram(tx, trainerId, templateId!, ids.deniz, addDays(today, -9));
+    const selinProgram = await createProgram(tx, trainerId, { ...input(REFORMER_PROGRAM, addDays(today, -14)), kind: "workout", clientId: ids.selin });
+    const checkins: [ClientKey, string, number[][]][] = [
+      // [day index, days ago]
+      ["deniz", denizProgram!, [[0, 9], [1, 7], [2, 5], [0, 2]]],
+      ["selin", selinProgram!, [[0, 10], [1, 7], [0, 3]]],
+    ];
+    for (const [key, programId, done] of checkins) {
+      await sendProgram(tx, trainerId, programId);
+      const program = await getProgram(tx, trainerId, programId);
+      for (const [d, ago] of done) await setCheckin(tx, { trainerId, clientId: ids[key] }, program!.days[d].id, addDays(today, -ago), true);
+    }
+    log(`programs: template '${GYM_TEMPLATE.name}' → Deniz, '${REFORMER_PROGRAM.name}' → Selin`);
+
+    return { portalFor: "Selin Aydın", token: tokens.selin, deniz: tokens.deniz };
   });
 
   console.log(`\nDone. Client portal (${result.portalFor}): /p/${result.token}`);
+  console.log(`Deniz Arslan (gym program): /p/${result.deniz}`);
 }
 
 main()

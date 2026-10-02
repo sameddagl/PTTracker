@@ -46,3 +46,7 @@ next-env.d.ts
 
 # Screen recordings from argent
 /.argent/
+
+# Marketing material stays on this machine only
+/docs/marketing/
+/docs/PAZARLAMA_PLANI.md
