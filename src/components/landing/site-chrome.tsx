@@ -80,7 +80,6 @@ export function SiteFooter() {
           <Logo />
           <p className="text-sm text-muted-foreground">Pilates ve PT eğitmenleri için danışan, seans ve ödeme takibi.</p>
           <p className="text-sm text-muted-foreground">
-            {LEGAL.controller} ·{" "}
             <a href={`mailto:${LEGAL.email}`} className="underline-offset-2 hover:text-foreground hover:underline">
               {LEGAL.email}
             </a>

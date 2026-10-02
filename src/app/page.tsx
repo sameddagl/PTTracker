@@ -252,10 +252,6 @@ const FAQ = [
     q: "Verilerim nerede saklanıyor?",
     a: "Veriler Almanya'daki (Frankfurt) bir veri merkezinde tutulur. Satılmaz, reklam için kullanılmaz. Hesabınızı sildiğinizde danışan kayıtlarınız da kalıcı olarak silinir. Ayrıntılar KVKK Aydınlatma Metni'nde.",
   },
-  {
-    q: `${APP_NAME}'u kim yapıyor?`,
-    a: `${APP_NAME}'u ${LEGAL.controller} geliştiriyor. Sorunuz, öneriniz ya da takıldığınız bir yer varsa ${LEGAL.email} adresine yazabilirsiniz.`,
-  },
 ];
 
 const HERO_CHECKS = ["Kredi kartı gerekmez", "Danışanlarınız uygulama indirmez", "Türkçe arayüz, TL fiyatlar"];
@@ -290,7 +286,6 @@ const JSON_LD = {
       url: SITE,
       logo: { "@type": "ImageObject", url: `${SITE}/pwa-icon/512`, width: 512, height: 512 },
       email: LEGAL.email,
-      founder: { "@type": "Person", name: LEGAL.controller },
       areaServed: { "@type": "Country", name: "Türkiye" },
       description: APP_DESCRIPTION,
     },
