@@ -11,9 +11,9 @@ import { APP_NAME } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 const PATH = "/personal-trainer";
-const TITLE = "Personal Trainer Uygulaması: Danışan, Program ve Ödeme Takibi";
+const TITLE = "Freelance Personal Trainer Uygulaması: Danışan ve PT Paketi Takibi";
 const DESCRIPTION =
-  "Serbest çalışan personal trainer'lar için PT paketi, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm takibi. Danışan programını ve gelişimini kendi sayfasında görür. Beta süresince ücretsiz.";
+  "Serbest (freelance) çalışan personal trainer'lar için PT paketi ve kalan ders takibi, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm. Danışan programını ve gelişimini kendi sayfasında görür. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -68,6 +68,10 @@ const FAQ: Faq[] = [
     a: `Salonun programı salonun üyesini tutar. Sizin kendi danışanınız, sattığınız PT paketi ve tahsilatınız ise genelde defterde ya da WhatsApp'ta kalır. ${APP_NAME} bu kısmı tutar: kimin kaç dersi kaldı, kim ne kadar ödedi.`,
   },
   {
+    q: "Online PT yapıyorum, danışanıma uzaktan program gönderebilir miyim?",
+    a: "Evet. Programı hazırlayıp gönderdiğinizde danışan kendi linkinden açar: hareketleri, set ve tekrarları, video linklerini ve çalışan kasları görür, yaptığı günleri işaretler. Kilosunu kendisi girebilir, siz de mesajla takip edersiniz. Yüz yüze ders olmadan da kullanılabilir.",
+  },
+  {
     q: "Antrenman programı yazabiliyor muyum?",
     a: "Evet. Hazır hareket listesinden (salon, reformer ve mat hareketleri) gün gün program kurarsınız; set, tekrar, ağırlık, dinlenme ve not yazarsınız, harekete video linki eklersiniz. Programı şablon olarak kaydedip başka danışanlara kopyalarsınız. Danışan programını kendi sayfasında görür ve antrenmanı yaptığı günleri işaretler.",
   },
@@ -106,9 +110,9 @@ export default function PersonalTrainerPage() {
         <section aria-labelledby="hero-heading" className="px-4 pt-8 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="anim-rise eyebrow mb-4">Personal trainer&apos;lar için</p>
+              <p className="anim-rise eyebrow mb-4">Serbest çalışan personal trainer&apos;lar için</p>
               <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-                Personal trainer&apos;lar için danışan, program ve ödeme takibi
+                Freelance personal trainer&apos;lar için danışan, PT paketi ve program takibi
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
                 Antrenman programı, ölçümler ve beslenme planı danışanın kendi sayfasında. Paketten kaç ders kaldı, kim ne kadar

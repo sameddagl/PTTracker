@@ -1,4 +1,5 @@
 import { APP_DESCRIPTION, APP_NAME, siteUrl } from "@/lib/config";
+import { GUIDES } from "@/lib/guides";
 import { LEGAL } from "@/lib/legal";
 
 // A plain summary for AI assistants (llms.txt). Google ignores it; it costs nothing.
@@ -19,6 +20,8 @@ ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yokla
 - [Pilates eğitmenleri](${base}/pilates-egitmenleri): reformer ve mat; paket, telafi hakkı, kontenjan, ev programı
 - [Personal trainer](${base}/personal-trainer): PT paketi, antrenman programı, ölçüm ve beslenme planı
 - [Fiyatlar](${base}/fiyatlar): beta süresince ücretsiz; ücretli plana geçmeden en az bir hafta önce haber, beta'da kayıt olanlara 6 ay ücretsiz
+- [Rehber](${base}/rehber): bağımsız eğitmenler için pratik yazılar
+${GUIDES.map((g) => `  - [${g.title}](${base}/rehber/${g.slug})`).join("\n")}
 - [KVKK aydınlatma metni](${base}/kvkk): hangi veriler, neden ve nerede işleniyor
 - [Sağlık verileri açık rıza metni](${base}/acik-riza)
 - [Kullanım koşulları](${base}/kosullar)

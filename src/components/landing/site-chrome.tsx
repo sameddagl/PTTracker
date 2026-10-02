@@ -21,6 +21,7 @@ export const MARKETING_PAGES: NavLink[] = [
   { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri" },
   { href: "/personal-trainer", label: "Personal trainer" },
   { href: "/fiyatlar", label: "Fiyatlar" },
+  { href: "/rehber", label: "Rehber" },
 ];
 
 /** The same header menu on every marketing page; the landing's sections are linked from inner pages too. */

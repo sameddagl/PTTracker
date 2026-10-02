@@ -3,6 +3,7 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { adminDb } from "@/db";
 import { trainers } from "@/db/schema";
 import { siteUrl } from "@/lib/config";
+import { GUIDES } from "@/lib/guides";
 import { LEGAL } from "@/lib/legal";
 
 /** Bump when the landing copy changes meaningfully, so search engines re-read it. */
@@ -25,6 +26,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
+    { url: `${base}/rehber`, lastModified: GUIDES.map((g) => g.updated).sort().at(-1), changeFrequency: "weekly", priority: 0.7 },
+    ...GUIDES.map((g) => ({ url: `${base}/rehber/${g.slug}`, lastModified: g.updated, changeFrequency: "monthly" as const, priority: 0.6 })),
     ...["/kvkk", "/acik-riza", "/kosullar"].map((path) => ({
       url: `${base}${path}`,
       lastModified: LEGAL.updatedIso,

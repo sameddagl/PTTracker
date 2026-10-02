@@ -11,9 +11,9 @@ import { APP_NAME } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 const PATH = "/pilates-egitmenleri";
-const TITLE = "Pilates Eğitmenleri İçin Seans Paketi ve Yoklama Takibi";
+const TITLE = "Pilates Eğitmeni Uygulaması: Seans Paketi ve Kalan Ders Takibi";
 const DESCRIPTION =
-  "Reformer ve mat pilates eğitmenleri için seans paketi, yoklama, telafi hakkı, grup dersi kontenjanı, randevu, ders notları, ev programı ve ölçüm takibi. Danışanlar uygulama indirmez. Beta süresince ücretsiz.";
+  "Bağımsız çalışan pilates eğitmenleri için seans paketi ve kalan ders takibi: özel ders, düet ve reformer grup dersi, yoklama, telafi hakkı, geç iptal, randevu ve ödeme. Danışanlar uygulama indirmez. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -85,6 +85,10 @@ const CHECKLIST: { item: string; ours: string; has: boolean }[] = [
 
 const FAQ: Faq[] = [
   {
+    q: "Danışanın kaç seansı kaldığını nasıl takip ederim?",
+    a: "Paketi bir kez tanımlarsınız: ders sayısı, geçerlilik süresi ve kurallar. Yoklamayı aldığınızda ders paketten düşer; geç iptal ve telafi hakkı aynı anda işlenir. Kalan seansı hem siz hem danışan kendi sayfasında görür, defter ya da Excel tutmanıza gerek kalmaz.",
+  },
+  {
     q: "Reformer sayısına göre kontenjan koyabilir miyim?",
     a: "Evet. Her grup dersi için kontenjanı ayrı girersiniz. Dolu derse yeni danışan yazılamaz; sabit yeri olan danışanların yeri her hafta kendiliğinden ayrılır.",
   },
@@ -127,13 +131,13 @@ export default function PilatesPage() {
         <section aria-labelledby="hero-heading" className="px-4 pt-8 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="anim-rise eyebrow mb-4">Pilates eğitmenleri için</p>
+              <p className="anim-rise eyebrow mb-4">Bağımsız pilates eğitmenleri için</p>
               <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-                Pilates eğitmenleri için seans paketi, yoklama ve randevu takibi
+                Özel ders veren pilates eğitmenleri için seans paketi ve kalan ders takibi
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-                Reformer, mat, düet ya da grup dersi fark etmez. Yoklamayı aldığınızda kalan seans paketten düşer; telafi hakkı,
-                geç iptal ve paket yenileme kendiliğinden işlenir.
+                Reformer özel ders, mat, düet ya da grup dersi fark etmez. Yoklamayı aldığınızda kalan seans paketten düşer; telafi
+                hakkı, geç iptal ve paket yenileme kendiliğinden işlenir. Danışan kaç dersi kaldığını kendi sayfasından görür.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -160,8 +164,8 @@ export default function PilatesPage() {
               Kimler için?
             </h2>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-              Tek başına ders veren pilates eğitmenleri için: kendi stüdyosu olan, bir stüdyoda saatlik salon kiralayan ya da
-              danışanının evine giden. Danışanlarınızı, paketlerini ve ödemelerini kendiniz takip ediyorsanız {APP_NAME} tam size
+              Tek başına, bağımsız (freelance) ders veren pilates eğitmenleri için: kendi küçük stüdyosu olan, bir stüdyoda
+              saatlik salon kiralayan ya da danışanının evine giden. Danışanlarınızı, paketlerini ve ödemelerini kendiniz takip ediyorsanız {APP_NAME} tam size
               göre. Birden fazla eğitmenin aynı takvimi paylaştığı stüdyo hesabı şu an yok.
             </p>
           </div>
