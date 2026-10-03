@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, BellRing, Dumbbell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, LifeBuoy, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound, Wallet } from "lucide-react";
+import { Bell, BellRing, CalendarClock, ChevronRight, CircleHelp, ClipboardList, Download, Dumbbell, ExternalLink, Globe, HandCoins, LifeBuoy, ListChecks, LogOut, Package, Ruler, TimerOff, UsersRound, Wallet, type LucideIcon } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { PageHeader, SectionTitle } from "@/components/page-header";
-import { ActionTiles } from "@/components/action-tiles";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
 import { listMembers, myAccounts } from "@/db/team";
@@ -49,8 +48,7 @@ export default async function SettingsPage() {
             </div>
           </section>
           {accountSwitch}
-          <ul className="divide-y overflow-hidden surface">
-            {[
+          <SettingsGroup id="me" title="Sen" rows={[
               { href: "/ayarlar/profil", icon: Globe, title: "Profilin", hint: "Adın, fotoğrafın ve kısa tanıtımın" },
               { href: "/hakedis", icon: Wallet, title: "Hakedişim", hint: "Bu ay verdiğin dersler ve tutar" },
               ...(can(member, "editAvailability")
@@ -59,18 +57,7 @@ export default async function SettingsPage() {
               { href: "/programlar", icon: Dumbbell, title: "Programlar", hint: "Antrenman ve beslenme şablonları, hareketler" },
               { href: "/ayarlar/bildirimler", icon: Bell, title: "Bildirimler", hint: "Bu cihazda bildirimleri aç" },
               { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Yoklama, ders ve program adım adım" },
-            ].map(({ href, icon: Icon, title, hint }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                  <RowIcon>
-                    <Icon aria-hidden />
-                  </RowIcon>
-                  <RowText title={title} hint={hint} />
-                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
+            ]} />
           <p className="text-sm text-muted-foreground">Ödemeler, paketler ve stüdyo ayarları {studioName} tarafından yönetiliyor.</p>
           <form action={signOut}>
             <SubmitButton variant="outline">
@@ -84,36 +71,80 @@ export default async function SettingsPage() {
   }
 
   const pageUrl = trainer.publicPageEnabled && trainer.slug ? `${siteUrl()}/${trainer.slug}` : null;
-  const rows = [
+  // One list per area, in the order a studio is set up and then run.
+  const groups: { id: string; title: string; rows: Row[] }[] = [
     {
-      href: "/ayarlar/profil",
-      icon: Globe,
-      title: "Profil ve sayfan",
-      hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
+      id: "studio",
+      title: "Stüdyo",
+      rows: [
+        {
+          href: "/ayarlar/profil",
+          icon: Globe,
+          title: "Profil ve sayfan",
+          hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
+        },
+        {
+          href: "/ayarlar/ekip",
+          icon: UsersRound,
+          title: "Ekip",
+          hint: teamSize > 1 ? `${teamSize - 1} eğitmen · yetkiler, renk, hakediş` : "Stüdyonda ders veren eğitmenleri ekle",
+        },
+        ...(teamSize > 1 ? [{ href: "/hakedis", icon: HandCoins, title: "Hakediş", hint: "Eğitmenlerin aylık dersleri ve tutarları" }] : []),
+      ],
     },
     {
-      href: "/ayarlar/ekip",
-      icon: UsersRound,
-      title: "Ekip",
-      hint: teamSize > 1 ? `${teamSize - 1} eğitmen · davet, renk, hakediş` : "Stüdyonda başka eğitmen varsa davet et",
+      id: "lessons",
+      title: "Dersler ve randevu",
+      rows: [
+        { href: "/ayarlar/musaitlik", icon: CalendarClock, title: "Müsaitlik ve randevu", hint: trainer.bookingEnabled ? "Danışanlar randevu alabiliyor" : "Randevu kapalı" },
+        { href: "/takvim/grup", icon: UsersRound, title: "Grup dersleri", hint: "Haftalık grup dersleri, kontenjan, sabit yer" },
+        {
+          href: "/ayarlar/iptal-kurali",
+          icon: TimerOff,
+          title: "Geç iptal kuralı",
+          hint: trainer.lateCancelHours === 0 ? "Kural yok, iptal her zaman ücretsiz" : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz`,
+        },
+      ],
     },
-    ...(teamSize > 1 ? [{ href: "/hakedis", icon: Wallet, title: "Hakediş", hint: "Eğitmenlerin bu ayki dersleri ve tutarları" }] : []),
-    { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
-    { href: "/programlar", icon: Dumbbell, title: "Programlar", hint: "Antrenman ve beslenme şablonları, hareketler" },
     {
-      href: "/ayarlar/iptal-kurali",
-      icon: TimerOff,
-      title: "Geç iptal kuralı",
-      hint: trainer.lateCancelHours === 0 ? "Kural yok, iptal her zaman ücretsiz" : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz`,
+      id: "clients",
+      title: "Paketler ve danışanlar",
+      rows: [
+        { href: "/paketler", icon: Package, title: "Paketler ve fiyatlar", hint: "Seans paketleri, indirimler, taksitler, deneme dersi" },
+        { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Kayıtta danışana sorulan sorular" },
+        {
+          href: "/ayarlar/mesajlar",
+          icon: BellRing,
+          title: "Hatırlatma ve mesajlar",
+          hint: trainer.remindersEnabled ? `Hatırlatma dersten ${trainer.reminderHours} saat önce` : "Otomatik hatırlatma kapalı",
+        },
+        { href: "/ayarlar/olcumler", icon: Ruler, title: "Ölçümler", hint: "Formdaki ölçüler, danışanın kendi kilosu" },
+      ],
     },
     {
-      href: "/ayarlar/mesajlar",
-      icon: BellRing,
-      title: "Hatırlatma ve mesajlar",
-      hint: trainer.remindersEnabled ? `Hatırlatma dersten ${trainer.reminderHours} saat önce` : "Otomatik hatırlatma kapalı",
+      id: "programs",
+      title: "Programlar",
+      rows: [
+        { href: "/programlar", icon: Dumbbell, title: "Program şablonları", hint: "Antrenman ve beslenme şablonları" },
+        { href: "/programlar/hareketler", icon: ListChecks, title: "Hareketler", hint: "Hareket listesi, videolar, çalışan kaslar" },
+      ],
     },
-    { href: "/ayarlar/olcumler", icon: Ruler, title: "Ölçümler", hint: "Formdaki ölçüler, danışanın kendi kilosu" },
-    { href: "/ayarlar/kayit-formu", icon: ClipboardList, title: "Kayıt formu", hint: "Kayıtta danışana sorulan sorular" },
+    {
+      id: "account",
+      title: "Uygulama ve hesap",
+      rows: [
+        { href: "/ayarlar/bildirimler", icon: Bell, title: "Bildirimler", hint: "Hangi bildirim ve e-postaları alacağını seç" },
+        { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Paket, yoklama, ödeme ve diğer konular adım adım" },
+        {
+          href: "/ayarlar/destek",
+          icon: LifeBuoy,
+          title: "Bize yazın",
+          hint: supportUnread > 0 ? `${supportUnread} yeni cevap` : "Soru, öneri, takıldığın bir yer",
+          badge: supportUnread,
+        },
+        { href: "/ayarlar/disa-aktar", icon: Download, title: "Verilerini indir", hint: "Excel: danışanlar, paketler, dersler, ödemeler", download: true },
+      ],
+    },
   ];
 
   return (
@@ -123,8 +154,11 @@ export default async function SettingsPage() {
         <section aria-label="Hesap" className="flex items-center gap-4 surface p-5">
           <Avatar name={trainer.fullName || claims?.email || "?"} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-semibold">{trainer.fullName || "—"}</p>
-            <p className="truncate text-sm text-muted-foreground">{claims?.email ?? "—"}</p>
+            <p className="truncate text-lg font-semibold">{trainer.businessName?.trim() || trainer.fullName || "—"}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {trainer.businessName?.trim() ? `${trainer.fullName} · ` : ""}
+              {claims?.email ?? "—"}
+            </p>
           </div>
         </section>
 
@@ -146,75 +180,9 @@ export default async function SettingsPage() {
           </section>
         )}
 
-        <ActionTiles
-          items={[
-            { href: "/ders/yeni?next=/ayarlar", icon: <CalendarPlus />, title: "Ders planla", primary: true },
-            { href: "/takvim/grup", icon: <UsersRound />, title: "Grup dersleri" },
-            { href: "/ayarlar/musaitlik", icon: <CalendarClock />, title: "Müsaitlik ve randevu" },
-          ]}
-        />
-
-        <section aria-labelledby="studio-heading">
-          <SectionTitle id="studio-heading">Stüdyon</SectionTitle>
-          <ul className="divide-y overflow-hidden surface">
-            {rows.map(({ href, icon: Icon, title, hint }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                  <RowIcon>
-                    <Icon aria-hidden />
-                  </RowIcon>
-                  <RowText title={title} hint={hint} />
-                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="account-heading">
-          <SectionTitle id="account-heading">Uygulama ve hesap</SectionTitle>
-          <ul className="divide-y overflow-hidden surface">
-            <li>
-              <Link href="/ayarlar/bildirimler" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                <RowIcon>
-                  <Bell aria-hidden />
-                </RowIcon>
-                <RowText title="Bildirimler" hint="Hangi bildirim ve e-postaları alacağını seç" />
-                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-              </Link>
-            </li>
-            <li>
-              <Link href="/yardim" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                <RowIcon>
-                  <CircleHelp aria-hidden />
-                </RowIcon>
-                <RowText title="Yardım" hint="Paket, yoklama, ödeme ve diğer konular adım adım" />
-                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-              </Link>
-            </li>
-            <li>
-              <Link href="/ayarlar/destek" className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                <RowIcon>
-                  <LifeBuoy aria-hidden />
-                </RowIcon>
-                <RowText title="Bize yazın" hint={supportUnread > 0 ? `${supportUnread} yeni cevap` : "Soru, öneri, takıldığın bir yer"} />
-                {supportUnread > 0 && (
-                  <span className="min-w-6 rounded-full bg-lime px-1.5 text-center text-xs leading-6 font-semibold text-lime-foreground tabular-nums">{supportUnread}</span>
-                )}
-                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-              </Link>
-            </li>
-            <li>
-              {/* A plain link, so the browser downloads the file instead of routing to it. */}
-              <a href="/ayarlar/disa-aktar" download className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                <RowIcon>
-                  <Download aria-hidden />
-                </RowIcon>
-                <RowText title="Verilerini indir" hint="Excel: danışanlar, paketler, dersler, ödemeler" />
-              </a>
-            </li>
-          </ul>
-        </section>
+        {groups.map((g) => (
+          <SettingsGroup key={g.id} id={g.id} title={g.title} rows={g.rows} />
+        ))}
 
         <form action={signOut}>
           <SubmitButton variant="outline">
@@ -228,6 +196,47 @@ export default async function SettingsPage() {
         </div>
       </div>
     </>
+  );
+}
+
+type Row = { href: string; icon: LucideIcon; title: string; hint: string; badge?: number; download?: boolean };
+
+function SettingsGroup({ id, title, rows }: { id: string; title: string; rows: Row[] }) {
+  return (
+    <section aria-labelledby={`${id}-heading`}>
+      <SectionTitle id={`${id}-heading`}>{title}</SectionTitle>
+      <ul className="divide-y overflow-hidden surface">
+        {rows.map(({ href, icon: Icon, title, hint, badge, download }) => {
+          const inner = (
+            <>
+              <RowIcon>
+                <Icon aria-hidden />
+              </RowIcon>
+              <RowText title={title} hint={hint} />
+              {!!badge && (
+                <span className="min-w-6 rounded-full bg-lime px-1.5 text-center text-xs leading-6 font-semibold text-lime-foreground tabular-nums">{badge}</span>
+              )}
+              {!download && <ChevronRight className="size-4 text-muted-foreground" aria-hidden />}
+            </>
+          );
+          const cls = "flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50";
+          return (
+            <li key={href}>
+              {download ? (
+                // A plain link, so the browser downloads the file instead of routing to it.
+                <a href={href} download className={cls}>
+                  {inner}
+                </a>
+              ) : (
+                <Link href={href} className={cls}>
+                  {inner}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
