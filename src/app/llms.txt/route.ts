@@ -9,7 +9,7 @@ export function GET() {
   const base = siteUrl();
   const text = `# ${APP_NAME}
 
-> ${APP_DESCRIPTION} Türkiye'de tek başına çalışan pilates eğitmenleri ve personal trainer'lar ile 2–6 eğitmenli küçük stüdyolar için web uygulaması. Beta süresince ücretsiz.
+> ${APP_DESCRIPTION} Türkiye'de tek başına çalışan pilates eğitmenleri ve personal trainer'lar ile birkaç eğitmenli küçük stüdyolar için web uygulaması. Beta süresince ücretsiz.
 
 ${APP_NAME} ile eğitmen danışanlarını, seans paketlerini, derslerini, yoklamayı ve ödemeleri tek yerde tutar. Her danışanın uygulama indirmeden açtığı kişisel bir sayfası olur; kalan derslerini görür, randevu alır, dersini onaylar, antrenman programını ve ölçüm grafiklerini görür, eğitmenine mesaj yazar. Ödemeler eğitmenin IBAN'ına gider, ${APP_NAME} komisyon almaz.
 

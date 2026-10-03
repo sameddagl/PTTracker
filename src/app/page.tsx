@@ -200,7 +200,7 @@ const REASONS = [
   },
   {
     title: "Sağlık bilgisi rıza olmadan tutulmaz",
-    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her hesabın danışanları ayrı tutulur; stüdyoda eğitmen, siz izin vermedikçe yalnızca kendi danışanlarını görür.",
+    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her hesabın danışanları ayrı tutulur; stüdyoda eğitmen önce kendi danışanlarını görür, bütün danışanları görmesini isterseniz kapatabilirsiniz.",
   },
 ];
 
@@ -243,7 +243,7 @@ const FAQ = [
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
-    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Stüdyo hesabında eğitmen, siz izin vermedikçe yalnızca kendi danışanlarını görür.",
+    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Stüdyo hesabında eğitmen önce kendi danışanlarını görür; bütün danışanlara geçebilmesini Ekip ayarlarından kapatabilirsiniz. Ödemeleri ve fiyatları hiç görmez.",
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",
@@ -278,7 +278,7 @@ const AUDIENCES = [
     href: "/ozellikler#ekip",
     icon: UsersRound,
     title: "Küçük stüdyolar",
-    text: "2–6 eğitmenli butik pilates ve PT stüdyoları; ortak takvim, eğitmen yetkileri ve hakediş.",
+    text: "Birkaç eğitmenli butik pilates ve PT stüdyoları; ortak takvim, eğitmen yetkileri ve hakediş.",
   },
 ];
 

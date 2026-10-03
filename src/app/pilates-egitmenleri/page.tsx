@@ -174,7 +174,7 @@ export default function PilatesPage() {
               göre.
             </p>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-              2–6 eğitmenli butik bir stüdyonuz varsa ekibinizi de davet edin: takvim ortak olur, her eğitmen kendi derslerini ve
+              Birkaç eğitmenli butik bir stüdyonuz varsa ekibinizi de davet edin: takvim ortak olur, her eğitmen kendi derslerini ve
               yoklamasını görür, ödemeler ve fiyatlar sizde kalır. Hakedişi de buradan hesaplarsınız.{" "}
               <Link href="/ozellikler#ekip" className="font-medium text-foreground underline-offset-4 hover:underline">
                 Ekip ve stüdyo özellikleri

@@ -195,7 +195,7 @@ const GROUPS: Group[] = [
     id: "ekip",
     label: "Ekip ve stüdyo",
     title: "Ekip ve stüdyo",
-    lead: "2–6 eğitmenli bir stüdyonuz varsa ekibinizi aynı hesaba davet edin. Takvim ortak olur; ödemeler ve fiyatlar sizde kalır.",
+    lead: "Birkaç eğitmenli bir stüdyonuz varsa ekibinizi aynı hesaba davet edin. Takvim ortak olur; ödemeler ve fiyatlar sizde kalır.",
     Demo: TeamCalendarDemo,
     features: [
       { icon: UserPlus, title: "E-postayla davet", text: "Ayarlar → Ekip'ten eğitmeni e-postasıyla davet edin, kendi e-postasıyla giriş yapsın. Hem kendi hesabı hem stüdyonuzda dersi olan eğitmen, hesaplar arasında geçiş yapar." },
