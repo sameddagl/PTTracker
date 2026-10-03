@@ -12,6 +12,7 @@ import {
   StickyNote,
   UserPlus,
   UserRoundSearch,
+  UsersRound,
 } from "lucide-react";
 import {
   AttendanceDemo,
@@ -25,10 +26,12 @@ import {
   MessagesDemo,
   NutritionDemo,
   PaymentDemo,
+  PayrollDemo,
   PricingDemo,
   ProgramDemo,
   ProgressDemo,
   PublicPageDemo,
+  TeamCalendarDemo,
 } from "@/components/landing/feature-demos";
 import { Analytics } from "@/components/analytics";
 import { PhoneMockup } from "@/components/landing/phone-mockup";
@@ -50,6 +53,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   keywords: [
     "pilates stüdyo programı",
+    "stüdyo yönetim programı",
+    "eğitmen hakediş",
     "personal trainer uygulaması",
     "danışan takip programı",
     "seans takip",
@@ -195,7 +200,7 @@ const REASONS = [
   },
   {
     title: "Sağlık bilgisi rıza olmadan tutulmaz",
-    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her eğitmen yalnızca kendi danışanlarını görür.",
+    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her hesabın danışanları ayrı tutulur; stüdyoda eğitmen, siz izin vermedikçe yalnızca kendi danışanlarını görür.",
   },
 ];
 
@@ -205,8 +210,8 @@ const FAQ = [
     a: `${APP_NAME}, Türkiye'de kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer'lar için web tabanlı bir danışan ve seans takip programı. Seans paketlerini, yoklamayı, randevuları, ders hatırlatmalarını ve IBAN'a gelen ödemeleri tek hesapta tutar. Danışanlar uygulama indirmez; kendilerine gönderilen linki tarayıcıda açar.`,
   },
   {
-    q: "Stüdyomda birden fazla eğitmen var, kullanabilir miyiz?",
-    a: `${APP_NAME} şimdilik tek başına çalışan eğitmenler için. Stüdyonuzda birkaç eğitmen varsa her biri kendi hesabını açar ve yalnızca kendi danışanlarını görür; eğitmenlerin ortak kullandığı bir takvim şu an yok.`,
+    q: "Stüdyomda birden fazla eğitmen var, birlikte kullanabilir miyiz?",
+    a: "Evet. Eğitmenlerinizi Ayarlar → Ekip'ten e-postayla davet edersiniz, her biri kendi e-postasıyla giriş yapar. Takvim ortaktır ve her eğitmenin kendi rengi vardır. Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını ve programları görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz. Resepsiyon hesabı, salon ve reformer planlaması ve birden fazla şube şu an yok.",
   },
   {
     q: "Geç iptal ve telafi hakkı nasıl işliyor?",
@@ -238,7 +243,7 @@ const FAQ = [
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
-    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her eğitmen sadece kendi danışanlarını görür; bu ayrım doğrudan veritabanında yapılır.",
+    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Stüdyo hesabında eğitmen, siz izin vermedikçe yalnızca kendi danışanlarını görür.",
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",
@@ -269,6 +274,19 @@ const AUDIENCES = [
     title: "Personal trainer'lar",
     text: "Salonda ders veren serbest PT'ler; PT paketleri, taksit, randevu ve tahsilat.",
   },
+  {
+    href: "/ozellikler#ekip",
+    icon: UsersRound,
+    title: "Küçük stüdyolar",
+    text: "2–6 eğitmenli butik pilates ve PT stüdyoları; ortak takvim, eğitmen yetkileri ve hakediş.",
+  },
+];
+
+const STUDIO_POINTS = [
+  "Her eğitmenin rengi ayrı, takvimi eğitmene göre süzersiniz",
+  "Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der",
+  "Bir dersi ya da bütün seriyi başka eğitmene verirsiniz",
+  "Hakediş: ders başına ücret ya da yüzde, ay sonunda Excel",
 ];
 
 // Structured data: what the product is (no ratings or reviews: there are none yet) and the FAQ.
@@ -323,6 +341,7 @@ const JSON_LD = {
         "Beslenme planı",
         "Vücut ölçüsü takibi ve grafikler",
         "Danışanla mesajlaşma",
+        "Stüdyo ekibi: ortak takvim, eğitmen yetkileri ve hakediş",
       ],
       // A web app; it can be added to the home screen, but there is no store app.
       operatingSystem: "Web",
@@ -447,9 +466,9 @@ export default function Home() {
           <h2 id="audience-heading" data-reveal className="eyebrow mb-5 text-center">
             Kimin için?
           </h2>
-          <ul className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2">
+          <ul className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {AUDIENCES.map(({ href, icon: Icon, title, text }, i) => (
-              <li key={href} data-reveal style={stagger(i, 2)}>
+              <li key={href} data-reveal style={stagger(i, 3)} className={cn(i === 2 && "sm:col-span-2 lg:col-span-1")}>
                 <Link href={href} className={cn(card, "hover-lift group flex h-full items-start gap-4 p-5 sm:p-6")}>
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
                     <Icon className="size-5" />
@@ -565,6 +584,41 @@ export default function Home() {
               </li>
             ))}
           </ul>
+        </section>
+
+        {/* Studios: the team features, kept to one card so the page stays about the instructor. */}
+        <section id="studyo" aria-labelledby="studio-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
+          <div data-reveal className={cn(card, "mx-auto grid max-w-6xl gap-6 p-2 lg:grid-cols-2 lg:items-center lg:gap-10")}>
+            <div className="flex flex-col gap-4 px-4 pt-5 lg:px-6 lg:py-8">
+              <p className="eyebrow">Stüdyolar için</p>
+              <h2 id="studio-heading" className="text-2xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-3xl">
+                Stüdyonuzda birkaç eğitmen mi var? Ekibinizi davet edin.
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Her eğitmen kendi e-postasıyla girer; takvimi, kendi derslerini, yoklamayı ve ders notlarını görür. Ödemeler,
+                fiyatlar ve stüdyo ayarları sizde kalır. Danışan da kendi sayfasında her dersi kimin vereceğini görür.
+              </p>
+              <ul className="flex flex-col gap-2 text-sm">
+                {STUDIO_POINTS.map((t) => (
+                  <li key={t} className="flex items-center gap-2.5">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                      <Check className="size-3" strokeWidth={3} />
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">Şimdilik yok: resepsiyon hesabı, salon ve reformer planlaması, birden fazla şube.</p>
+              <Link href="/ozellikler#ekip" className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium underline-offset-4 hover:underline">
+                Ekip özelliklerinin hepsi
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            </div>
+            <div aria-hidden className="grid gap-3 rounded-[1.35rem] bg-canvas p-4 sm:p-5">
+              <TeamCalendarDemo />
+              <PayrollDemo />
+            </div>
+          </div>
         </section>
 
         {/* Big numbers */}

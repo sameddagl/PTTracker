@@ -3,6 +3,7 @@ import { Avatar } from "@/components/avatar";
 import { MuscleMap } from "@/components/muscle-map";
 import { MUSCLES, type MuscleKey } from "@/lib/muscles";
 import { APP_DOMAIN } from "@/lib/config";
+import { teamColor, type TeamColor } from "@/lib/team";
 import { cn } from "@/lib/utils";
 
 /*
@@ -626,6 +627,104 @@ export function PortalPhonesDemo() {
           <p className="mt-1 rounded-lg bg-muted px-2 py-1 text-muted-foreground">61,9 kg</p>
         </div>
       </MiniPhone>
+    </div>
+  );
+}
+
+const TEAM: { name: string; color: TeamColor }[] = [
+  { name: "Elif Ö.", color: "lime" },
+  { name: "Can E.", color: "sky" },
+  { name: "Selin A.", color: "rose" },
+];
+
+/** A studio day on the shared calendar: one colour per instructor, two lessons at the same hour. */
+export function TeamCalendarDemo() {
+  const slots: { t: string; lessons: { title: string; who: number; with: string }[] }[] = [
+    { t: "09:00", lessons: [{ title: "Özel Reformer", who: 0, with: "Zeynep K." }] },
+    {
+      t: "10:00",
+      lessons: [
+        { title: "Düet", who: 1, with: "Ayşe D., Mert A." },
+        { title: "Özel Reformer", who: 2, with: "Deniz Y." },
+      ],
+    },
+    { t: "18:00", lessons: [{ title: "Grup Reformer", who: 0, with: "5/8 kişi" }] },
+  ];
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex flex-wrap gap-1.5 text-xs font-medium">
+        <span className="rounded-full bg-primary px-3 py-1.5 text-primary-foreground">Hepsi</span>
+        {TEAM.map((m) => (
+          <span key={m.name} className="flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1.5">
+            <span className="size-2 rounded-full" style={{ backgroundColor: teamColor(m.color) }} />
+            {m.name}
+          </span>
+        ))}
+      </div>
+      <div className={cn(panel, "flex flex-col gap-2 p-3")}>
+        <p className="text-sm font-medium">Salı, 13 Ekim</p>
+        {slots.map((s) => (
+          <div key={s.t} className="grid grid-cols-[2.75rem_1fr] items-start gap-2">
+            <span className="pt-2 text-xs text-muted-foreground tabular-nums">{s.t}</span>
+            <div className={cn("grid gap-1.5", s.lessons.length > 1 && "grid-cols-2")}>
+              {s.lessons.map((l) => (
+                <div
+                  key={l.title + l.who}
+                  className="min-w-0 rounded-xl border-l-4 bg-muted px-2.5 py-1.5"
+                  style={{ borderLeftColor: teamColor(TEAM[l.who].color) }}
+                >
+                  <p className="truncate text-xs font-medium">{l.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {TEAM[l.who].name} · {l.with}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** One instructor's month of pay (hakediş): lessons by type, the total, closed and paid. */
+export function PayrollDemo() {
+  const rows = [
+    { type: "Özel", count: 18, amount: "₺7.200" },
+    { type: "Düet", count: 6, amount: "₺3.000" },
+    { type: "Grup", count: 10, amount: "₺3.000" },
+  ];
+  return (
+    <div className={cn(panel, "w-full p-4")}>
+      <div className="flex items-center gap-3">
+        <Avatar name="Selin A." size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">Selin A.</p>
+          <p className="text-xs text-muted-foreground">Ekim hakedişi · ay kapandı</p>
+        </div>
+        <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success-strong">
+          <Check className="size-3" strokeWidth={3} />
+          Ödendi
+        </span>
+      </div>
+      <ul className="mt-3 flex flex-col gap-1.5 text-xs">
+        {rows.map((r) => (
+          <li key={r.type} className="flex items-center justify-between">
+            <span className="text-muted-foreground tabular-nums">
+              {r.type} · {r.count} ders
+            </span>
+            <span className="font-medium tabular-nums">{r.amount}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="my-3 border-t border-dashed" />
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold tabular-nums">Toplam ₺13.200</span>
+        <span className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+          <FileSpreadsheet className="size-3.5" />
+          Excel
+        </span>
+      </div>
     </div>
   );
 }

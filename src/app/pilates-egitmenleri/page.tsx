@@ -79,7 +79,8 @@ const CHECKLIST: { item: string; ours: string; has: boolean }[] = [
   { item: "Ölçüm ve gelişim grafikleri", ours: "Danışan kendi sayfasında görür", has: true },
   { item: "Excel'den danışan aktarma", ours: "Kalan seans ve borçlarla birlikte", has: true },
   { item: "Danışan için uygulama", ours: "Gerekmez; kişisel link tarayıcıda açılır", has: true },
-  { item: "Birden fazla eğitmen, ortak takvim", ours: "Şimdilik yok", has: false },
+  { item: "Birden fazla eğitmen, ortak takvim", ours: "Var; eğitmen başına renk, yetki ve hakediş", has: true },
+  { item: "Resepsiyon hesabı, salon ve reformer planlaması", ours: "Şimdilik yok", has: false },
   { item: "Kartla online tahsilat", ours: "Yok; ödeme doğrudan IBAN'ınıza gelir", has: false },
 ];
 
@@ -98,7 +99,11 @@ const FAQ: Faq[] = [
   },
   {
     q: "Bir stüdyoda saatlik salon kiralıyorum, kullanabilir miyim?",
-    a: `Evet. ${APP_NAME} tek başına ders veren eğitmen için: kendi stüdyonuz da olabilir, kiraladığınız salon ya da danışanın evi de. Birden fazla eğitmenin aynı takvimi paylaştığı stüdyo hesabı şu an yok.`,
+    a: "Evet. Kendi stüdyonuz, kiraladığınız salon ya da danışanın evi fark etmez; danışanlarınız, paketleriniz ve ödemeleriniz sizin hesabınızda durur. Bir stüdyonun ekibinde de ders veriyorsanız kendi hesabınızla stüdyonun hesabı arasında geçiş yaparsınız.",
+  },
+  {
+    q: "Birkaç eğitmenli bir stüdyom var, ekiple kullanabilir miyiz?",
+    a: "Evet. Eğitmenlerinizi e-postayla davet edersiniz; takvim ortak olur, her eğitmenin rengi ayrıdır, iki eğitmen aynı saatte ders verebilir. Eğitmen kendi derslerini, yoklamayı ve ders notlarını görür; ödemeleri, fiyatları ve stüdyo ayarlarını görmez. Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplarsınız. Resepsiyon hesabı ve reformer planlaması şu an yok.",
   },
   {
     q: "Danışanım uygulama indirmek zorunda mı?",
@@ -166,7 +171,14 @@ export default function PilatesPage() {
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
               Tek başına, bağımsız (freelance) ders veren pilates eğitmenleri için: kendi küçük stüdyosu olan, bir stüdyoda
               saatlik salon kiralayan ya da danışanının evine giden. Danışanlarınızı, paketlerini ve ödemelerini kendiniz takip ediyorsanız {APP_NAME} tam size
-              göre. Birden fazla eğitmenin aynı takvimi paylaştığı stüdyo hesabı şu an yok.
+              göre.
+            </p>
+            <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
+              2–6 eğitmenli butik bir stüdyonuz varsa ekibinizi de davet edin: takvim ortak olur, her eğitmen kendi derslerini ve
+              yoklamasını görür, ödemeler ve fiyatlar sizde kalır. Hakedişi de buradan hesaplarsınız.{" "}
+              <Link href="/ozellikler#ekip" className="font-medium text-foreground underline-offset-4 hover:underline">
+                Ekip ve stüdyo özellikleri
+              </Link>
             </p>
           </div>
         </section>

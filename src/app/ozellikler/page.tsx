@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowRightLeft,
   Bell,
   BellRing,
   CalendarCheck,
@@ -40,6 +41,7 @@ import {
   Trash2,
   TrendingUp,
   UserCheck,
+  UserPlus,
   UserRoundSearch,
   UsersRound,
   Wallet,
@@ -55,6 +57,7 @@ import {
   ProgressDemo,
   PortalPhonesDemo,
   PublicPageDemo,
+  TeamCalendarDemo,
 } from "@/components/landing/feature-demos";
 import { Reveal } from "@/components/landing/reveal";
 import { Breadcrumbs, CtaBand, FaqSection, JsonLd, SiteFooter, SiteHeader, card, pageJsonLd, type Faq } from "@/components/landing/site-chrome";
@@ -65,7 +68,7 @@ import { cn } from "@/lib/utils";
 
 const PATH = "/ozellikler";
 const TITLE = "Özellikler: Kayıttan Programa, Randevudan Ödemeye";
-const DESCRIPTION = `${APP_NAME} özellikleri konu konu: kişisel sayfa ve online kayıt, randevu ve yoklama, seans paketi ve taksit, antrenman programı ve vücut haritası, beslenme planı, ölçüm grafikleri, mesajlaşma ve Excel. Pilates ve PT eğitmenleri için.`;
+const DESCRIPTION = `${APP_NAME} özellikleri konu konu: kişisel sayfa ve online kayıt, randevu ve yoklama, seans paketi ve taksit, antrenman programı ve vücut haritası, beslenme planı, ölçüm grafikleri, mesajlaşma, Excel ve stüdyo ekibi. Pilates ve PT eğitmenleri ile küçük stüdyolar için.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -189,6 +192,23 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    id: "ekip",
+    label: "Ekip ve stüdyo",
+    title: "Ekip ve stüdyo",
+    lead: "2–6 eğitmenli bir stüdyonuz varsa ekibinizi aynı hesaba davet edin. Takvim ortak olur; ödemeler ve fiyatlar sizde kalır.",
+    Demo: TeamCalendarDemo,
+    features: [
+      { icon: UserPlus, title: "E-postayla davet", text: "Ayarlar → Ekip'ten eğitmeni e-postasıyla davet edin, kendi e-postasıyla giriş yapsın. Hem kendi hesabı hem stüdyonuzda dersi olan eğitmen, hesaplar arasında geçiş yapar." },
+      { icon: Lock, title: "Kim neyi görür", text: "Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını ve programları görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez. Bütün danışanları mı, yalnızca kendi danışanlarını mı göreceğini siz seçersiniz." },
+      { icon: CalendarDays, title: "Renkli ortak takvim", text: "Her dersin ve grup dersinin bir eğitmeni var, her eğitmenin de kendi rengi. Takvimi tek eğitmene göre süzün. Çakışmaya eğitmen bazında bakılır; iki eğitmen aynı saatte ders verebilir." },
+      { icon: ArrowRightLeft, title: "Dersi devretme", text: "Bir dersi ya da bütün seriyi başka eğitmene verin. O dersteki danışanlara dersi kimin vereceği bildirilir." },
+      { icon: CalendarClock, title: "Eğitmene göre randevu", text: "Her eğitmenin kendi çalışma saatleri ve izin günleri olur. Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der; boş olan eğitmen dersi alır." },
+      { icon: Package, title: "Eğitmene özel paket", text: "Bir seans paketini belirli eğitmenlerle sınırlayın; örneğin kıdemli eğitmenin özel dersleri ayrı bir paketle satılsın." },
+      { icon: Wallet, title: "Hakediş", text: "Ders türüne göre (özel, düet, trio, grup) ders başına sabit ücret ya da dersin değerinden yüzde. Ayı kapatın, ödendi diye işaretleyin, Excel olarak indirin. Eğitmen yalnızca kendi hakedişini görür." },
+      { icon: UsersRound, title: "Sayfanızda ekibiniz", text: "Stüdyo sayfanızda eğitmenler fotoğrafı ve kısa tanıtımıyla yer alır. Danışan kendi sayfasında her dersi kimin vereceğini görür." },
+    ],
+  },
+  {
     id: "veri",
     label: "Verileriniz",
     title: "Verileriniz",
@@ -199,7 +219,7 @@ const GROUPS: Group[] = [
       { icon: Download, title: "Excel olarak indirme", text: "Danışanlar, paketler, dersler, ödemeler, ölçümler, notlar ve programlar tek dosyada." },
       { icon: ShieldCheck, title: "KVKK'ya uygun", text: "Aydınlatma metni ve sağlık verileri için açık rıza akışı hazır." },
       { icon: Server, title: "Sunucular AB'de", text: "Veriler Almanya'da (Frankfurt) tutulur, satılmaz, reklam için kullanılmaz." },
-      { icon: Lock, title: "Sadece sizin danışanlarınız", text: "Her eğitmen yalnızca kendi danışanlarını görür; bu ayrım doğrudan veritabanında yapılır." },
+      { icon: Lock, title: "Sadece sizin danışanlarınız", text: "Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır." },
       { icon: Trash2, title: "Silince silinir", text: "Hesabınızı sildiğinizde danışan kayıtlarınız da kalıcı olarak silinir." },
     ],
   },
@@ -217,6 +237,14 @@ const FAQ: Faq[] = [
   {
     q: "Hem pilates hem PT için uygun mu?",
     a: "Evet. Hareket listesinde salon, reformer ve mat hareketleri bir arada; özel, düet ve grup derslerini aynı yerden takip edersiniz.",
+  },
+  {
+    q: "Stüdyomdaki eğitmenler ödemeleri ve fiyatları görür mü?",
+    a: "Hayır. Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını ve programları görür. Ödemeler, fiyatlar, paket ve stüdyo ayarları yalnızca stüdyo sahibinde. Hakedişinde de eğitmen yalnızca kendi tutarını görür.",
+  },
+  {
+    q: "Stüdyolar için olmayan ne var?",
+    a: "Resepsiyon hesabı, salon ya da reformer planlaması, kartla online tahsilat ve birden fazla şube şu an yok. Ödemeler doğrudan IBAN'ınıza gelir.",
   },
 ];
 
@@ -243,8 +271,8 @@ export default function FeaturesPage() {
             style={{ "--delay": "160ms" } as React.CSSProperties}
             className="anim-rise mx-auto mt-5 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg"
           >
-            Pilates eğitmenleri ve personal trainer&apos;lar için {APP_NAME}&apos;un bütün özellikleri, konu konu. Beta süresince hepsi
-            ücretsiz.
+            Pilates eğitmenleri, personal trainer&apos;lar ve küçük stüdyolar için {APP_NAME}&apos;un bütün özellikleri, konu konu.
+            Beta süresince hepsi ücretsiz.
           </p>
           <div style={{ "--delay": "240ms" } as React.CSSProperties} className="anim-rise mt-7 flex justify-center">
             <Button asChild size="lg">

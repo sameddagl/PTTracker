@@ -92,6 +92,10 @@ const FAQ: Faq[] = [
     a: "Evet. Ders planlarken iki ya da üç danışan seçerseniz düet ya da trio olur. Kontenjanlı grup dersleri de açabilirsiniz; her danışanın dersi kendi paketinden düşer.",
   },
   {
+    q: "Küçük bir PT stüdyom var, eğitmenlerimle birlikte kullanabilir miyiz?",
+    a: "Evet. Eğitmenlerinizi e-postayla davet edersiniz, her biri kendi e-postasıyla girer. Takvim ortaktır; eğitmen kendi derslerini, yoklamayı, ders notlarını ve programları görür, ödemeleri ve fiyatları görmez. Bir PT paketini belirli eğitmenlerle sınırlayabilir, hakedişi ders başına ücretle ya da yüzdeyle hesaplayıp ay sonunda Excel olarak indirebilirsiniz.",
+  },
+  {
     q: "Taksitli PT paketi satabilir miyim?",
     a: "Evet. Pakete taksitli fiyat ve taksit sayısını eklersiniz. Danışan kendi sayfasında vadesi gelen taksiti görür, havaleyi yapıp dekontunu yükler.",
   },

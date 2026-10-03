@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const PATH = "/fiyatlar";
 const TITLE = "Fiyatlar: Beta Süresince Ücretsiz";
-const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri ve personal trainer'lar için ücretsiz. Kart bilgisi yok, komisyon yok. Beta döneminde kayıt olanlara ücretli plana geçildiğinde 6 ay ücretsiz.`;
+const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri, personal trainer'lar ve küçük stüdyolar için ücretsiz. Kart bilgisi yok, komisyon yok. Beta döneminde kayıt olanlara ücretli plana geçildiğinde 6 ay ücretsiz.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -31,6 +31,7 @@ const INCLUDED = [
   "Ders, taksit ve ölçüm hatırlatması, mesajlaşma",
   "Taksit, havale bildirimi ve dekont onayı",
   "Excel'den aktarma ve Excel olarak indirme",
+  "Stüdyolar için ekip: ortak takvim, eğitmen yetkileri, hakediş",
 ];
 
 const PROMISES = [
@@ -59,6 +60,10 @@ const FAQ: Faq[] = [
   {
     q: "Danışan sayısında sınır var mı?",
     a: "Beta süresince yok. İstediğiniz kadar danışan, paket ve ders ekleyebilirsiniz.",
+  },
+  {
+    q: "Stüdyolar için ayrı bir fiyat var mı?",
+    a: "Şu an yok. Beta süresince stüdyolar da herkes gibi ücretsiz kullanır; ekibe eğitmen eklemek için ayrıca bir şey ödemezsiniz.",
   },
   {
     q: "Ödemelerden komisyon alıyor musunuz?",
@@ -118,7 +123,7 @@ export default function PricingPage() {
                 <h2 id="plan-heading" className="text-xl font-semibold tracking-[-0.02em]">
                   Beta
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">Tek başına çalışan pilates eğitmenleri ve personal trainer&apos;lar için</p>
+                <p className="mt-1 text-sm text-muted-foreground">Pilates eğitmenleri, personal trainer&apos;lar ve küçük stüdyolar için</p>
               </div>
               <p className="shrink-0 text-right">
                 <span className="block text-4xl font-semibold tracking-[-0.04em] tabular-nums">₺0</span>
