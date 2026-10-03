@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { createTemplate, reorderTemplates, setTemplateActive, updateTemplate } from "@/db/packages";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 
@@ -81,6 +81,7 @@ export async function saveTemplateAction(
   _prev: FormState<TemplateField>,
   formData: FormData,
 ): Promise<FormState<TemplateField>> {
+  await requireOwner();
   const raw = readForm(formData, FIELDS);
   const parsed = templateSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
@@ -97,11 +98,13 @@ export async function saveTemplateAction(
 }
 
 export async function toggleTemplateAction(id: string, isActive: boolean) {
+  await requireOwner();
   await withTrainer((tx, trainerId) => setTemplateActive(tx, trainerId, z.uuid().parse(id), isActive));
   revalidatePath("/paketler");
 }
 
 export async function reorderTemplatesAction(ids: string[]) {
+  await requireOwner();
   const parsed = z.array(z.uuid()).max(200).parse(ids);
   await withTrainer((tx, trainerId) => reorderTemplates(tx, trainerId, parsed));
   revalidatePath("/paketler");

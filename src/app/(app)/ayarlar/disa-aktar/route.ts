@@ -6,10 +6,14 @@ import { todayISO } from "@/lib/format";
 
 /** The signed-in trainer's data as an .xlsx download. Signed-out visitors are sent to the login page. */
 export async function GET() {
-  const { data, today } = await withTrainer(async (tx, trainerId) => {
+  const out = await withTrainer(async (tx, trainerId, member) => {
+    // The whole studio's data, money included: the owner's to take.
+    if (member.role !== "owner") return null;
     const trainer = await getTrainer(tx, trainerId);
     return { data: await loadExportData(tx, trainer), today: todayISO(trainer.timezone) };
   });
+  if (!out) return new Response("Not found", { status: 404 });
+  const { data, today } = out;
   const buffer = await buildExportWorkbook(data).xlsx.writeBuffer();
   return new Response(new Uint8Array(buffer as ArrayBuffer), {
     headers: {

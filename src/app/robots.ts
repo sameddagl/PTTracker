@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/bugun", "/danisanlar", "/takvim", "/odemeler", "/paketler", "/ayarlar", "/ders", "/baslangic", "/yardim", "/mesajlar", "/yoklama", "/yonetim", "/yazdir", "/giris", "/auth", "/p/", "/*/kayit"],
+      disallow: ["/bugun", "/danisanlar", "/takvim", "/odemeler", "/paketler", "/ayarlar", "/ders", "/baslangic", "/yardim", "/mesajlar", "/yoklama", "/yonetim", "/yazdir", "/davet", "/hakedis", "/giris", "/auth", "/p/", "/*/kayit"],
     },
     sitemap: `${siteUrl()}/sitemap.xml`,
   };

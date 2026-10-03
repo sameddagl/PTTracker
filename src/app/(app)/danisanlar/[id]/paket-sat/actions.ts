@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { expiryFor, sellPackage } from "@/db/packages";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 
@@ -57,6 +57,7 @@ const sellSchema = z
   });
 
 export async function sellPackageAction(_prev: FormState<SellField>, formData: FormData): Promise<FormState<SellField>> {
+  await requireOwner();
   const raw = readForm(formData, FIELDS);
   const parsed = sellSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };

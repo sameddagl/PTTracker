@@ -3,28 +3,36 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CalendarCheck, CalendarDays, ClipboardCheck, Dumbbell, MessagesSquare, Package, Settings, Users, Wallet } from "lucide-react";
+import { Activity, CalendarCheck, CalendarDays, ClipboardCheck, Dumbbell, HandCoins, MessagesSquare, Package, Settings, Users, Wallet } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
+type Item = { href: string; label: string; icon: typeof Users; desktopOnly?: boolean; ownerOnly?: boolean; studioOnly?: boolean };
+
+const ITEMS: Item[] = [
   { href: "/bugun", label: "Bugün", icon: CalendarCheck },
   { href: "/danisanlar", label: "Danışanlar", icon: Users },
   { href: "/takvim", label: "Takvim", icon: CalendarDays },
   { href: "/yoklama", label: "Yoklama", icon: ClipboardCheck, desktopOnly: true },
   { href: "/mesajlar", label: "Mesajlar", icon: MessagesSquare },
-  { href: "/odemeler", label: "Ödemeler", icon: Wallet },
-  { href: "/paketler", label: "Paketler", icon: Package, desktopOnly: true },
+  { href: "/odemeler", label: "Ödemeler", icon: Wallet, ownerOnly: true },
+  { href: "/paketler", label: "Paketler", icon: Package, desktopOnly: true, ownerOnly: true },
+  { href: "/hakedis", label: "Hakediş", icon: HandCoins, desktopOnly: true, studioOnly: true },
   { href: "/programlar", label: "Programlar", icon: Dumbbell, desktopOnly: true },
   { href: "/ayarlar", label: "Ayarlar", icon: Settings, desktopOnly: true },
-] as const;
+];
+
+/** What the signed-in member sees: instructors don't get money or packages; Hakediş only in a studio. */
+export type NavScope = { role: "owner" | "instructor"; studio: boolean };
+
+const itemsFor = ({ role, studio }: NavScope) => ITEMS.filter((i) => (!i.ownerOnly || role === "owner") && (!i.studioOnly || studio));
 
 // Five tabs fit a phone's bottom bar (at 375px a sixth leaves the current tab's
 // label no room). On phones Ayarlar is the avatar in the top bar, and
 // packages live under it.
-const MOBILE_ITEMS = ITEMS.filter((i) => !("desktopOnly" in i));
+const mobileItems = (scope: NavScope) => itemsFor(scope).filter((i) => !i.desktopOnly);
 
-type Badges = Partial<Record<(typeof ITEMS)[number]["href"], number>>;
+type Badges = Partial<Record<string, number>>;
 
 /**
  * Which tab is current. A tapped tab lights up right away, before the new
@@ -41,11 +49,11 @@ function useActiveTab() {
   };
 }
 
-export function SideNav({ badges = {} }: { badges?: Badges }) {
+export function SideNav({ badges = {}, scope }: { badges?: Badges; scope: NavScope }) {
   const { isActive, onTap } = useActiveTab();
   return (
     <nav className="flex flex-col gap-1" aria-label="Ana menü">
-      {ITEMS.map(({ href, label, icon: Icon }) => (
+      {itemsFor(scope).map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -70,7 +78,7 @@ export function SideNav({ badges = {} }: { badges?: Badges }) {
 }
 
 /** Phones: a floating dark pill; the current tab widens into a lime chip with its label. */
-export function BottomNav({ badges = {} }: { badges?: Badges }) {
+export function BottomNav({ badges = {}, scope }: { badges?: Badges; scope: NavScope }) {
   const { isActive, onTap } = useActiveTab();
   const pathname = usePathname();
   // Inside a conversation the composer takes the bottom of the screen, like any chat app.
@@ -81,7 +89,7 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
       className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
     >
       <ul className="mx-auto flex max-w-md gap-1 rounded-full bg-[#1d1d1f] p-1.5 shadow-float ring-1 ring-white/10 dark:bg-[#1c1c1f]">
-        {MOBILE_ITEMS.map(({ href, label, icon: Icon }) => {
+        {mobileItems(scope).map(({ href, label, icon: Icon }) => {
           const active = isActive(href);
           return (
             <li key={href} className={cn("transition-[flex-grow] duration-200", active ? "grow-[2.4]" : "grow")}>
@@ -121,7 +129,7 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
 /** Phones only: the app name, and the trainer's avatar that opens Ayarlar. */
 export function MobileTopBar({ name, appName }: { name: string; appName: string }) {
   const { isActive, onTap } = useActiveTab();
-  const active = isActive("/ayarlar") || isActive("/paketler") || isActive("/programlar") || isActive("/yardim");
+  const active = isActive("/ayarlar") || isActive("/paketler") || isActive("/programlar") || isActive("/yardim") || isActive("/hakedis");
   return (
     <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
       <Link href="/bugun" className="flex items-center gap-2 text-base font-semibold tracking-tight">

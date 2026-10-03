@@ -2,11 +2,12 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { trainers } from "@/db/schema";
 import { cleanPrefs, notifyPrefsSchema } from "@/lib/notify-prefs";
 
 export async function saveTrainerPrefsAction(input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireOwner();
   const parsed = notifyPrefsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Tercihler kaydedilemedi." };
   const prefs = cleanPrefs("trainer", parsed.data);

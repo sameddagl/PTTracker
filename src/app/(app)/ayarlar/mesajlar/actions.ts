@@ -2,7 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { trainers } from "@/db/schema";
 import type { FormState } from "@/lib/forms";
 import { REMINDER_HOUR_OPTIONS, TEMPLATES, TEMPLATE_MAX_LENGTH, cleanTemplates, type TemplateKey } from "@/lib/templates";
@@ -10,6 +10,7 @@ import { REMINDER_HOUR_OPTIONS, TEMPLATES, TEMPLATE_MAX_LENGTH, cleanTemplates, 
 type Key = "reminderHours" | TemplateKey;
 
 export async function saveMessageSettingsAction(_prev: FormState<Key>, formData: FormData): Promise<FormState<Key>> {
+  await requireOwner();
   const hours = Number(formData.get("reminderHours"));
   if (!(REMINDER_HOUR_OPTIONS as readonly number[]).includes(hours)) return { errors: { reminderHours: "Listeden bir süre seç." } };
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, BellRing, Dumbbell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, LifeBuoy, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound } from "lucide-react";
+import { Bell, BellRing, Dumbbell, CalendarClock, CalendarPlus, ChevronRight, CircleHelp, ClipboardList, LifeBuoy, Download, Ruler, ExternalLink, Globe, LogOut, Package, TimerOff, UsersRound, Wallet } from "lucide-react";
 import { SubmitButton } from "@/components/submit-button";
 import { Avatar } from "@/components/avatar";
 import { CopyButton } from "@/components/copy-button";
@@ -9,22 +9,75 @@ import { PageHeader, SectionTitle } from "@/components/page-header";
 import { ActionTiles } from "@/components/action-tiles";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
+import { listMembers, myAccounts } from "@/db/team";
 import { countUnreadSupport } from "@/db/support";
 import { siteUrl } from "@/lib/config";
 import { signOut } from "../../giris/actions";
+import { AccountSwitch } from "./account-switch";
 import { DeleteAccount } from "./delete-account";
 
 export const metadata: Metadata = { title: "Ayarlar" };
 
 export default async function SettingsPage() {
-  const [{ trainer, clientCount, supportUnread }, claims] = await Promise.all([
-    withTrainer(async (tx, id) => ({
+  const [{ trainer, clientCount, supportUnread, member, teamSize }, claims] = await Promise.all([
+    withTrainer(async (tx, id, member) => ({
       trainer: await getTrainer(tx, id),
-      clientCount: (await listClients(tx, id)).length,
-      supportUnread: await countUnreadSupport(tx, id),
+      member,
+      clientCount: member.role === "owner" ? (await listClients(tx, id)).length : 0,
+      supportUnread: member.role === "owner" ? await countUnreadSupport(tx, id) : 0,
+      teamSize: (await listMembers(tx, id)).length,
     })),
     getClaims(),
   ]);
+  const accounts = await myAccounts(member.userId);
+  const accountSwitch = accounts.length > 1 && <AccountSwitch accounts={accounts} current={member.accountId} />;
+
+  if (member.role === "instructor") {
+    const studioName = trainer.businessName?.trim() || trainer.fullName;
+    return (
+      <>
+        <PageHeader title="Ayarlar" />
+        <div className="flex flex-col gap-6">
+          <section aria-label="Hesap" className="flex items-center gap-4 surface p-5">
+            <Avatar name={member.name || claims?.email || "?"} size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-lg font-semibold">{member.name || "—"}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {studioName} · {claims?.email ?? "—"}
+              </p>
+            </div>
+          </section>
+          {accountSwitch}
+          <ul className="divide-y overflow-hidden surface">
+            {[
+              { href: "/ayarlar/profil", icon: Globe, title: "Profilin", hint: "Adın, fotoğrafın ve kısa tanıtımın" },
+              { href: "/hakedis", icon: Wallet, title: "Hakedişim", hint: "Bu ay verdiğin dersler ve tutar" },
+              { href: "/programlar", icon: Dumbbell, title: "Programlar", hint: "Antrenman ve beslenme şablonları, hareketler" },
+              { href: "/ayarlar/bildirimler", icon: Bell, title: "Bildirimler", hint: "Bu cihazda bildirimleri aç" },
+              { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Yoklama, ders ve program adım adım" },
+            ].map(({ href, icon: Icon, title, hint }) => (
+              <li key={href}>
+                <Link href={href} className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                  <RowIcon>
+                    <Icon aria-hidden />
+                  </RowIcon>
+                  <RowText title={title} hint={hint} />
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm text-muted-foreground">Ödemeler, paketler ve stüdyo ayarları {studioName} tarafından yönetiliyor.</p>
+          <form action={signOut}>
+            <SubmitButton variant="outline">
+              <LogOut />
+              Çıkış yap
+            </SubmitButton>
+          </form>
+        </div>
+      </>
+    );
+  }
 
   const pageUrl = trainer.publicPageEnabled && trainer.slug ? `${siteUrl()}/${trainer.slug}` : null;
   const rows = [
@@ -34,6 +87,13 @@ export default async function SettingsPage() {
       title: "Profil ve sayfan",
       hint: trainer.publicPageEnabled && trainer.slug ? `Yayında · /${trainer.slug}` : "Henüz yayında değil",
     },
+    {
+      href: "/ayarlar/ekip",
+      icon: UsersRound,
+      title: "Ekip",
+      hint: teamSize > 1 ? `${teamSize - 1} eğitmen · davet, renk, hakediş` : "Stüdyonda başka eğitmen varsa davet et",
+    },
+    ...(teamSize > 1 ? [{ href: "/hakedis", icon: Wallet, title: "Hakediş", hint: "Eğitmenlerin bu ayki dersleri ve tutarları" }] : []),
     { href: "/paketler", icon: Package, title: "Paketler", hint: "Fiyatlar, indirimler, taksitler" },
     { href: "/programlar", icon: Dumbbell, title: "Programlar", hint: "Antrenman ve beslenme şablonları, hareketler" },
     {
@@ -63,6 +123,8 @@ export default async function SettingsPage() {
             <p className="truncate text-sm text-muted-foreground">{claims?.email ?? "—"}</p>
           </div>
         </section>
+
+        {accountSwitch}
 
         {pageUrl && (
           <section aria-label="Sayfan" className="flex items-center gap-3 surface py-2 pr-2 pl-4">

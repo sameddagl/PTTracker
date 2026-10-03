@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { approveApplication, getApplication, rejectApplication } from "@/db/applications";
 import { createPortalLink, getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
@@ -20,6 +20,7 @@ function revalidateAll(clientId: string) {
 }
 
 export async function approveApplicationAction(_prev: DecisionState, formData: FormData): Promise<DecisionState> {
+  await requireOwner();
   const id = z.uuid().safeParse(formData.get("id"));
   const startsOn = z.iso.date().safeParse(formData.get("startsOn"));
   if (!id.success || !startsOn.success) return { error: "Başlangıç tarihi seç." };
@@ -57,6 +58,7 @@ export async function approveApplicationAction(_prev: DecisionState, formData: F
 }
 
 export async function rejectApplicationAction(formData: FormData) {
+  await requireOwner();
   const id = z.uuid().parse(formData.get("id"));
   const result = await withTrainer((tx, trainerId) => rejectApplication(tx, trainerId, id));
   if (result) revalidateAll(result.clientId);

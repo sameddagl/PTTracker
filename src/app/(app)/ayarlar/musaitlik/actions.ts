@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { addTimeOff, deleteTimeOff, replaceAvailabilityRules } from "@/db/booking";
 import { trainers } from "@/db/schema";
 import type { FormState } from "@/lib/forms";
@@ -30,6 +30,7 @@ export async function saveAvailabilityAction(
   _prev: FormState<AvailabilityField>,
   formData: FormData,
 ): Promise<FormState<AvailabilityField>> {
+  await requireOwner();
   let rules: unknown;
   try {
     rules = JSON.parse(formData.get("rules")?.toString() ?? "[]");
@@ -74,6 +75,7 @@ const offSchema = z
   .refine((v) => v.endsOn >= v.startsOn, { path: ["endsOn"], message: "Bitiş tarihi başlangıçtan önce olamaz." });
 
 export async function addTimeOffAction(_prev: FormState<"startsOn" | "endsOn">, formData: FormData): Promise<FormState<"startsOn" | "endsOn">> {
+  await requireOwner();
   const parsed = offSchema.safeParse({
     startsOn: formData.get("startsOn")?.toString() ?? "",
     endsOn: formData.get("endsOn")?.toString() || formData.get("startsOn")?.toString() || "",
@@ -89,6 +91,7 @@ export async function addTimeOffAction(_prev: FormState<"startsOn" | "endsOn">, 
 }
 
 export async function deleteTimeOffAction(id: string) {
+  await requireOwner();
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return;
   await withTrainer((tx, trainerId) => deleteTimeOff(tx, trainerId, parsed.data));

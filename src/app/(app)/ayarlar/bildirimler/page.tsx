@@ -14,7 +14,7 @@ import { saveTrainerPrefsAction } from "./actions";
 export const metadata: Metadata = { title: "Bildirimler" };
 
 export default async function NotificationsPage() {
-  const trainer = await withTrainer((tx, id) => getTrainer(tx, id));
+  const { trainer, member } = await withTrainer(async (tx, id, member) => ({ trainer: await getTrainer(tx, id), member }));
   return (
     <>
       <Link href="/ayarlar" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -42,7 +42,11 @@ export default async function NotificationsPage() {
             }}
           />
         </section>
-        <NotifyPrefsForm rows={prefsView("trainer", trainer.notifyPrefs)} save={saveTrainerPrefsAction} />
+        {member.role === "owner" ? (
+          <NotifyPrefsForm rows={prefsView("trainer", trainer.notifyPrefs)} save={saveTrainerPrefsAction} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Kendi derslerindeki randevu, iptal ve danışanlarından gelen mesajlar bu cihaza bildirim olarak gelir.</p>
+        )}
         <p className="text-sm text-muted-foreground">
           Mesajlar e-postayla gelmez. Giriş kodu e-postası her zaman gelir.
         </p>

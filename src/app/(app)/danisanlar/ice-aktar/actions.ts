@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { existingPhones, importClients, type ImportResult } from "@/db/import";
 import { getTrainer } from "@/db/queries";
 import { todayISO } from "@/lib/format";
@@ -25,6 +25,7 @@ export type ReadFileState = { error?: string; file?: ParsedFile };
 
 /** Step 1: reads the upload and guesses the columns. Nothing is saved. */
 export async function readImportFileAction(_prev: ReadFileState, formData: FormData): Promise<ReadFileState> {
+  await requireOwner();
   // Signed-in check (and the data we need) before touching the upload.
   const { known, today } = await withTrainer(async (tx, trainerId) => {
     const trainer = await getTrainer(tx, trainerId);
@@ -80,6 +81,7 @@ export type ImportState = { error?: string; result?: ImportResult };
 
 /** Step 2: creates the clients and packages, all or nothing. */
 export async function importClientsAction(input: ImportInput): Promise<ImportState> {
+  await requireOwner();
   const parsed = importSchema.safeParse(input);
   if (!parsed.success) return { error: "Dosya okunamadı. Dosyayı yeniden yükle." };
   const { rows, lines, headers, mapping } = parsed.data;

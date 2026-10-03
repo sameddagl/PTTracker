@@ -6,7 +6,7 @@ export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 const RESERVED = new Set([
   "acik-riza", "admin", "api", "app", "auth", "ayarlar", "baslangic", "bugun", "danisan", "danisanlar", "ders", "destek",
   "fiyatlar", "giris", "gizlilik", "hakkimizda", "help", "icon", "kayit", "kosullar", "kvkk", "login", "manifest", "mesajlar", "odemeler",
-  "p", "paketler", "pwa-icon", "sozlesme", "takvim", "www", "yardim", "yazdir", "yoklama", "yonetim",
+  "p", "paketler", "pwa-icon", "sozlesme", "takvim", "www", "yardim", "yazdir", "yoklama", "yonetim", "davet", "hakedis", "ekip",
   // Marketing pages planned in docs/seo-audit/ACTION-PLAN.md.
   "alternatif", "blog", "hakkinda", "iletisim", "karsilastirma", "monitoring", "online-randevu", "ozellikler", "personal-trainer",
   "pilates", "pilates-egitmenleri", "rehber", "sablonlar",

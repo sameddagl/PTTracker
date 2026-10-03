@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { LEGAL } from "@/lib/legal";
-import { withTrainer, type Tx } from "@/db";
+import { requireOwner, type Tx, withTrainer } from "@/db";
 import { archiveClient, deleteClient, restoreClient } from "@/db/clients";
 import { clients, consents } from "@/db/schema";
 import { fieldErrors, readForm, type FormState } from "@/lib/forms";
@@ -102,18 +102,21 @@ export async function updateClientAction(clientId: string, _prev: ClientFormStat
 }
 
 export async function archiveClientAction(clientId: string) {
+  await requireOwner();
   await withTrainer((tx, trainerId) => archiveClient(tx, trainerId, clientId));
   revalidatePath("/", "layout");
   redirect(`/danisanlar/${clientId}`);
 }
 
 export async function restoreClientAction(clientId: string) {
+  await requireOwner();
   await withTrainer((tx, trainerId) => restoreClient(tx, trainerId, clientId));
   revalidatePath("/", "layout");
   redirect(`/danisanlar/${clientId}`);
 }
 
 export async function deleteClientAction(clientId: string) {
+  await requireOwner();
   await withTrainer((tx, trainerId) => deleteClient(tx, trainerId, clientId));
   revalidatePath("/", "layout");
   redirect("/danisanlar/arsiv");

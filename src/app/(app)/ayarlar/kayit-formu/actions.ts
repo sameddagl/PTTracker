@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { createIntakeField, deleteIntakeField, reorderIntakeFields, updateIntakeField } from "@/db/intake";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 import { INTAKE_TYPES } from "@/lib/intake";
@@ -57,6 +57,7 @@ export async function saveIntakeFieldAction(
   _prev: FormState<IntakeFieldFormField>,
   formData: FormData,
 ): Promise<FormState<IntakeFieldFormField>> {
+  await requireOwner();
   const raw = readForm(formData, FIELDS);
   const parsed = fieldSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
@@ -71,6 +72,7 @@ export async function saveIntakeFieldAction(
 }
 
 export async function deleteIntakeFieldAction(id: string) {
+  await requireOwner();
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return;
   await withTrainer((tx, trainerId) => deleteIntakeField(tx, trainerId, parsed.data));
@@ -78,6 +80,7 @@ export async function deleteIntakeFieldAction(id: string) {
 }
 
 export async function reorderIntakeFieldsAction(ids: string[]) {
+  await requireOwner();
   const parsed = z.array(z.uuid()).max(200).parse(ids);
   await withTrainer((tx, trainerId) => reorderIntakeFields(tx, trainerId, parsed));
   revalidatePath("/ayarlar/kayit-formu");

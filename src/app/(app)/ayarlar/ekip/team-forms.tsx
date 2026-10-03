@@ -18,17 +18,18 @@ type InviteField = "fullName" | "email" | "color" | "form";
 export function InviteForm({ suggestedColor }: { suggestedColor: string }) {
   const [state, action, pending] = useActionState<FormState<InviteField>, FormData>(inviteAction, {});
   const form = useRef<HTMLFormElement>(null);
-  const [color, setColor] = useState(suggestedColor);
+  // The suggestion follows the team (next free colour) until the owner picks one.
+  const [picked, setPicked] = useState<string | null>(null);
+  const color = picked ?? suggestedColor;
 
   useEffect(() => {
     if (!state.savedAt) return;
     toast.success("Davet gönderildi", { description: "Eğitmen e-postadaki linkle katılır." });
     form.current?.reset();
   }, [state.savedAt]);
-  useEffect(() => setColor(suggestedColor), [suggestedColor]);
 
   return (
-    <form ref={form} action={action} className="flex flex-col gap-4" noValidate>
+    <form ref={form} action={action} onReset={() => setPicked(null)} className="flex flex-col gap-4" noValidate>
       <FormError message={state.errors?.form} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="fullName" label="Ad soyad" error={state.errors?.fullName}>
@@ -41,7 +42,7 @@ export function InviteForm({ suggestedColor }: { suggestedColor: string }) {
       <Field id="color" label="Takvimdeki rengi" error={state.errors?.color}>
         <div className="flex items-center gap-3">
           <span className="size-5 shrink-0 rounded-full" style={{ background: teamColor(color) }} aria-hidden />
-          <NativeSelect id="color" name="color" value={color} onChange={(e) => setColor(e.target.value)} className="max-w-56">
+          <NativeSelect id="color" name="color" value={color} onChange={(e) => setPicked(e.target.value)} className="max-w-56">
             {TEAM_COLORS.map((c) => (
               <option key={c} value={c}>
                 {TEAM_COLOR_LABELS[c]}

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { addGroupMember, createGroupClass, endGroupClass, removeGroupMember, updateGroupClass } from "@/db/groups";
 import { getTrainer } from "@/db/queries";
 import { fieldErrors, type FormState } from "@/lib/forms";
@@ -38,6 +38,7 @@ const rawOf = (formData: FormData) => ({
 const echo = (raw: ReturnType<typeof rawOf>) => ({ ...raw, weekdays: raw.weekdays.join(",") });
 
 export async function createGroupAction(_prev: GroupFormState, formData: FormData): Promise<GroupFormState> {
+  await requireOwner();
   const raw = rawOf(formData);
   const parsed = createSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: echo(raw) };
@@ -49,6 +50,7 @@ export async function createGroupAction(_prev: GroupFormState, formData: FormDat
 const updateSchema = z.object({ title, capacity, joinMode });
 
 export async function updateGroupAction(id: string, _prev: GroupFormState, formData: FormData): Promise<GroupFormState> {
+  await requireOwner();
   const raw = rawOf(formData);
   const parsed = updateSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: echo(raw) };
@@ -67,11 +69,13 @@ export async function updateGroupAction(id: string, _prev: GroupFormState, formD
 }
 
 export async function endGroupAction(id: string) {
+  await requireOwner();
   await withTrainer(async (tx, trainerId) => endGroupClass(tx, await getTrainer(tx, trainerId), id));
   revalidatePath("/takvim", "layout");
 }
 
 export async function addMemberAction(classId: string, clientId: string, startsOn: string): Promise<{ ok: true; skipped: number } | { ok: false; error: string }> {
+  await requireOwner();
   if (!z.uuid().safeParse(clientId).success || !z.iso.date().safeParse(startsOn).success) return { ok: false, error: "Danışan ve tarih seç." };
   const res = await withTrainer(async (tx, trainerId) => addGroupMember(tx, await getTrainer(tx, trainerId), { classId, clientId, startsOn }));
   if (!res.ok) {
@@ -90,6 +94,7 @@ export async function addMemberAction(classId: string, clientId: string, startsO
 }
 
 export async function removeMemberAction(memberId: string) {
+  await requireOwner();
   await withTrainer(async (tx, trainerId) => removeGroupMember(tx, await getTrainer(tx, trainerId), memberId));
   revalidatePath("/takvim", "layout");
 }

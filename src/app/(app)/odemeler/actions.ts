@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { confirmPayment, deletePayment, recordPayment, rejectPayment } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
 import { notifyClient as tellClient } from "@/lib/notify";
@@ -44,6 +44,7 @@ export async function recordPaymentAction(
   _prev: FormState<PaymentField>,
   formData: FormData,
 ): Promise<FormState<PaymentField>> {
+  await requireOwner();
   const raw = readForm(formData, FIELDS);
   const parsed = paymentSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
@@ -62,6 +63,7 @@ export async function recordPaymentAction(
 }
 
 export async function deletePaymentAction(id: string): Promise<{ ok: boolean }> {
+  await requireOwner();
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return { ok: false };
   const row = await withTrainer((tx, trainerId) => deletePayment(tx, trainerId, parsed.data));
@@ -85,6 +87,7 @@ async function notifyClient(clientId: string, heading: string, lines: string[]) 
 }
 
 export async function confirmPaymentAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireOwner();
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
   const result = await withTrainer((tx, trainerId) => confirmPayment(tx, trainerId, parsed.data));
@@ -103,6 +106,7 @@ export async function confirmPaymentAction(id: string): Promise<{ ok: true } | {
 }
 
 export async function rejectPaymentAction(id: string, reason: string): Promise<{ ok: boolean }> {
+  await requireOwner();
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return { ok: false };
   const why = reason.trim().slice(0, 200) || null;

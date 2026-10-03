@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requireOwner, withTrainer } from "@/db";
 import { listMeasurementTypes } from "@/db/progress";
 import { measurementTypes, trainers } from "@/db/schema";
 import { BUILTIN_METRICS, DEFAULT_METRICS } from "@/lib/measurements";
@@ -13,6 +13,7 @@ const FAIL = "Bir sorun oldu. Sayfayı yenileyip tekrar dene.";
 
 /** The metrics on the "Ölçüm ekle" form, in the given order. */
 export async function saveMetricSetAction(keys: string[]): Promise<Result> {
+  await requireOwner();
   if (!Array.isArray(keys) || keys.length > 30) return { ok: false, error: FAIL };
   await withTrainer(async (tx, trainerId) => {
     const custom = new Set((await listMeasurementTypes(tx, trainerId)).filter((t) => !t.archivedAt).map((t) => t.id));
@@ -25,6 +26,7 @@ export async function saveMetricSetAction(keys: string[]): Promise<Result> {
 }
 
 export async function setSelfWeighAction(on: boolean): Promise<Result> {
+  await requireOwner();
   await withTrainer((tx, trainerId) => tx.update(trainers).set({ clientsSelfWeigh: Boolean(on) }).where(eq(trainers.id, trainerId)));
   revalidatePath("/", "layout");
   return { ok: true };
@@ -37,6 +39,7 @@ const customSchema = z.object({
 });
 
 export async function addCustomMetricAction(input: { label: string; unit: string; decimals: number }): Promise<Result> {
+  await requireOwner();
   const parsed = customSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   await withTrainer(async (tx, trainerId) => {
@@ -52,6 +55,7 @@ export async function addCustomMetricAction(input: { label: string; unit: string
 
 /** Archived, not deleted: old readings keep their label. */
 export async function archiveCustomMetricAction(id: string): Promise<Result> {
+  await requireOwner();
   if (!z.uuid().safeParse(id).success) return { ok: false, error: FAIL };
   await withTrainer(async (tx, trainerId) => {
     await tx

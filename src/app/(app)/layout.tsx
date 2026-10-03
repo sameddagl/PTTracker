@@ -7,17 +7,21 @@ import { countPendingApplications } from "@/db/applications";
 import { countUnread } from "@/db/messages";
 import { countPendingPayments } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
+import { isStudio } from "@/db/team";
 import { APP_NAME } from "@/lib/config";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
-  const { trainer, pending, payments, unread } = await withTrainer(async (tx, id) => ({
+  const { trainer, member, studio, pending, payments, unread } = await withTrainer(async (tx, id, member) => ({
     trainer: await getTrainer(tx, id),
-    pending: await countPendingApplications(tx, id),
-    payments: await countPendingPayments(tx, id),
+    member,
+    studio: await isStudio(tx, id),
+    pending: member.role === "owner" ? await countPendingApplications(tx, id) : 0,
+    payments: member.role === "owner" ? await countPendingPayments(tx, id) : 0,
     unread: await countUnread(tx, id),
   }));
   if (!trainer.onboardedAt) redirect("/baslangic");
   const badges = { "/danisanlar": pending, "/odemeler": payments, "/mesajlar": unread };
+  const scope = { role: member.role, studio };
 
   return (
     <div className="min-h-dvh bg-canvas md:grid md:grid-cols-[256px_1fr]">
@@ -29,15 +33,15 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             </span>
             {APP_NAME}
           </Link>
-          <SideNav badges={badges} />
+          <SideNav badges={badges} scope={scope} />
         </div>
       </aside>
-      <MobileTopBar name={trainer.fullName} appName={APP_NAME} />
+      <MobileTopBar name={member.name || trainer.fullName} appName={APP_NAME} />
       {/* Pages opt into a wider column by rendering an element with data-wide (the week calendar). */}
       <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-5 pb-[calc(8.5rem+env(safe-area-inset-bottom))] has-[[data-chat]]:pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8 md:pt-10 md:pb-12">
         {children}
       </main>
-      <BottomNav badges={badges} />
+      <BottomNav badges={badges} scope={scope} />
     </div>
   );
 }
