@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader, SectionTitle } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { isStudio, listMembers } from "@/db/team";
+import { teamColor } from "@/lib/team";
 import { ApplicationsBanner, AttendanceBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
 import { LOST_AFTER_DAYS, lostClients, tomorrowAttendees } from "@/db/engagement";
@@ -43,31 +45,39 @@ import { GettingStarted, GuideComplete } from "./getting-started";
 
 export const metadata: Metadata = { title: "Bugün" };
 
-export default async function TodayPage() {
-  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue } = await withTrainer(async (tx, trainerId) => {
+export default async function TodayPage({ searchParams }: PageProps<"/bugun">) {
+  const { gorunum } = await searchParams;
+  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue, owner, studio, mine, name, team } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
+    const owner = member.role === "owner";
+    const studio = await isStudio(tx, trainerId);
+    // In a studio an instructor sees their own day; the owner chooses between the whole studio and their own lessons.
+    const mine = studio && (!owner || gorunum === "benim");
+    const only = mine ? member.id : null;
     // Sequential on purpose: a transaction runs on one connection.
     const today = todayISO(trainer.timezone);
     await ensureGroupOccurrences(tx, trainer);
-    const lessons = await getLessons(tx, trainer, { from: today, to: today });
-    const alerts = await getPackageAlerts(tx, trainer);
-    const tomorrow = await tomorrowAttendees(tx, trainer);
-    const lost = await lostClients(tx, trainer, 5);
-    const measureDue = await dueMeasurements(tx, trainer, 5);
-    const unmarked = await countPendingAttendance(tx, trainer);
+    const lessons = await getLessons(tx, trainer, { from: today, to: today, instructorId: only });
+    // Packages, money, lost clients and the setup checklist are the owner's business.
+    const alerts = owner ? await getPackageAlerts(tx, trainer) : [];
+    const tomorrow = await tomorrowAttendees(tx, trainer, only);
+    const lost = owner ? await lostClients(tx, trainer, 5) : [];
+    const measureDue = owner ? await dueMeasurements(tx, trainer, 5) : [];
+    const unmarked = await countPendingAttendance(tx, trainer, 14, only);
     const portals = await getActivePortalTokens(tx, [
       ...new Set([...alerts.map((a) => a.clientId), ...tomorrow.filter((t) => !t.confirmed).map((t) => t.clientId), ...lost.map((c) => c.clientId), ...measureDue.map((c) => c.clientId)]),
     ]);
-    const pending = await countPendingApplications(tx, trainerId);
-    const pendingPayments = await countPendingPayments(tx, trainerId);
-    const money = await getPaymentSummary(tx, trainer);
+    const pending = owner ? await countPendingApplications(tx, trainerId) : 0;
+    const pendingPayments = owner ? await countPendingPayments(tx, trainerId) : 0;
+    const money = owner ? await getPaymentSummary(tx, trainer) : null;
     // Skip the checklist counts once the trainer has hidden it.
-    const guideFacts = trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
-    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue };
+    const guideFacts = !owner || trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
+    const team = studio && !mine ? await listMembers(tx, trainerId) : [];
+    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue, owner, studio, mine, name: member.name, team };
   });
 
   const now = new Date();
-  const firstName = trainer.fullName.split(" ")[0];
+  const firstName = (owner ? trainer.fullName : name).split(" ")[0];
   const live = lessons.filter((l) => l.lessonStatus === "scheduled");
   const next = live.find((l) => l.endsAt > now);
   const people = live.reduce((sum, l) => sum + l.attendees.filter((a) => a.status !== "cancelled").length, 0);
@@ -100,7 +110,28 @@ export default async function TodayPage() {
       </div>
       {guideView === "congrats" && <GuideComplete />}
 
-      <section aria-label="Özet" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {studio && owner && (
+        <nav aria-label="Görünüm" className="mb-6 flex gap-2">
+          {[
+            { key: "studyo", label: "Stüdyo" },
+            { key: "benim", label: "Benim derslerim" },
+          ].map((o) => (
+            <Link
+              key={o.key}
+              href={o.key === "studyo" ? "/bugun" : "/bugun?gorunum=benim"}
+              aria-current={(o.key === "benim") === mine ? "true" : undefined}
+              className={cn(
+                "flex min-h-11 items-center rounded-full px-4 text-sm font-medium transition-colors md:min-h-9",
+                (o.key === "benim") === mine ? "bg-foreground text-background" : "bg-card text-muted-foreground shadow-card hover:text-foreground",
+              )}
+            >
+              {o.label}
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      <section aria-label="Özet" className={cn("mb-8 grid grid-cols-2 gap-3", money && "sm:grid-cols-3")}>
         <StatTile
           tone="ink"
           label="Bugün"
@@ -109,15 +140,17 @@ export default async function TodayPage() {
           icon={<CalendarClock />}
         />
         <StatTile label="Katılımcı" value={people} hint="bugünkü derslerde" icon={<Users />} />
-        <StatTile
-          className="col-span-2 sm:col-span-1"
-          tone={money.overdue > 0 ? "lime" : "default"}
-          label="Bekleyen alacak"
-          value={formatTRY(money.outstanding)}
-          hint={money.overdue > 0 ? `${formatTRY(money.overdue)} vadesi geldi` : `Bu ay ${formatTRY(money.thisMonth)} tahsilat`}
-          icon={<Wallet />}
-          href="/odemeler"
-        />
+        {money && (
+          <StatTile
+            className="col-span-2 sm:col-span-1"
+            tone={money.overdue > 0 ? "lime" : "default"}
+            label="Bekleyen alacak"
+            value={formatTRY(money.outstanding)}
+            hint={money.overdue > 0 ? `${formatTRY(money.overdue)} vadesi geldi` : `Bu ay ${formatTRY(money.thisMonth)} tahsilat`}
+            icon={<Wallet />}
+            href="/odemeler"
+          />
+        )}
       </section>
 
       {(pending > 0 || pendingPayments > 0 || unmarked > 0) && (
@@ -178,6 +211,16 @@ export default async function TodayPage() {
                       </span>
                       <span className="font-semibold max-sm:font-normal max-sm:text-muted-foreground">{l.groupClassId ? (l.title ?? "Grup dersi") : SESSION_TYPE_LABELS[l.sessionType]}</span>
                       {current && <Badge variant="lime">Şimdi</Badge>}
+                      {team.length > 0 && l.instructorId && (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{ background: teamColor(team.find((m) => m.id === l.instructorId)?.color, team.findIndex((m) => m.id === l.instructorId)) }}
+                            aria-hidden
+                          />
+                          {team.find((m) => m.id === l.instructorId)?.fullName}
+                        </span>
+                      )}
                       {l.groupClassId && (
                         <span className="text-xs text-muted-foreground tabular-nums">
                           {takenPlaces(l)}/{l.capacity}
@@ -257,7 +300,7 @@ export default async function TodayPage() {
         </section>
       )}
 
-      <section aria-labelledby="alerts-heading">
+      {owner && <section aria-labelledby="alerts-heading">
         <h2 id="alerts-heading" className="mb-3 text-base font-semibold">
           Dikkat edilecekler
         </h2>
@@ -272,7 +315,7 @@ export default async function TodayPage() {
             ))}
           </ul>
         )}
-      </section>
+      </section>}
 
       {measureDue.length > 0 && (
         <section aria-labelledby="measure-due-heading" className="mt-8">

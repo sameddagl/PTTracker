@@ -390,7 +390,7 @@ export async function listClientOptions(tx: Tx, trainerId: string) {
 }
 
 /** Attendees still unmarked on lessons from the last `days` days before today (Bugün handles today). */
-export async function countPendingAttendance(tx: Tx, trainer: TrainerRef, days = 14) {
+export async function countPendingAttendance(tx: Tx, trainer: TrainerRef, days = 14, instructorId?: string | null) {
   const today = todayISO(trainer.timezone);
   const tz = trainer.timezone;
   const [row] = await tx
@@ -400,6 +400,7 @@ export async function countPendingAttendance(tx: Tx, trainer: TrainerRef, days =
     .where(
       and(
         eq(lessons.trainerId, trainer.id),
+        instructorId ? eq(lessons.instructorId, instructorId) : undefined,
         eq(lessons.status, "scheduled"),
         eq(lessonAttendees.status, "scheduled"),
         gte(lessons.startsAt, sql`((${today}::date - ${days}::int)::timestamp at time zone ${tz})`),

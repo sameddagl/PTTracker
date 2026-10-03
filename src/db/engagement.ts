@@ -142,7 +142,7 @@ export type TomorrowAttendee = {
 };
 
 /** Tomorrow's bookings, for the "Yarın gelecekler" list on Bugün. */
-export async function tomorrowAttendees(tx: Tx, trainer: { id: string; timezone: string }): Promise<TomorrowAttendee[]> {
+export async function tomorrowAttendees(tx: Tx, trainer: { id: string; timezone: string }, instructorId?: string | null): Promise<TomorrowAttendee[]> {
   const tomorrow = addDays(todayISO(trainer.timezone), 1);
   const tz = trainer.timezone;
   const rows = await tx
@@ -163,6 +163,7 @@ export async function tomorrowAttendees(tx: Tx, trainer: { id: string; timezone:
     .where(
       and(
         eq(lessons.trainerId, trainer.id),
+        instructorId ? eq(lessons.instructorId, instructorId) : undefined,
         eq(lessons.status, "scheduled"),
         eq(lessonAttendees.status, "scheduled"),
         gte(lessons.startsAt, sql`(${tomorrow}::date::timestamp at time zone ${tz})`),

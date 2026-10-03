@@ -17,10 +17,11 @@ export const metadata: Metadata = { title: "Yoklama" };
 const LOOKBACK_DAYS = 14;
 
 export default async function AttendancePage() {
-  const { trainer, lessons } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
     const today = todayISO(trainer.timezone);
-    const lessons = await getLessons(tx, trainer, { from: addDays(today, -LOOKBACK_DAYS), to: today });
+    // An instructor takes attendance for their own lessons only.
+    const lessons = await getLessons(tx, trainer, { from: addDays(today, -LOOKBACK_DAYS), to: today, instructorId: member.role === "owner" ? null : member.id });
     return { trainer, lessons };
   });
 

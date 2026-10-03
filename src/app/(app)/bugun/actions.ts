@@ -55,10 +55,11 @@ export type RemindResult = { ok: true; sent: number; unreachable: number } | { o
  * tomorrow who hasn't answered. Same text and channel as the automatic one.
  */
 export async function remindUnconfirmedAction(): Promise<RemindResult> {
-  const due = await withTrainer(async (tx, trainerId) => {
+  const due = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
     const cutoff = Date.now() - MANUAL_REMINDER_GAP_HOURS * 3_600_000;
-    const list = (await tomorrowAttendees(tx, trainer)).filter((t) => !t.confirmed && (!t.remindedAt || t.remindedAt.getTime() < cutoff));
+    // An instructor reminds the clients of their own lessons.
+    const list = (await tomorrowAttendees(tx, trainer, member.role === "owner" ? null : member.id)).filter((t) => !t.confirmed && (!t.remindedAt || t.remindedAt.getTime() < cutoff));
     if (list.length > 0) {
       await tx
         .update(lessonAttendees)

@@ -8,6 +8,8 @@ import { withTrainer } from "@/db";
 import { ensureGroupOccurrences } from "@/db/groups";
 import { getLessons, type CalendarLesson } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
+import { listMembers } from "@/db/team";
+import { teamColor } from "@/lib/team";
 import {
   WEEKDAY_LABELS,
   addDays,
@@ -27,23 +29,31 @@ export const metadata: Metadata = { title: "Takvim" };
 const HOUR_PX = 56;
 
 export default async function CalendarPage({ searchParams }: PageProps<"/takvim">) {
-  const { hafta, gun } = await searchParams;
+  const { hafta, gun, egitmen } = await searchParams;
 
-  const { trainer, lessons, today, monday } = await withTrainer(async (tx, trainerId) => {
+  const { trainer, lessons, today, monday, member, team } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
     const today = todayISO(trainer.timezone);
     const monday = startOfWeek(isISODate(gun) ? gun : isISODate(hafta) ? hafta : today);
     await ensureGroupOccurrences(tx, trainer);
     const lessons = await getLessons(tx, trainer, { from: monday, to: addDays(monday, 6), includeCancelled: true });
-    return { trainer, lessons, today, monday };
+    return { trainer, lessons, today, monday, member, team: await listMembers(tx, trainerId) };
   });
+
+  // Studios: colour per instructor and a filter. An instructor starts on their own lessons, the owner on everyone's.
+  const studio = team.length > 1;
+  const colors: Record<string, string> = Object.fromEntries(team.map((m, i) => [m.id, teamColor(m.color, i)]));
+  const filter = !studio ? "hepsi" : egitmen === "hepsi" || team.some((m) => m.id === egitmen) ? (egitmen as string) : member.role === "owner" ? "hepsi" : member.id;
+  const shown = filter === "hepsi" ? lessons : lessons.filter((l) => l.instructorId === filter);
+  const q = filter === "hepsi" && member.role === "owner" ? "" : `&egitmen=${filter}`;
 
   const days = eachDay(monday, addDays(monday, 6));
   const selected = isISODate(gun) && days.includes(gun) ? gun : days.includes(today) ? today : monday;
-  const byDay = new Map(days.map((d) => [d, lessons.filter((l) => l.localDate === d)]));
+  const byDay = new Map(days.map((d) => [d, shown.filter((l) => l.localDate === d)]));
 
-  const weekHref = (m: string) => `/takvim?hafta=${m}`;
-  const dayHref = (d: string) => `/takvim?hafta=${monday}&gun=${d}`;
+  const weekHref = (m: string) => `/takvim?hafta=${m}${q}`;
+  const dayHref = (d: string) => `/takvim?hafta=${monday}&gun=${d}${q}`;
+  const studioColors = studio ? colors : null;
   const back = encodeURIComponent(dayHref(selected));
 
   return (
@@ -53,10 +63,34 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
         className="mb-6"
         items={[
           { href: `/ders/yeni?tarih=${selected}&next=${back}`, icon: <CalendarPlus />, title: "Ders planla", primary: true },
-          { href: "/takvim/grup", icon: <UsersRound />, title: "Grup dersleri" },
-          { href: "/ayarlar/musaitlik", icon: <CalendarClock />, title: "Müsaitlik ve randevu" },
+          ...(member.role === "owner"
+            ? [
+                { href: "/takvim/grup", icon: <UsersRound />, title: "Grup dersleri" },
+                { href: "/ayarlar/musaitlik", icon: <CalendarClock />, title: "Müsaitlik ve randevu" },
+              ]
+            : []),
         ]}
       />
+
+      {studio && (
+        <nav aria-label="Eğitmen" className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+          {[{ id: "hepsi", name: "Hepsi", color: null as string | null }, ...team.map((m) => ({ id: m.id, name: m.id === member.id ? "Ben" : m.fullName.split(" ")[0] || "İsimsiz", color: colors[m.id] }))].map((o) => (
+            <Link
+              key={o.id}
+              href={`/takvim?hafta=${monday}&gun=${selected}&egitmen=${o.id}`}
+              scroll={false}
+              aria-current={filter === o.id ? "true" : undefined}
+              className={cn(
+                "flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors md:min-h-9",
+                filter === o.id ? "bg-foreground text-background" : "bg-card text-muted-foreground shadow-card hover:text-foreground",
+              )}
+            >
+              {o.color && <span className="size-2.5 rounded-full" style={{ background: o.color }} aria-hidden />}
+              {o.name}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <nav aria-label="Hafta" className="mb-4 flex items-center gap-2">
         <Button asChild variant="outline" size="icon" aria-label="Önceki hafta">
@@ -113,16 +147,19 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
         </ol>
 
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">{dayLong(selected)}</h2>
-        <DayAgenda lessons={byDay.get(selected)!} weekEmpty={lessons.length === 0} addHref={`/ders/yeni?tarih=${selected}&next=${back}`} />
+        <DayAgenda lessons={byDay.get(selected)!} weekEmpty={shown.length === 0} addHref={`/ders/yeni?tarih=${selected}&next=${back}`} colors={studioColors} />
       </div>
 
       {/* Tablets and up: week grid */}
-      <WeekGrid days={days} byDay={byDay} today={today} timezone={trainer.timezone} back={back} />
+      <WeekGrid days={days} byDay={byDay} today={today} timezone={trainer.timezone} back={back} colors={studioColors} />
     </>
   );
 }
 
-function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
+/** Instructor colours in a studio (null for a trainer working alone). */
+type Colors = Record<string, string> | null;
+
+function LessonCard({ lesson: l, colors }: { lesson: CalendarLesson; colors: Colors }) {
   const tone = lessonTone(l);
   return (
     <Link
@@ -138,7 +175,10 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
         <div className="text-xs text-muted-foreground tabular-nums">{minutesToTime(l.startMinute + l.durationMinutes)}</div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{l.groupClassId ? (l.title ?? "Grup dersi") : lessonTitle(l)}</p>
+        <p className="flex items-center gap-2 truncate font-medium">
+          {colors && l.instructorId && <span className="size-2.5 shrink-0 rounded-full" style={{ background: colors[l.instructorId] }} aria-hidden />}
+          {l.groupClassId ? (l.title ?? "Grup dersi") : lessonTitle(l)}
+        </p>
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           {SESSION_TYPE_LABELS[l.sessionType]}
           {l.groupClassId && (
@@ -155,7 +195,7 @@ function LessonCard({ lesson: l }: { lesson: CalendarLesson }) {
   );
 }
 
-function DayAgenda({ lessons, addHref, weekEmpty }: { lessons: CalendarLesson[]; addHref: string; weekEmpty: boolean }) {
+function DayAgenda({ lessons, addHref, weekEmpty, colors }: { lessons: CalendarLesson[]; addHref: string; weekEmpty: boolean; colors: Colors }) {
   if (lessons.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center">
@@ -177,7 +217,7 @@ function DayAgenda({ lessons, addHref, weekEmpty }: { lessons: CalendarLesson[];
     <ul className="flex flex-col gap-2">
       {lessons.map((l) => (
         <li key={l.lessonId}>
-          <LessonCard lesson={l} />
+          <LessonCard lesson={l} colors={colors} />
         </li>
       ))}
     </ul>
@@ -190,12 +230,14 @@ function WeekGrid({
   today,
   timezone,
   back,
+  colors,
 }: {
   days: string[];
   byDay: Map<string, CalendarLesson[]>;
   today: string;
   timezone: string;
   back: string;
+  colors: Colors;
 }) {
   const all = [...byDay.values()].flat();
   // 07:00–21:00 by default, stretched to fit any earlier or later lesson.
@@ -261,6 +303,7 @@ function WeekGrid({
                     height: Math.max((l.durationMinutes / 60) * HOUR_PX - 2, 20),
                     left: `calc(${(lane / lanes) * 100}% + 2px)`,
                     width: `calc(${100 / lanes}% - 4px)`,
+                    ...(colors && l.instructorId ? { borderLeft: `3px solid ${colors[l.instructorId]}` } : {}),
                   }}
                 >
                   <span className="font-semibold tabular-nums">{minutesToTime(l.startMinute)}</span>{" "}
