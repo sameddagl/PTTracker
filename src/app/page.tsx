@@ -43,19 +43,21 @@ import { APP_DESCRIPTION, APP_DOMAIN, APP_NAME, siteUrl } from "@/lib/config";
 import { LEGAL } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 
-const TITLE = `${APP_NAME} · Pilates ve PT için Danışan ve Seans Takibi`;
+const TITLE = `${APP_NAME} · Pilates ve PT Stüdyosu Yönetim Uygulaması`;
 const DESCRIPTION =
-  "Pilates ve PT eğitmenleri için danışan takip programı. Seans paketi, yoklama, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm takibi tek yerde. Beta süresince ücretsiz.";
+  "Pilates ve personal training stüdyoları için yönetim uygulaması. Eğitmen ekibi ve ortak takvim, seans paketi, yoklama, randevu, ödeme, eğitmen hakedişi, antrenman programı ve ölçüm takibi tek yerde. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/" },
   keywords: [
-    "pilates stüdyo programı",
     "stüdyo yönetim programı",
+    "pilates stüdyosu yönetim programı",
+    "pilates stüdyo programı",
+    "PT stüdyosu programı",
     "eğitmen hakediş",
-    "personal trainer uygulaması",
+    "ortak eğitmen takvimi",
     "danışan takip programı",
     "seans takip",
     "seans paketi takibi",
@@ -85,9 +87,9 @@ const FEATURES = [
     Demo: ConfirmDemo,
   },
   {
-    title: "Instagram bio'nuza koyacağınız sayfa",
-    text: "Tanıtımınız, paketleriniz ve fiyatlarınız tek linkte. Danışan paketini seçip formu doldursun, siz onaylayın.",
-    chips: ["Kişisel sayfa", "Online kayıt", "Başvuru onayı", "Açık rıza"],
+    title: "Instagram bio'nuza koyacağınız stüdyo sayfası",
+    text: "Stüdyonuzun tanıtımı, eğitmenleriniz, paketleriniz ve fiyatlarınız tek linkte. Danışan paketini seçip formu doldursun, siz onaylayın.",
+    chips: ["Stüdyo sayfası", "Ekibiniz", "Online kayıt", "Açık rıza"],
     Demo: PublicPageDemo,
   },
   {
@@ -104,8 +106,8 @@ const FEATURES = [
   },
   {
     title: "Danışan randevusunu kendisi alır",
-    text: "Çalışma saatlerinizi girin, danışan boş bir saat seçsin. Çakışma olmaz; iptalde sizin kuralınız geçerli.",
-    chips: ["Online randevu", "Çalışma saatleri", "İptal kuralı"],
+    text: "Eğitmenlerin çalışma saatlerini girin; danışan boş bir saat seçsin, isterse eğitmenini de. Çakışma olmaz, iptalde sizin kuralınız geçerli.",
+    chips: ["Online randevu", "Eğitmen seçimi", "İptal kuralı"],
     Demo: BookingDemo,
   },
   {
@@ -137,7 +139,7 @@ const FEATURES = [
 const MORE = [
   { icon: StickyNote, title: "Danışan notları", text: "Ders notlarını yoklamadan yazın. Sakatlık gibi bir uyarı varsa ders listesinde adının yanında görünür." },
   { icon: MessageSquareText, title: "Kendi cümlelerinizle", text: "Hatırlatmaların ne zaman gideceğini ve hazır mesajların metnini siz belirlersiniz." },
-  { icon: CalendarCheck, title: "Her pazartesi haftalık özet", text: "Geçen hafta kaç ders verdiniz, kimler geldi, ne kadar tahsil ettiniz; tek bildirimde." },
+  { icon: CalendarCheck, title: "Her pazartesi haftalık özet", text: "Geçen hafta stüdyoda kaç ders yapıldı, kimler geldi, ne kadar tahsilat oldu; tek bildirimde." },
   { icon: UserRoundSearch, title: "Bir süredir gelmeyenler", text: "Üç haftadır gelmeyen danışanları bir listede görün, WhatsApp'tan hemen yazın." },
   { icon: ClipboardCheck, title: "Yoklama ekranı", text: "Almayı unuttuğunuz yoklamalar burada birikir. Grup dersinde “Hepsi geldi” deyip geçin." },
   { icon: Smartphone, title: "Mağazadan indirmeden ana ekranda", text: "Siz de danışanlarınız da ana ekrana ekleyin; hatırlatmalar ve mesajlar telefona bildirim olarak gelsin." },
@@ -172,16 +174,16 @@ const STATS = [
 
 const STEPS = [
   {
-    title: "Paketlerinizi ve sayfanızı hazırlayın",
-    text: "Seans paketlerini, fiyatları, çalışma saatlerinizi ve kayıt formunu girin. Birkaç dakikanızı alır.",
+    title: "Stüdyonuzu kurun",
+    text: "Seans paketlerini, fiyatları, eğitmenlerinizi, çalışma saatlerini ve kayıt formunu girin. Birkaç dakikanızı alır.",
   },
   {
     title: "Linkinizi Instagram'da paylaşın",
-    text: "Danışan sayfanıza girip paketini seçer, formu doldurur. Hesap açması, şifre belirlemesi gerekmez.",
+    text: "Danışan stüdyo sayfanıza girip paketini seçer, formu doldurur. Hesap açması, şifre belirlemesi gerekmez.",
   },
   {
     title: "Başvuruyu onaylayın",
-    text: "Onayladığınız danışan listenize eklenir. Seanslarını, yoklamasını ve ödemelerini buradan takip edersiniz.",
+    text: "Onayladığınız danışan listenize eklenir. Derslerini, yoklamasını ve ödemelerini buradan takip edersiniz.",
   },
 ];
 
@@ -200,18 +202,18 @@ const REASONS = [
   },
   {
     title: "Sağlık bilgisi rıza olmadan tutulmaz",
-    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her hesabın danışanları ayrı tutulur; stüdyoda eğitmen önce kendi danışanlarını görür, neleri görüp değiştirebileceğini her eğitmen için ayrı seçersiniz.",
+    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her stüdyonun danışanları ayrı tutulur. Eğitmen önce kendi danışanlarını görür; neleri görüp değiştirebileceğini her eğitmen için ayrı seçersiniz.",
   },
 ];
 
 const FAQ = [
   {
     q: `${APP_NAME} nedir?`,
-    a: `${APP_NAME}, Türkiye'de kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer'lar için web tabanlı bir danışan ve seans takip programı. Seans paketlerini, yoklamayı, randevuları, ders hatırlatmalarını ve IBAN'a gelen ödemeleri tek hesapta tutar. Danışanlar uygulama indirmez; kendilerine gönderilen linki tarayıcıda açar.`,
+    a: `${APP_NAME}, Türkiye'deki pilates ve personal training stüdyoları için web tabanlı bir stüdyo yönetim uygulaması. Eğitmen ekibini ve ortak takvimi, seans paketlerini, yoklamayı, randevuları, ders hatırlatmalarını, IBAN'a gelen ödemeleri ve eğitmen hakedişini tek hesapta tutar. Danışanlar uygulama indirmez; kendilerine gönderilen linki tarayıcıda açar.`,
   },
   {
-    q: "Stüdyomda birden fazla eğitmen var, birlikte kullanabilir miyiz?",
-    a: "Evet. Eğitmenlerinizi Ayarlar → Ekip'ten eklersiniz; isterseniz e-postayla davet edersiniz ve kendi e-postasıyla giriş yapar, istemezseniz derslerini siz yönetirsiniz. Takvim ortaktır ve her eğitmenin kendi rengi vardır. Eğitmen ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez; danışanları görme, ders planlama, çalışma saatlerini ve programları düzenleme gibi yetkileri her eğitmen için ayrı verirsiniz. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz. Resepsiyon hesabı, salon ve reformer planlaması ve birden fazla şube şu an yok.",
+    q: "Eğitmenlerimle birlikte nasıl kullanırız?",
+    a: "Eğitmenlerinizi Ayarlar → Ekip'ten eklersiniz; isterseniz e-postayla davet edersiniz ve kendi e-postasıyla giriş yapar, istemezseniz derslerini siz yönetirsiniz. Takvim ortaktır ve her eğitmenin kendi rengi vardır. Eğitmen ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez; danışanları görme, ders planlama, çalışma saatlerini ve programları düzenleme gibi yetkileri her eğitmen için ayrı verirsiniz. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz. Resepsiyon hesabı, salon ve reformer planlaması ve birden fazla şube şu an yok.",
   },
   {
     q: "Geç iptal ve telafi hakkı nasıl işliyor?",
@@ -238,12 +240,12 @@ const FAQ = [
     a: "Hayır. Danışan parayı doğrudan sizin IBAN'ınıza gönderir, dekontu yükler, siz onaylarsınız. Nakit ya da kartla aldığınız ödemeleri de kendiniz girersiniz.",
   },
   {
-    q: "Yalnızca pilates eğitmenleri için mi?",
-    a: "Hayır. Reformer ve mat pilates eğitmenleri de, personal trainer'lar ve grup dersi verenler de kullanabilir. Özel, düet ve grup derslerini aynı yerden takip edersiniz.",
+    q: "Yalnızca pilates stüdyoları için mi?",
+    a: "Hayır. Reformer ve mat pilates stüdyoları da, personal training stüdyoları da, grup dersi yapan stüdyolar da kullanabilir. Özel, düet ve grup derslerini aynı yerden takip edersiniz.",
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
-    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Stüdyo hesabında eğitmen önce kendi danışanlarını görür; bütün danışanları görüp göremeyeceğini, danışan bilgilerini değiştirip değiştiremeyeceğini her eğitmen için Ekip sayfasından seçersiniz. Ödemeleri ve fiyatları hiç görmez.",
+    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her stüdyonun danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Eğitmen önce kendi danışanlarını görür; bütün danışanları görüp göremeyeceğini, danışan bilgilerini değiştirip değiştiremeyeceğini her eğitmen için Ekip sayfasından seçersiniz. Ödemeleri ve fiyatları hiç görmez.",
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",
@@ -251,7 +253,7 @@ const FAQ = [
   },
   {
     q: `${APP_NAME} ücretli mi?`,
-    a: "Beta süresince eğitmenler için ücretsiz, kart bilgisi de istemiyoruz. Ücretli plana geçmeden en az bir hafta önce haber veririz; beta döneminde kayıt olan eğitmenler, ücretli plana geçildiğinde 6 ay ücretsiz kullanır. Devam edip etmemek size kalır, verilerinizi istediğiniz an Excel olarak indirebilirsiniz.",
+    a: "Beta süresince ücretsiz, kart bilgisi de istemiyoruz. Ekibe eğitmen eklemek için ayrıca bir şey ödemezsiniz. Ücretli plana geçmeden en az bir hafta önce haber veririz; beta döneminde kayıt olanlar, ücretli plana geçildiğinde 6 ay ücretsiz kullanır. Devam edip etmemek size kalır, verilerinizi istediğiniz an Excel olarak indirebilirsiniz.",
   },
   {
     q: "Verilerim nerede saklanıyor?",
@@ -265,20 +267,20 @@ const AUDIENCES = [
   {
     href: "/pilates-egitmenleri",
     icon: Activity,
-    title: "Pilates eğitmenleri",
-    text: "Reformer ve mat; özel, düet ve grup paketleri, telafi hakkı, reformer kontenjanı.",
+    title: "Pilates stüdyoları",
+    text: "Reformer ve mat; özel, düet ve grup paketleri, telafi hakkı, reformer sayısına göre kontenjan.",
   },
   {
     href: "/personal-trainer",
     icon: Dumbbell,
-    title: "Personal trainer'lar",
-    text: "Salonda ders veren serbest PT'ler; PT paketleri, taksit, randevu ve tahsilat.",
+    title: "PT stüdyoları",
+    text: "PT paketleri, antrenman programı, ölçüm ve beslenme planı, taksitli tahsilat.",
   },
   {
     href: "/ozellikler#ekip",
     icon: UsersRound,
-    title: "Küçük stüdyolar",
-    text: "Birkaç eğitmenli butik pilates ve PT stüdyoları; ortak takvim, eğitmen yetkileri ve hakediş.",
+    title: "Eğitmen ekibi",
+    text: "Ortak takvimde her eğitmenin rengi ayrı; yetkileri siz verirsiniz, hakediş ay sonunda hazır.",
   },
 ];
 
@@ -286,6 +288,7 @@ const STUDIO_POINTS = [
   "Her eğitmenin rengi ayrı, takvimi eğitmene göre süzersiniz",
   "Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der",
   "Bir dersi ya da bütün seriyi başka eğitmene verirsiniz",
+  "Danışanları görme, ders planlama, program şablonları: yetkiyi eğitmene göre verirsiniz",
   "Hakediş: ders başına ücret ya da yüzde, ay sonunda Excel",
 ];
 
@@ -330,8 +333,11 @@ const JSON_LD = {
       "@id": `${SITE}/#software`,
       name: APP_NAME,
       applicationCategory: "BusinessApplication",
-      applicationSubCategory: "Danışan ve seans takip programı",
+      applicationSubCategory: "Pilates ve PT stüdyosu yönetim uygulaması",
       featureList: [
+        "Eğitmen ekibi ve eğitmen renkli ortak takvim",
+        "Eğitmen başına yetkiler",
+        "Eğitmen hakedişi: ders başına ücret ya da yüzde, aylık kapanış",
         "Seans paketi ve kalan ders takibi",
         "Yoklama, telafi hakkı ve geç iptal kuralı",
         "Online randevu ve grup dersi kontenjanı",
@@ -341,7 +347,7 @@ const JSON_LD = {
         "Beslenme planı",
         "Vücut ölçüsü takibi ve grafikler",
         "Danışanla mesajlaşma",
-        "Stüdyo ekibi: ortak takvim, eğitmen yetkileri ve hakediş",
+        "Ekibi gösteren stüdyo sayfası ve online kayıt",
       ],
       // A web app; it can be added to the home screen, but there is no store app.
       operatingSystem: "Web",
@@ -380,22 +386,22 @@ export default function Home() {
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
             <p className="anim-rise mb-7 inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pr-3.5 pl-2 text-xs font-medium shadow-card sm:text-sm">
               <span className="rounded-full bg-lime px-2 py-0.5 text-lime-foreground">Beta</span>
-              Eğitmenlere ücretsiz
+              Stüdyolara ücretsiz
             </p>
             <h1
               id="hero-heading"
               style={{ "--delay": "80ms" } as React.CSSProperties}
               className="anim-rise text-[2.5rem] leading-[1.04] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.5rem]"
             >
-              <span className="block text-foreground">Defteri bırakın.</span>{" "}
-              <span className="block text-muted-foreground">Pilates ve PT danışan takibini {APP_NAME} yapsın.</span>
+              <span className="block text-foreground">Stüdyonuzu tek yerden yönetin.</span>{" "}
+              <span className="block text-muted-foreground">Ekip, dersler, paketler ve ödemeler {APP_NAME}&apos;da.</span>
             </h1>
             <p
               style={{ "--delay": "180ms" } as React.CSSProperties}
               className="anim-rise mt-6 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg"
             >
-              Kendi danışanlarıyla çalışan pilates eğitmenleri ve personal trainer&apos;lar için seans paketi, yoklama, randevu, ödeme,
-              antrenman programı ve ölçüm takibi. Yoklamayı aldığınızda kalan seans paketten düşer; danışanınız gelişimini kendi
+              Pilates ve personal training stüdyoları için: eğitmenlerinizin ortak takvimi, seans paketleri, yoklama, randevu, ödeme
+              ve hakediş. Yoklamayı aldığınızda ders paketten düşer; danışanınız kalan dersini, programını ve gelişimini kendi
               sayfasında görür.
             </p>
             <div
@@ -486,6 +492,92 @@ export default function Home() {
           </ul>
         </section>
 
+        {/* Studio management: the main story, right after the audience cards. */}
+        <section id="studyo" aria-labelledby="studio-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
+          <SectionHeading
+            id="studio-heading"
+            eyebrow="Stüdyo yönetimi"
+            lead="Ekip, takvim ve hakediş tek yerde."
+            rest="Hangi dersi kim veriyor, ay sonunda kime ne ödenecek, bir bakışta görün."
+          />
+          <div data-reveal className={cn(card, "mx-auto mt-14 grid max-w-6xl gap-6 p-2 lg:grid-cols-2 lg:items-center lg:gap-10")}>
+            <div className="flex flex-col gap-4 px-4 pt-5 lg:px-6 lg:py-8">
+              <h3 className="text-2xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-3xl">
+                Her eğitmenin rengi ayrı, takvim herkes için tek.
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Eğitmenlerinizi ekleyin. İsteyen kendi e-postasıyla girip derslerini, yoklamayı ve ders notlarını görür; girmeyenin
+                derslerini siz yönetirsiniz. Ödemeler, fiyatlar ve stüdyo ayarları yalnızca sizde. Danışan da kendi sayfasında her
+                dersi kimin vereceğini görür.
+              </p>
+              <ul className="flex flex-col gap-2 text-sm">
+                {STUDIO_POINTS.map((t) => (
+                  <li key={t} className="flex items-start gap-2.5">
+                    <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                      <Check className="size-3" strokeWidth={3} />
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">Şimdilik yok: resepsiyon hesabı, salon ve reformer planlaması, birden fazla şube.</p>
+              <Link href="/ozellikler#ekip" className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium underline-offset-4 hover:underline">
+                Stüdyo ve ekip özelliklerinin hepsi
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            </div>
+            <div aria-hidden className="grid gap-3 rounded-[1.35rem] bg-canvas p-4 sm:p-5">
+              <TeamCalendarDemo />
+              <PayrollDemo />
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="ozellikler" aria-labelledby="features-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
+          <SectionHeading
+            id="features-heading"
+            eyebrow="Özellikler"
+            lead="Seans paketinden ödemeye her şey tek yerde."
+            rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
+          />
+          <p data-reveal className="mt-6 text-center">
+            <Link href="/ozellikler" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline">
+              Bütün özellikler, konu konu
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </p>
+          <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map(({ title, text, chips, Demo }, i) => (
+              <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col p-2")}>
+                <div aria-hidden className="flex min-h-56 items-center justify-center rounded-[1.35rem] bg-canvas p-4 sm:p-5">
+                  <Demo />
+                </div>
+                <div className="flex flex-1 flex-col gap-3 px-4 pt-5 pb-4">
+                  <h3 className="text-lg leading-snug font-semibold tracking-[-0.02em]">{title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
+                  <div className="mt-auto pt-2">
+                    <Chips items={chips} />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <ul className="mx-auto mt-4 grid max-w-6xl gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+            {MORE.map(({ icon: Icon, title, text }, i) => (
+              <li key={title} data-reveal style={stagger(i, 3)} className={cn(card, "hover-lift flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
+                  <Icon className="size-5" />
+                </span>
+                <div className="flex min-w-0 flex-col gap-1 sm:gap-3">
+                  <h3 className="text-base font-semibold tracking-[-0.02em]">{title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {/* Progress: measurements, workout programs and nutrition plans */}
         <section id="gelisim" aria-labelledby="progress-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
           <SectionHeading
@@ -541,86 +633,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features */}
-        <section id="ozellikler" aria-labelledby="features-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
-          <SectionHeading
-            id="features-heading"
-            eyebrow="Özellikler"
-            lead="Seans paketinden ödemeye her şey tek yerde."
-            rest="Deftere, Excel'e, dağınık WhatsApp mesajlarına gerek kalmaz."
-          />
-          <p data-reveal className="mt-6 text-center">
-            <Link href="/ozellikler" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline">
-              Bütün özellikler, konu konu
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-          </p>
-          <ul className="mx-auto mt-14 grid max-w-6xl gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ title, text, chips, Demo }, i) => (
-              <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col p-2")}>
-                <div aria-hidden className="flex min-h-56 items-center justify-center rounded-[1.35rem] bg-canvas p-4 sm:p-5">
-                  <Demo />
-                </div>
-                <div className="flex flex-1 flex-col gap-3 px-4 pt-5 pb-4">
-                  <h3 className="text-lg leading-snug font-semibold tracking-[-0.02em]">{title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
-                  <div className="mt-auto pt-2">
-                    <Chips items={chips} />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <ul className="mx-auto mt-4 grid max-w-6xl gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-            {MORE.map(({ icon: Icon, title, text }, i) => (
-              <li key={title} data-reveal style={stagger(i, 3)} className={cn(card, "hover-lift flex gap-4 p-5 sm:flex-col sm:gap-3 sm:p-6")}>
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
-                  <Icon className="size-5" />
-                </span>
-                <div className="flex min-w-0 flex-col gap-1 sm:gap-3">
-                  <h3 className="text-base font-semibold tracking-[-0.02em]">{title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Studios: the team features, kept to one card so the page stays about the instructor. */}
-        <section id="studyo" aria-labelledby="studio-heading" className="scroll-mt-20 px-4 pt-24 sm:px-6 sm:pt-32">
-          <div data-reveal className={cn(card, "mx-auto grid max-w-6xl gap-6 p-2 lg:grid-cols-2 lg:items-center lg:gap-10")}>
-            <div className="flex flex-col gap-4 px-4 pt-5 lg:px-6 lg:py-8">
-              <p className="eyebrow">Stüdyolar için</p>
-              <h2 id="studio-heading" className="text-2xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-3xl">
-                Stüdyonuzda birkaç eğitmen mi var? Ekibinizi davet edin.
-              </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Her eğitmen kendi e-postasıyla girer; takvimi, kendi derslerini, yoklamayı ve ders notlarını görür. Ödemeler,
-                fiyatlar ve stüdyo ayarları sizde kalır. Danışan da kendi sayfasında her dersi kimin vereceğini görür.
-              </p>
-              <ul className="flex flex-col gap-2 text-sm">
-                {STUDIO_POINTS.map((t) => (
-                  <li key={t} className="flex items-center gap-2.5">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-lime text-lime-foreground" aria-hidden>
-                      <Check className="size-3" strokeWidth={3} />
-                    </span>
-                    {t}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs text-muted-foreground">Şimdilik yok: resepsiyon hesabı, salon ve reformer planlaması, birden fazla şube.</p>
-              <Link href="/ozellikler#ekip" className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium underline-offset-4 hover:underline">
-                Ekip özelliklerinin hepsi
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </div>
-            <div aria-hidden className="grid gap-3 rounded-[1.35rem] bg-canvas p-4 sm:p-5">
-              <TeamCalendarDemo />
-              <PayrollDemo />
-            </div>
-          </div>
-        </section>
-
         {/* Big numbers */}
         <section aria-labelledby="stats-heading" className="px-4 pt-24 sm:px-6 sm:pt-32">
           <div data-reveal className="mx-auto max-w-6xl rounded-[1.75rem] bg-[#1d1d1f] px-6 py-12 text-white sm:px-12 sm:py-16 dark:border dark:bg-card">
@@ -668,7 +680,7 @@ export default function Home() {
             <div data-reveal className="lg:sticky lg:top-28 lg:self-start">
               <p className="eyebrow mb-4">Neden {APP_NAME}?</p>
               <h2 id="why-heading" className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.05]">
-                <span className="text-foreground">Türkiye&apos;deki eğitmenlerin çalışma düzenine göre hazırlandı.</span>{" "}
+                <span className="text-foreground">Türkiye&apos;deki stüdyoların çalışma düzenine göre hazırlandı.</span>{" "}
                 <span className="text-muted-foreground">Yabancı bir programın çevirisi değil.</span>
               </h2>
             </div>
@@ -694,7 +706,7 @@ export default function Home() {
 
         <CtaBand
           page="landing"
-          title="Defteri bu akşam kapatın. Yarınki yoklamayı telefondan alın."
+          title="Stüdyonuzu bu akşam kurun. Yarınki dersleri telefondan yönetin."
           text="Beta döneminde ücretsiz. Kurulum birkaç dakika sürer."
         />
       </main>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarClock, Check, Gift, Minus, Package, RotateCcw, StickyNote, TrendingUp, UsersRound } from "lucide-react";
+import { ArrowRight, BellRing, CalendarClock, Check, Gift, Minus, Package, Palette, RotateCcw, StickyNote, TrendingUp, UsersRound } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Reveal } from "@/components/landing/reveal";
 import { stagger } from "@/lib/motion";
@@ -11,9 +11,9 @@ import { APP_NAME } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 const PATH = "/pilates-egitmenleri";
-const TITLE = "Pilates Eğitmeni Uygulaması: Seans Paketi ve Kalan Ders Takibi";
+const TITLE = "Pilates Stüdyosu Yönetim Uygulaması: Seans Paketi, Ders ve Eğitmen Takibi";
 const DESCRIPTION =
-  "Bağımsız çalışan pilates eğitmenleri için seans paketi ve kalan ders takibi: özel ders, düet ve reformer grup dersi, yoklama, telafi hakkı, geç iptal, randevu ve ödeme. Danışanlar uygulama indirmez. Beta süresince ücretsiz.";
+  "Pilates stüdyoları için yönetim uygulaması: özel, düet ve reformer grup dersi paketleri, kalan ders takibi, yoklama, telafi hakkı, geç iptal, eğitmenlerin ortak takvimi ve hakedişi, randevu ve ödeme. Danışanlar uygulama indirmez. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -23,6 +23,11 @@ export const metadata: Metadata = {
 };
 
 const FEATURES = [
+  {
+    icon: Palette,
+    title: "Eğitmenler ve ortak takvim",
+    text: "Her eğitmenin dersleri takvimde kendi renginde; takvimi tek eğitmene göre süzersiniz. Hakedişi ders başına ücretle ya da dersin değerinden yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz.",
+  },
   {
     icon: Package,
     title: "Özel, düet ve grup paketleri",
@@ -41,7 +46,7 @@ const FEATURES = [
   {
     icon: CalendarClock,
     title: "Danışan randevusunu kendi alır",
-    text: "Çalışma saatlerinizi girin; danışan boş saatlerden birini seçer. Çakışan ders olmaz, iptal kuralınız randevuda da geçerli.",
+    text: "Eğitmenlerin çalışma saatlerini girin; danışan boş saatlerden birini, isterse eğitmenini de seçer. Çakışan ders olmaz, iptal kuralınız randevuda da geçerli.",
   },
   {
     icon: BellRing,
@@ -61,12 +66,15 @@ const FEATURES = [
   {
     icon: Gift,
     title: "Deneme dersi",
-    text: "Sayfanızda ilk kez gelenlere deneme dersi gösterin. Aynı telefon numarası deneme dersini bir kez alabilir.",
+    text: "Stüdyo sayfanızda ilk kez gelenlere deneme dersi gösterin. Aynı telefon numarası deneme dersini bir kez alabilir.",
   },
 ];
 
-// Honest checklist: what a pilates instructor usually looks for, and whether we have it.
+// Honest checklist: what a pilates studio usually looks for, and whether we have it.
 const CHECKLIST: { item: string; ours: string; has: boolean }[] = [
+  { item: "Birden fazla eğitmen, ortak takvim", ours: "Var; eğitmen başına renk ve filtre", has: true },
+  { item: "Eğitmen yetkileri", ours: "Her eğitmen için ayrı; ödemeleri ve fiyatları görmez", has: true },
+  { item: "Eğitmen hakedişi", ours: "Ders başına ücret ya da yüzde; ay sonunda Excel", has: true },
   { item: "Kalan seans takibi", ours: "Yoklamayı aldığınızda paketten düşer", has: true },
   { item: "Telafi hakkı", ours: "Paket başına siz belirlersiniz", has: true },
   { item: "Geç iptal kuralı", ours: "0 ile 48 saat arasında", has: true },
@@ -79,9 +87,9 @@ const CHECKLIST: { item: string; ours: string; has: boolean }[] = [
   { item: "Ölçüm ve gelişim grafikleri", ours: "Danışan kendi sayfasında görür", has: true },
   { item: "Excel'den danışan aktarma", ours: "Kalan seans ve borçlarla birlikte", has: true },
   { item: "Danışan için uygulama", ours: "Gerekmez; kişisel link tarayıcıda açılır", has: true },
-  { item: "Birden fazla eğitmen, ortak takvim", ours: "Var; eğitmen başına renk, yetki ve hakediş", has: true },
   { item: "Resepsiyon hesabı, salon ve reformer planlaması", ours: "Şimdilik yok", has: false },
   { item: "Kartla online tahsilat", ours: "Yok; ödeme doğrudan IBAN'ınıza gelir", has: false },
+  { item: "Birden fazla şube", ours: "Şimdilik yok", has: false },
 ];
 
 const FAQ: Faq[] = [
@@ -98,12 +106,12 @@ const FAQ: Faq[] = [
     a: "Pakete kaç telafi hakkı tanıdığınızı siz yazarsınız. Danışan geç iptal ettiğinde önce telafi hakkı kullanılır, ders paketten düşmez. Hak bitince geç iptaller paketten düşer.",
   },
   {
-    q: "Bir stüdyoda saatlik salon kiralıyorum, kullanabilir miyim?",
-    a: "Evet. Kendi stüdyonuz, kiraladığınız salon ya da danışanın evi fark etmez; danışanlarınız, paketleriniz ve ödemeleriniz sizin hesabınızda durur. Bir stüdyonun ekibinde de ders veriyorsanız kendi hesabınızla stüdyonun hesabı arasında geçiş yaparsınız.",
+    q: "Eğitmenlerimle birlikte nasıl kullanırız?",
+    a: "Eğitmenlerinizi Ayarlar → Ekip'ten eklersiniz; isterseniz e-postayla davet edersiniz, giriş yapmayan eğitmenin derslerini siz yönetirsiniz. Takvim ortaktır, her eğitmenin rengi ayrıdır, iki eğitmen aynı saatte ders verebilir. Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplarsınız. Resepsiyon hesabı ve reformer planlaması şu an yok.",
   },
   {
-    q: "Birkaç eğitmenli bir stüdyom var, ekiple kullanabilir miyiz?",
-    a: "Evet. Eğitmenlerinizi e-postayla davet edersiniz; takvim ortak olur, her eğitmenin rengi ayrıdır, iki eğitmen aynı saatte ders verebilir. Eğitmen kendi derslerini, yoklamayı ve ders notlarını görür; ödemeleri, fiyatları ve stüdyo ayarlarını görmez. Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplarsınız. Resepsiyon hesabı ve reformer planlaması şu an yok.",
+    q: "Eğitmenlerim neleri görür?",
+    a: "Eğitmen kendi derslerini, yoklamayı ve ders notlarını görür; ödemeleri, fiyatları ve stüdyo ayarlarını görmez. Bütün danışanları görme, danışan ekleme, derslerini kendisi planlama, çalışma saatlerini değiştirme gibi yetkileri her eğitmen için ayrı verirsiniz.",
   },
   {
     q: "Danışanım uygulama indirmek zorunda mı?",
@@ -128,21 +136,22 @@ export default function PilatesPage() {
     <div data-marketing className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
       <Reveal />
-      <JsonLd data={pageJsonLd({ path: PATH, title: TITLE, description: DESCRIPTION, crumbs: [{ href: PATH, label: "Pilates eğitmenleri" }], faq: FAQ })} />
+      <JsonLd data={pageJsonLd({ path: PATH, title: TITLE, description: DESCRIPTION, crumbs: [{ href: PATH, label: "Pilates stüdyoları" }], faq: FAQ })} />
       <SiteHeader page="pilates" />
-      <Breadcrumbs items={[{ href: PATH, label: "Pilates eğitmenleri" }]} />
+      <Breadcrumbs items={[{ href: PATH, label: "Pilates stüdyoları" }]} />
 
       <main>
         <section aria-labelledby="hero-heading" className="px-4 pt-8 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="anim-rise eyebrow mb-4">Bağımsız pilates eğitmenleri için</p>
+              <p className="anim-rise eyebrow mb-4">Pilates stüdyoları için</p>
               <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-                Özel ders veren pilates eğitmenleri için seans paketi ve kalan ders takibi
+                Pilates stüdyonuzu yönetin: paketler, dersler, eğitmenler
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
                 Reformer özel ders, mat, düet ya da grup dersi fark etmez. Yoklamayı aldığınızda kalan seans paketten düşer; telafi
-                hakkı, geç iptal ve paket yenileme kendiliğinden işlenir. Danışan kaç dersi kaldığını kendi sayfasından görür.
+                hakkı, geç iptal ve paket yenileme kendiliğinden işlenir. Her eğitmenin dersi takvimde kendi renginde; danışan kaç
+                dersi kaldığını kendi sayfasından görür.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -166,18 +175,17 @@ export default function PilatesPage() {
         <section aria-labelledby="who-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
           <div data-reveal className={cn(card, "mx-auto max-w-5xl p-6 sm:p-10")}>
             <h2 id="who-heading" className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
-              Kimler için?
+              Stüdyo sahibi ve eğitmenler için
             </h2>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-              Tek başına, bağımsız (freelance) ders veren pilates eğitmenleri için: kendi küçük stüdyosu olan, bir stüdyoda
-              saatlik salon kiralayan ya da danışanının evine giden. Danışanlarınızı, paketlerini ve ödemelerini kendiniz takip ediyorsanız {APP_NAME} tam size
-              göre.
+              Reformer ve mat pilates stüdyoları için. Danışanlar, seans paketleri ve ödemeler stüdyonun hesabında durur; paketleri,
+              fiyatları ve kuralları siz belirlersiniz.
             </p>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-              Birkaç eğitmenli butik bir stüdyonuz varsa ekibinizi de davet edin: takvim ortak olur, her eğitmen kendi derslerini ve
-              yoklamasını görür, ödemeler ve fiyatlar sizde kalır. Hakedişi de buradan hesaplarsınız.{" "}
+              Eğitmenlerinizi ekleyin: takvim ortak olur, her eğitmen kendi derslerini, yoklamasını ve ders notlarını görür. Ödemeler
+              ve fiyatlar sizde kalır, hakedişi ay sonunda buradan hesaplarsınız.{" "}
               <Link href="/ozellikler#ekip" className="font-medium text-foreground underline-offset-4 hover:underline">
-                Ekip ve stüdyo özellikleri
+                Stüdyo ve ekip özellikleri
               </Link>
             </p>
           </div>
@@ -207,7 +215,7 @@ export default function PilatesPage() {
           <SectionHeading
             id="checklist-heading"
             eyebrow="Karşılaştırırken"
-            lead="Bir pilates programında bakmanız gerekenler."
+            lead="Bir pilates stüdyosu programında bakmanız gerekenler."
             rest="Olmayanları da yazdık."
           />
           <div data-reveal className={cn(card, "mx-auto mt-12 max-w-4xl overflow-hidden")}>

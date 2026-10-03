@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const PATH = "/fiyatlar";
 const TITLE = "Fiyatlar: Beta Süresince Ücretsiz";
-const DESCRIPTION = `${APP_NAME} beta süresince pilates eğitmenleri, personal trainer'lar ve küçük stüdyolar için ücretsiz. Kart bilgisi yok, komisyon yok. Beta döneminde kayıt olanlara ücretli plana geçildiğinde 6 ay ücretsiz.`;
+const DESCRIPTION = `${APP_NAME} beta süresince pilates ve personal training stüdyoları için ücretsiz. Kart bilgisi yok, komisyon yok. Beta döneminde kayıt olanlara ücretli plana geçildiğinde 6 ay ücretsiz.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -21,17 +21,17 @@ export const metadata: Metadata = {
 };
 
 const INCLUDED = [
+  "Eğitmen ekibi, renkli ortak takvim, eğitmen yetkileri ve hakediş",
   "Sınırsız danışan ve seans paketi",
   "Yoklama, telafi hakkı ve geç iptal kuralı",
   "Grup dersleri, kontenjan ve sabit yer",
   "Danışanın kendi aldığı randevular",
-  "Instagram'a koyacağınız sayfa ve kayıt formu",
+  "Instagram'a koyacağınız stüdyo sayfası ve kayıt formu",
   "Antrenman programı, beslenme planı ve hareket listesi",
   "Ölçüm takibi ve gelişim grafikleri, ders notları",
   "Ders, taksit ve ölçüm hatırlatması, mesajlaşma",
   "Taksit, havale bildirimi ve dekont onayı",
   "Excel'den aktarma ve Excel olarak indirme",
-  "Stüdyolar için ekip: ortak takvim, eğitmen yetkileri, hakediş",
 ];
 
 const PROMISES = [
@@ -43,7 +43,7 @@ const PROMISES = [
   {
     icon: Gift,
     title: "Beta'da kayıt olana 6 ay ücretsiz",
-    text: "Beta döneminde kayıt olan eğitmenlere, ücretli plana geçildiğinde 6 aylık ücretsiz abonelik tanımlanır.",
+    text: "Beta döneminde kayıt olan stüdyolara, ücretli plana geçildiğinde 6 aylık ücretsiz abonelik tanımlanır.",
   },
   {
     icon: Download,
@@ -62,8 +62,8 @@ const FAQ: Faq[] = [
     a: "Beta süresince yok. İstediğiniz kadar danışan, paket ve ders ekleyebilirsiniz.",
   },
   {
-    q: "Stüdyolar için ayrı bir fiyat var mı?",
-    a: "Şu an yok. Beta süresince stüdyolar da herkes gibi ücretsiz kullanır; ekibe eğitmen eklemek için ayrıca bir şey ödemezsiniz.",
+    q: "Eğitmen eklemek ücretli mi?",
+    a: "Beta süresince hayır. Ekibinize eğitmen eklemek için ayrıca bir şey ödemezsiniz; eğitmen sayısına göre ayrı bir fiyat da yok.",
   },
   {
     q: "Ödemelerden komisyon alıyor musunuz?",
@@ -123,7 +123,7 @@ export default function PricingPage() {
                 <h2 id="plan-heading" className="text-xl font-semibold tracking-[-0.02em]">
                   Beta
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">Pilates eğitmenleri, personal trainer&apos;lar ve küçük stüdyolar için</p>
+                <p className="mt-1 text-sm text-muted-foreground">Pilates ve personal training stüdyoları için</p>
               </div>
               <p className="shrink-0 text-right">
                 <span className="block text-4xl font-semibold tracking-[-0.04em] tabular-nums">₺0</span>

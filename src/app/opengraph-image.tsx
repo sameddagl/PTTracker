@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { APP_NAME } from "@/lib/config";
 
 // Default share image (WhatsApp, Instagram DMs, X). Trainer pages use their own cover photo.
-export const alt = `${APP_NAME} · Pilates ve PT eğitmenleri için danışan ve seans takibi`;
+export const alt = `${APP_NAME} · Pilates ve PT stüdyoları için yönetim uygulaması`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -19,11 +19,11 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 44, fontWeight: 700, color: "#1d1d1f", letterSpacing: -1 }}>{APP_NAME}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 76, fontWeight: 700, color: "#1d1d1f", letterSpacing: -3, lineHeight: 1.05 }}>Seanslar, paketler, ödemeler.</div>
-          <div style={{ fontSize: 76, fontWeight: 700, color: "#6e6e73", letterSpacing: -3, lineHeight: 1.05 }}>Hepsi tek yerde.</div>
+          <div style={{ fontSize: 76, fontWeight: 700, color: "#1d1d1f", letterSpacing: -3, lineHeight: 1.05 }}>Stüdyonuzu yönetin.</div>
+          <div style={{ fontSize: 76, fontWeight: 700, color: "#6e6e73", letterSpacing: -3, lineHeight: 1.05 }}>Ekip, ders, paket, ödeme.</div>
         </div>
         <div style={{ display: "flex", gap: 16 }}>
-          {["Pilates ve PT eğitmenleri için", "Beta süresince ücretsiz"].map((t) => (
+          {["Pilates ve PT stüdyoları için", "Beta süresince ücretsiz"].map((t) => (
             <div key={t} style={{ display: "flex", fontSize: 28, color: "#1d1d1f", background: "#ffffff", border: "1px solid #e6e6ea", borderRadius: 999, padding: "12px 28px" }}>
               {t}
             </div>

@@ -1,5 +1,5 @@
-// Rehber: short, practical articles for independent pilates instructors and
-// personal trainers. Marketing copy, so it addresses the reader with "siz";
+// Rehber: short, practical articles for pilates and personal training
+// studios. Marketing copy, so it addresses the reader with "siz";
 // sample messages to clients use "sen" like the app. Text may contain
 // [label](/path) links and **bold**; see <RichText> in the rehber pages.
 
@@ -29,11 +29,11 @@ export const GUIDES: Guide[] = [
     slug: "seans-paketi-takibi",
     title: "Seans paketi takibi: Kalan dersleri defter tutmadan izlemek",
     description:
-      "Pilates ve PT eğitmenleri için seans paketi takibinin kuralları: paket süresi, geç iptal, telafi hakkı, dondurma ve yenileme. Defterde, Excel'de ve uygulamada nasıl yapılır?",
+      "Pilates ve PT stüdyoları için seans paketi takibinin kuralları: paket süresi, geç iptal, telafi hakkı, dondurma ve yenileme. Defterde, Excel'de ve uygulamada nasıl yapılır?",
     published: "2026-10-02",
     updated: "2026-10-02",
     minutes: 5,
-    related: { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri için seans takibi" },
+    related: { href: "/pilates-egitmenleri", label: "Pilates stüdyoları için seans takibi" },
     body: [
       {
         t: "p",
@@ -115,7 +115,7 @@ export const GUIDES: Guide[] = [
     slug: "pilates-ozel-ders-fiyati",
     title: "Pilates özel ders ve seans paketi fiyatı nasıl belirlenir?",
     description:
-      "Bağımsız pilates eğitmenleri ve PT'ler için ders fiyatı hesaplama yöntemi: bir dersin maliyeti, hedef kazanç, paket indirimi, düet ve grup fiyatı, taksit farkı. Örnek hesapla.",
+      "Pilates ve PT stüdyoları için ders fiyatı hesaplama yöntemi: bir dersin maliyeti, hedef kazanç, paket indirimi, düet ve grup fiyatı, taksit farkı. Örnek hesapla.",
     published: "2026-10-02",
     updated: "2026-10-02",
     minutes: 6,
@@ -138,6 +138,7 @@ export const GUIDES: Guide[] = [
         t: "ul",
         items: [
           "Salon kirası: saatlik kiralıyorsanız ders başına; aylık kiralıyorsanız aylık kira bölü ayda verdiğiniz ders sayısı",
+          "Eğitmen ücreti: dersi ekibinizden bir eğitmen veriyorsa ders başına hakedişi",
           "Ekipman: reformer, mat, küçük aletler; yıllık yıpranma payını aylığa bölün",
           "Yol, telefon, uygulama ve muhasebe giderleri",
           "Vergi ve sosyal güvenlik payı",
@@ -196,7 +197,7 @@ export const GUIDES: Guide[] = [
       },
       {
         t: "p",
-        text: "Paketlerinizi peşin, taksitli ve indirimli fiyatla Stüdyom'a girip danışanın kendi sayfasından seçmesini sağlayabilirsiniz. Ayrıntılar [pilates eğitmenleri](/pilates-egitmenleri) sayfasında.",
+        text: "Paketlerinizi peşin, taksitli ve indirimli fiyatla Stüdyom'a girip danışanın kendi sayfasından seçmesini sağlayabilirsiniz. Ayrıntılar [pilates stüdyoları](/pilates-egitmenleri) sayfasında.",
       },
     ],
   },
@@ -255,7 +256,7 @@ export const GUIDES: Guide[] = [
       { t: "h2", text: "Stüdyom'da nasıl işliyor?" },
       {
         t: "p",
-        text: "Ücretsiz iptal süresini 0 ile 48 saat arasında seçersiniz, telafi hakkını paket başına belirlersiniz. Danışan kendi sayfasından iptal ettiğinde süre kontrol edilir; geç iptalde önce telafi hakkı kullanılır, hak yoksa ders paketten düşer. Kalan ders sayısı herkes için aynı kuralla hesaplanır. Ayrıntılar [pilates eğitmenleri](/pilates-egitmenleri) sayfasında.",
+        text: "Ücretsiz iptal süresini 0 ile 48 saat arasında seçersiniz, telafi hakkını paket başına belirlersiniz. Danışan kendi sayfasından iptal ettiğinde süre kontrol edilir; geç iptalde önce telafi hakkı kullanılır, hak yoksa ders paketten düşer. Kalan ders sayısı herkes için aynı kuralla hesaplanır. Ayrıntılar [pilates stüdyoları](/pilates-egitmenleri) sayfasında.",
       },
     ],
   },
@@ -267,7 +268,7 @@ export const GUIDES: Guide[] = [
     published: "2026-10-02",
     updated: "2026-10-02",
     minutes: 4,
-    related: { href: "/personal-trainer", label: "Personal trainer'lar için danışan takibi" },
+    related: { href: "/personal-trainer", label: "PT stüdyoları için danışan takibi" },
     body: [
       {
         t: "p",

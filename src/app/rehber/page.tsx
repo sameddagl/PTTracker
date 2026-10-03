@@ -8,9 +8,9 @@ import { GUIDES, guideDate } from "@/lib/guides";
 import { cn } from "@/lib/utils";
 
 const PATH = "/rehber";
-const TITLE = "Rehber: Pilates Eğitmenleri ve PT'ler İçin Pratik Yazılar";
+const TITLE = "Rehber: Pilates ve PT Stüdyoları İçin Pratik Yazılar";
 const DESCRIPTION =
-  "Bağımsız çalışan pilates eğitmenleri ve personal trainer'lar için seans paketi takibi, ders fiyatı, iptal politikası ve hatırlatma mesajları üzerine pratik yazılar.";
+  "Pilates ve personal training stüdyoları için seans paketi takibi, ders fiyatı, iptal politikası ve hatırlatma mesajları üzerine pratik yazılar.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -44,11 +44,11 @@ export default function GuidesPage() {
         <div className="mx-auto max-w-3xl">
           <p className="eyebrow mb-4">Rehber</p>
           <h1 className="text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-            Tek başına ders verenler için pratik yazılar
+            Stüdyo işleri için pratik yazılar
           </h1>
           <p className="mt-5 text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-            Seans paketi, fiyat, iptal kuralı, hatırlatma mesajı… Pilates eğitmenlerinin ve PT&apos;lerin her gün karşılaştığı
-            konular, örnek metinlerle.
+            Seans paketi, fiyat, iptal kuralı, hatırlatma mesajı… Pilates ve PT stüdyolarında her gün karşılaşılan konular, örnek
+            metinlerle.
           </p>
 
           <ul className="mt-12 flex flex-col gap-4">

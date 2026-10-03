@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Dumbbell, Package, Salad, Smartphone, TrendingUp, Wallet, X } from "lucide-react";
+import { ArrowRight, Dumbbell, Package, Salad, Smartphone, TrendingUp, UsersRound, Wallet, X } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Reveal } from "@/components/landing/reveal";
 import { stagger } from "@/lib/motion";
@@ -11,9 +11,9 @@ import { APP_NAME } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 const PATH = "/personal-trainer";
-const TITLE = "Freelance Personal Trainer Uygulaması: Danışan ve PT Paketi Takibi";
+const TITLE = "PT Stüdyosu Yönetim Uygulaması: Danışan, PT Paketi ve Program Takibi";
 const DESCRIPTION =
-  "Serbest (freelance) çalışan personal trainer'lar için PT paketi ve kalan ders takibi, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm. Danışan programını ve gelişimini kendi sayfasında görür. Beta süresince ücretsiz.";
+  "Personal training stüdyoları için yönetim uygulaması: PT paketi ve kalan ders takibi, eğitmenlerin ortak takvimi ve hakedişi, randevu, ödeme, antrenman programı, beslenme planı ve ölçüm. Danışan programını ve gelişimini kendi sayfasında görür. Beta süresince ücretsiz.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -49,9 +49,9 @@ const FEATURES = [
     text: "Taksit gününden bir gün önce danışana hatırlatma gider. Danışan parayı IBAN'ınıza gönderir, dekontu yükler; siz onaylarsınız. Nakit aldığınız ödemeyi de girersiniz.",
   },
   {
-    icon: CalendarClock,
-    title: "Randevuyu danışan alır",
-    text: "Salonda hangi saatlerde olduğunuzu girin. Danışan boş saatlerden birini kendi seçer; iptal kuralınız ve kalan dersi randevuda da geçerli.",
+    icon: UsersRound,
+    title: "Eğitmenler ve randevu",
+    text: "Her eğitmenin çalışma saatleri ayrı, takvimde rengi ayrı. Danışan boş saatlerden birini, isterse eğitmenini de kendisi seçer. Hakedişi ders başına ücretle ya da yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz.",
   },
 ];
 
@@ -64,11 +64,15 @@ const NOT_DOING = [
 
 const FAQ: Faq[] = [
   {
-    q: "Bir salonda ders veriyorum, salonun programı varken neden ayrı bir şey kullanayım?",
-    a: `Salonun programı salonun üyesini tutar. Sizin kendi danışanınız, sattığınız PT paketi ve tahsilatınız ise genelde defterde ya da WhatsApp'ta kalır. ${APP_NAME} bu kısmı tutar: kimin kaç dersi kaldı, kim ne kadar ödedi.`,
+    q: "Spor salonu programlarından farkı ne?",
+    a: `Salon programları üyeliği, turnikeyi ve giriş çıkışı tutar. PT stüdyosunda asıl iş başka: kimin kaç dersi kaldı, dersi hangi eğitmen verdi, kim ne kadar ödedi, kime hangi program yazıldı. ${APP_NAME} bu kısmı tutar.`,
   },
   {
-    q: "Online PT yapıyorum, danışanıma uzaktan program gönderebilir miyim?",
+    q: "Eğitmenlerimle birlikte nasıl kullanırız?",
+    a: "Eğitmenlerinizi Ayarlar → Ekip'ten eklersiniz; isterseniz e-postayla davet edersiniz, giriş yapmayan eğitmenin derslerini siz yönetirsiniz. Takvim ortaktır; eğitmen kendi derslerini, yoklamayı, ders notlarını ve programları görür, ödemeleri ve fiyatları görmez. Bir PT paketini belirli eğitmenlerle sınırlayabilir, hakedişi ders başına ücretle ya da yüzdeyle hesaplayıp ay sonunda Excel olarak indirebilirsiniz.",
+  },
+  {
+    q: "Online PT de yapıyoruz, danışana uzaktan program gönderebilir miyiz?",
     a: "Evet. Programı hazırlayıp gönderdiğinizde danışan kendi linkinden açar: hareketleri, set ve tekrarları, video linklerini ve çalışan kasları görür, yaptığı günleri işaretler. Kilosunu kendisi girebilir, siz de mesajla takip edersiniz. Yüz yüze ders olmadan da kullanılabilir.",
   },
   {
@@ -88,12 +92,8 @@ const FAQ: Faq[] = [
     a: "Hayır. Her danışanın kişisel bir linki olur, tarayıcıda açılır. Mağazadan indirme ya da şifre gerekmez. İsteyen sayfayı ana ekranına ekleyip ders hatırlatmalarını bildirim olarak alır.",
   },
   {
-    q: "Düet ya da küçük grup dersi verebilir miyim?",
+    q: "Düet ya da küçük grup dersi yapabilir miyiz?",
     a: "Evet. Ders planlarken iki ya da üç danışan seçerseniz düet ya da trio olur. Kontenjanlı grup dersleri de açabilirsiniz; her danışanın dersi kendi paketinden düşer.",
-  },
-  {
-    q: "Küçük bir PT stüdyom var, eğitmenlerimle birlikte kullanabilir miyiz?",
-    a: "Evet. Eğitmenlerinizi e-postayla davet edersiniz, her biri kendi e-postasıyla girer. Takvim ortaktır; eğitmen kendi derslerini, yoklamayı, ders notlarını ve programları görür, ödemeleri ve fiyatları görmez. Bir PT paketini belirli eğitmenlerle sınırlayabilir, hakedişi ders başına ücretle ya da yüzdeyle hesaplayıp ay sonunda Excel olarak indirebilirsiniz.",
   },
   {
     q: "Taksitli PT paketi satabilir miyim?",
@@ -106,21 +106,21 @@ export default function PersonalTrainerPage() {
     <div data-marketing className="min-h-dvh overflow-x-clip bg-canvas">
       <Analytics />
       <Reveal />
-      <JsonLd data={pageJsonLd({ path: PATH, title: TITLE, description: DESCRIPTION, crumbs: [{ href: PATH, label: "Personal trainer" }], faq: FAQ })} />
+      <JsonLd data={pageJsonLd({ path: PATH, title: TITLE, description: DESCRIPTION, crumbs: [{ href: PATH, label: "PT stüdyoları" }], faq: FAQ })} />
       <SiteHeader page="pt" />
-      <Breadcrumbs items={[{ href: PATH, label: "Personal trainer" }]} />
+      <Breadcrumbs items={[{ href: PATH, label: "PT stüdyoları" }]} />
 
       <main>
         <section aria-labelledby="hero-heading" className="px-4 pt-8 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.1fr_1fr]">
             <div>
-              <p className="anim-rise eyebrow mb-4">Serbest çalışan personal trainer&apos;lar için</p>
+              <p className="anim-rise eyebrow mb-4">Personal training stüdyoları için</p>
               <h1 id="hero-heading" style={{ "--delay": "80ms" } as React.CSSProperties} className="anim-rise text-[2.25rem] leading-[1.06] font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
-                Freelance personal trainer&apos;lar için danışan, PT paketi ve program takibi
+                PT stüdyonuzu yönetin: danışan, PT paketi ve program takibi
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">
-                Antrenman programı, ölçümler ve beslenme planı danışanın kendi sayfasında. Paketten kaç ders kaldı, kim ne kadar
-                ödedi, yarın kim geliyor; hepsi telefonunuzda.
+                Antrenman programı, ölçümler ve beslenme planı danışanın kendi sayfasında. Hangi eğitmenin hangi dersi var, paketten
+                kaç ders kaldı, kim ne kadar ödedi, yarın kim geliyor; hepsi telefonunuzda.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -144,19 +144,19 @@ export default function PersonalTrainerPage() {
         <section aria-labelledby="scenario-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
           <div data-reveal className={cn(card, "mx-auto max-w-5xl p-6 sm:p-10")}>
             <h2 id="scenario-heading" className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
-              Salonda ders veren serbest PT&apos;nin günü
+              Bir PT stüdyosunda sıradan bir gün
             </h2>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-              Sabah üç danışan, akşam iki. Biri dersi son anda iptal ediyor, biri taksitini gönderdiğini söylüyor, bir diğeri
+              Üç eğitmen, sabahtan akşama on beş ders. Biri dersi son anda iptal ediyor, biri taksitini gönderdiğini söylüyor, bir diğeri
               programını bu hafta yaptı mı belli değil. {APP_NAME} bunların hepsini tek yerde toplar: yoklamayı aldığınızda ders
               paketten düşer, dekontu gelen ödeme onayınızı bekler, danışan yaptığı antrenmanı işaretler, ölçümleri grafikte
-              görürsünüz.
+              görürsünüz. Ay sonunda her eğitmenin hakedişi hazırdır.
             </p>
           </div>
         </section>
 
         <section aria-labelledby="features-heading" className="px-4 pt-20 sm:px-6 sm:pt-28">
-          <SectionHeading id="features-heading" eyebrow="Neler var" lead="Programdan tahsilata PT işiniz tek yerde." />
+          <SectionHeading id="features-heading" eyebrow="Neler var" lead="Programdan tahsilata stüdyonuzun işi tek yerde." />
           <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, text }, i) => (
               <li key={title} data-reveal style={stagger(i)} className={cn(card, "hover-lift flex flex-col gap-3 p-6")}>

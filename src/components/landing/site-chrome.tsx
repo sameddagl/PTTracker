@@ -18,8 +18,8 @@ export type NavLink = { href: string; label: string };
 /** Marketing pages linked from every footer. */
 export const MARKETING_PAGES: NavLink[] = [
   { href: "/ozellikler", label: "Özellikler" },
-  { href: "/pilates-egitmenleri", label: "Pilates eğitmenleri" },
-  { href: "/personal-trainer", label: "Personal trainer" },
+  { href: "/pilates-egitmenleri", label: "Pilates stüdyoları" },
+  { href: "/personal-trainer", label: "PT stüdyoları" },
   { href: "/fiyatlar", label: "Fiyatlar" },
   { href: "/rehber", label: "Rehber" },
 ];
@@ -78,7 +78,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:flex-row sm:justify-between sm:px-6">
         <div className="flex flex-col gap-1">
           <Logo />
-          <p className="text-sm text-muted-foreground">Pilates ve PT eğitmenleri için danışan, seans ve ödeme takibi.</p>
+          <p className="text-sm text-muted-foreground">Pilates ve PT stüdyoları için yönetim uygulaması: ekip, ders, seans paketi ve ödeme.</p>
           <p className="text-sm text-muted-foreground">
             <a href={`mailto:${LEGAL.email}`} className="underline-offset-2 hover:text-foreground hover:underline">
               {LEGAL.email}
