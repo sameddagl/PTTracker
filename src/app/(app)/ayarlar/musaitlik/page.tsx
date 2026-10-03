@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/format";
 import { AvailabilityForm } from "./availability-form";
 import { TimeOff } from "./time-off";
+import { PendingLink } from "@/components/navigation-pending";
 
 export const metadata: Metadata = { title: "Müsaitlik" };
 
@@ -47,7 +48,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/aya
       {studio && (
         <nav aria-label="Eğitmen" className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
           {team.map((m, i) => (
-            <Link
+            <PendingLink
               key={m.id}
               href={`/ayarlar/musaitlik?egitmen=${m.id}`}
               aria-current={m.id === selected.id ? "true" : undefined}
@@ -58,7 +59,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/aya
             >
               <span className="size-2.5 rounded-full" style={{ background: teamColor(m.color, i) }} aria-hidden />
               {m.fullName || "İsimsiz"}
-            </Link>
+            </PendingLink>
           ))}
         </nav>
       )}

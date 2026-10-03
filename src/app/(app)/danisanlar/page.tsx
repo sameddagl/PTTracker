@@ -15,6 +15,7 @@ import { can } from "@/lib/permissions";
 import { clientIdsTaughtBy } from "@/db/team";
 import { cn } from "@/lib/utils";
 import { formatTRY } from "@/lib/format";
+import { PendingLink } from "@/components/navigation-pending";
 
 export const metadata: Metadata = { title: "Danışanlar" };
 
@@ -47,7 +48,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/danisanl
             { href: "/danisanlar", label: "Benim danışanlarım", on: mineOnly },
             { href: "/danisanlar?kapsam=tumu", label: "Tümü", on: !mineOnly },
           ].map((o) => (
-            <Link
+            <PendingLink
               key={o.href}
               href={o.href}
               aria-current={o.on ? "true" : undefined}
@@ -57,7 +58,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/danisanl
               )}
             >
               {o.label}
-            </Link>
+            </PendingLink>
           ))}
         </nav>
       )}

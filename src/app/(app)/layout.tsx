@@ -8,6 +8,7 @@ import { countUnread, listThreads } from "@/db/messages";
 import { countPendingPayments } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
 import { clientIdsTaughtBy, isStudio } from "@/db/team";
+import { NavigationPending } from "@/components/navigation-pending";
 import { APP_NAME } from "@/lib/config";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -46,7 +47,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <MobileTopBar name={member.name || trainer.fullName} appName={APP_NAME} />
       {/* Pages opt into a wider column by rendering an element with data-wide (the week calendar). */}
       <main className="mx-auto w-full max-w-3xl has-[[data-wide]]:max-w-6xl px-4 pt-5 pb-[calc(8.5rem+env(safe-area-inset-bottom))] has-[[data-chat]]:pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8 md:pt-10 md:pb-12">
-        {children}
+        <NavigationPending>{children}</NavigationPending>
       </main>
       <BottomNav badges={badges} scope={scope} />
     </div>

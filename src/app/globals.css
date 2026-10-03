@@ -253,6 +253,19 @@
    Everything is off for people who ask for reduced motion. Reveal hides an
    element only when scripting is on, so crawlers and no-JS readers always see
    the content; <Reveal /> adds .is-revealed as it scrolls into view. */
+/* Same-page navigation bar (src/components/navigation-pending.tsx). */
+@keyframes nav-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+.nav-progress {
+  animation: nav-progress 1s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html:has([data-marketing]) {
     scroll-behavior: smooth;

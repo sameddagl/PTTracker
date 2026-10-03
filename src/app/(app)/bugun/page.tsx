@@ -43,6 +43,7 @@ import { AttendanceRow } from "@/components/attendance-row";
 import { Avatar } from "@/components/avatar";
 import { takenPlaces } from "../takvim/lesson-summary";
 import { GettingStarted, GuideComplete } from "./getting-started";
+import { PendingLink } from "@/components/navigation-pending";
 
 export const metadata: Metadata = { title: "Bugün" };
 
@@ -117,7 +118,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/bugun">) {
             { key: "studyo", label: "Stüdyo" },
             { key: "benim", label: "Benim derslerim" },
           ].map((o) => (
-            <Link
+            <PendingLink
               key={o.key}
               href={o.key === "studyo" ? "/bugun" : "/bugun?gorunum=benim"}
               aria-current={(o.key === "benim") === mine ? "true" : undefined}
@@ -127,7 +128,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/bugun">) {
               )}
             >
               {o.label}
-            </Link>
+            </PendingLink>
           ))}
         </nav>
       )}

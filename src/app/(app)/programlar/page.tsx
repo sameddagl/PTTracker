@@ -8,6 +8,7 @@ import { listMembers } from "@/db/team";
 import { can, mayEditShared } from "@/lib/permissions";
 import { ensureExerciseLibrary, listTemplates } from "@/db/programs";
 import { formatShortDate } from "@/lib/format";
+import { PendingLink } from "@/components/navigation-pending";
 
 export const metadata: Metadata = { title: "Programlar" };
 
@@ -38,13 +39,13 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
             { href: "/programlar?tur=beslenme", label: "Beslenme", on: !workout },
           ].map((t) => (
             <li key={t.href}>
-              <Link
+              <PendingLink
                 href={t.href}
                 aria-current={t.on ? "page" : undefined}
                 className={`flex min-h-10 items-center rounded-full px-4 text-sm font-medium transition-colors ${t.on ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {t.label}
-              </Link>
+              </PendingLink>
             </li>
           ))}
         </ul>

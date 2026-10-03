@@ -14,6 +14,7 @@ import { MONTH_PATTERN, SESSION_LABELS, payRuleLabel, type SessionType } from "@
 import { profileImageUrl } from "@/lib/storage";
 import { teamColor } from "@/lib/team";
 import { PayrollButtons } from "./payroll-actions";
+import { PendingLink } from "@/components/navigation-pending";
 
 export const metadata: Metadata = { title: "Hakediş" };
 
@@ -70,16 +71,16 @@ export default async function PayrollPage({ searchParams }: PageProps<"/hakedis"
 
       <nav aria-label="Ay" className="mb-6 flex items-center gap-2">
         <Button asChild variant="outline" size="icon" aria-label="Önceki ay">
-          <Link href={`/hakedis?ay=${shiftMonth(month, -1)}`}>
+          <PendingLink href={`/hakedis?ay=${shiftMonth(month, -1)}`}>
             <ChevronLeft />
-          </Link>
+          </PendingLink>
         </Button>
         <span className="min-w-0 flex-1 text-center text-sm font-medium capitalize">{monthLabel(month)}</span>
         {month < current ? (
           <Button asChild variant="outline" size="icon" aria-label="Sonraki ay">
-            <Link href={`/hakedis?ay=${shiftMonth(month, 1)}`}>
+            <PendingLink href={`/hakedis?ay=${shiftMonth(month, 1)}`}>
               <ChevronRight />
-            </Link>
+            </PendingLink>
           </Button>
         ) : (
           <span className="size-11 md:size-9" aria-hidden />

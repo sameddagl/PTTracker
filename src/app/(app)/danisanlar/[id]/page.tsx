@@ -50,6 +50,7 @@ import { NotesPanel } from "./notes-panel";
 import { ProgramPanel } from "./program-panel";
 import { clientPrograms, listTemplates, recentCheckins } from "@/db/programs";
 import { PortalCard } from "./portal-card";
+import { PendingLink } from "@/components/navigation-pending";
 
 export const metadata: Metadata = { title: "Danışan" };
 
@@ -231,7 +232,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
         <ul className="flex w-max gap-1 rounded-full bg-muted p-1">
           {TABS.map((t) => (
             <li key={t.key}>
-              <Link
+              <PendingLink
                 href={t.key === "genel" ? `/danisanlar/${client.id}` : `/danisanlar/${client.id}?sekme=${t.key}`}
                 aria-current={tab === t.key ? "page" : undefined}
                 scroll={false}
@@ -240,7 +241,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
                 }`}
               >
                 {t.label}
-              </Link>
+              </PendingLink>
             </li>
           ))}
         </ul>
