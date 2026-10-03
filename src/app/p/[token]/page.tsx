@@ -59,7 +59,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const data = await getPortalData(token);
   if (!data) notFound();
 
-  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups, progress, workout, nutrition } = data;
+  const { client, packages, upcoming, recent, application, pendingApplications, offers, renewable, messages, reported, booking, bookable, groups, progress, workout, nutrition, team } = data;
   const unreadFromTrainer = messages.filter((m) => m.sender === "trainer" && !m.readAt).length;
   const tz = client.timezone;
   const trainerName = client.businessName || client.trainerName;
@@ -359,6 +359,7 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
                   offers={offers}
                   pendingIds={pendingApplications.map((a) => a.templateId)}
                   hasPackage={packages.length > 0 || pendingApplications.length > 0}
+                  team={team}
                 />
 
                 {(packages.length > 0 || upcoming.length > 0) && (

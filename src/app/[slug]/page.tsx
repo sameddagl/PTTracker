@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
+import { InstructorChips } from "@/components/instructor-chips";
 import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, Sparkles, UsersRound } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
@@ -221,7 +222,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
             <ul className="flex flex-col gap-4">
               {packages.map((p) => (
                 <li key={p.id}>
-                  <PackageCard slug={slug} pkg={p} highlight={packages.length > 1 && best?.id === p.id} />
+                  <PackageCard slug={slug} pkg={p} highlight={packages.length > 1 && best?.id === p.id} team={team} />
                 </li>
               ))}
             </ul>
@@ -290,7 +291,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
   );
 }
 
-function PackageCard({ slug, pkg: p, highlight }: { slug: string; pkg: PublicPage["packages"][number]; highlight: boolean }) {
+function PackageCard({ slug, pkg: p, highlight, team }: { slug: string; pkg: PublicPage["packages"][number]; highlight: boolean; team: PublicPage["team"] }) {
   const plan = paymentOptions(p).find((o) => o.installments > 1);
   const perLesson = p.price && p.sessionCount > 1 ? Number(p.price) / p.sessionCount : null;
   return (
@@ -316,6 +317,9 @@ function PackageCard({ slug, pkg: p, highlight }: { slug: string; pkg: PublicPag
             </span>
           ) : null}
         </p>
+        <div className="mt-2 empty:hidden">
+          <InstructorChips team={team} instructorIds={p.instructorIds} />
+        </div>
       </div>
 
       {(p.price || plan) && (

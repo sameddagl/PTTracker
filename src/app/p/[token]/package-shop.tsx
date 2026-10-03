@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Hourglass } from "lucide-react";
 import { toast } from "sonner";
+import { InstructorChips, type ChipMember } from "@/components/instructor-chips";
 import { PriceTag } from "@/components/price-tag";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,24 @@ type Offer = PricedTemplate & {
   sessionType: keyof typeof SESSION_TYPE_LABELS;
   sessionCount: number;
   validityDays: number | null;
+  instructorIds: string[] | null;
 };
 
 /** The trainer's packages, requested from the portal without filling the sign-up form again. */
-export function PackageShop({ token, offers, pendingIds, hasPackage }: { token: string; offers: Offer[]; pendingIds: string[]; hasPackage: boolean }) {
+export function PackageShop({
+  token,
+  offers,
+  pendingIds,
+  hasPackage,
+  team = [],
+}: {
+  token: string;
+  offers: Offer[];
+  pendingIds: string[];
+  hasPackage: boolean;
+  /** Studios: the team, to show who teaches with each package. */
+  team?: ChipMember[];
+}) {
   const [open, setOpen] = useState(!hasPackage);
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
@@ -65,6 +80,9 @@ export function PackageShop({ token, offers, pendingIds, hasPackage }: { token: 
                         {SESSION_TYPE_LABELS[o.sessionType]} · {o.sessionCount} ders
                         {o.validityDays ? ` · ${o.validityDays} gün geçerli` : ""}
                       </p>
+                      <div className="mt-2 empty:hidden">
+                        <InstructorChips team={team} instructorIds={o.instructorIds} />
+                      </div>
                     </div>
                     {o.price && <PriceTag price={o.price} compareAtPrice={o.compareAtPrice} size="md" className="max-w-36" />}
                   </div>

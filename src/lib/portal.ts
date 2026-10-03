@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { adminDb, type Tx } from "@/db";
 import { getBookingView, upcomingForClient } from "@/db/booking";
 import { renewablePackages } from "@/db/engagement";
@@ -8,18 +8,7 @@ import { portalProgress } from "@/db/progress";
 import { portalProgram } from "@/db/programs";
 import { getGroupView } from "@/db/groups";
 import { PORTAL_TOKEN_PATTERN, hashToken } from "@/db/portal";
-import {
-  applications,
-  clientPackageBalances,
-  clientPackages,
-  clients,
-  lessonAttendees,
-  lessons,
-  packageTemplates,
-  payments,
-  portalTokens,
-  trainers,
-} from "@/db/schema";
+import { accountMembers, applications, clientPackageBalances, clientPackages, clients, lessonAttendees, lessons, packageTemplates, payments, portalTokens, trainers } from "@/db/schema";
 import { siteUrl } from "./config";
 
 export const portalUrl = (token: string) => `${siteUrl()}/p/${token}`;
@@ -147,6 +136,7 @@ export async function getPortalData(token: string) {
       installmentPrice: packageTemplates.installmentPrice,
       installments: packageTemplates.installments,
       isTrial: packageTemplates.isTrial,
+      instructorIds: packageTemplates.instructorIds,
     })
     .from(packageTemplates)
     .where(and(eq(packageTemplates.trainerId, link.trainerId), eq(packageTemplates.isActive, true), eq(packageTemplates.isPublic, true)))
@@ -202,6 +192,12 @@ export async function getPortalData(token: string) {
     application: application ?? null,
     pendingApplications,
     offers: offers.filter((o) => newcomer || !o.isTrial),
+    // Studios: the team, so packages can say who teaches with them.
+    team: await adminDb
+      .select({ id: accountMembers.id, fullName: accountMembers.fullName, color: accountMembers.color })
+      .from(accountMembers)
+      .where(and(eq(accountMembers.accountId, link.trainerId), eq(accountMembers.active, true)))
+      .orderBy(sql`${accountMembers.role} = 'owner' desc`, asc(accountMembers.createdAt)),
     renewable,
     messages,
     reported,

@@ -47,6 +47,7 @@ export const getPublicPage = cache(async (slug: string) => {
       features: packageTemplates.features,
       installments: packageTemplates.installments,
       isTrial: packageTemplates.isTrial,
+      instructorIds: packageTemplates.instructorIds,
     })
     .from(packageTemplates)
     .where(
@@ -80,7 +81,7 @@ export const getPublicPage = cache(async (slug: string) => {
 
   // Studios list their team; a trainer working alone is the page itself.
   const teamRows = await adminDb
-    .select({ id: accountMembers.id, fullName: accountMembers.fullName, bio: accountMembers.bio, photoPath: accountMembers.photoPath })
+    .select({ id: accountMembers.id, fullName: accountMembers.fullName, bio: accountMembers.bio, photoPath: accountMembers.photoPath, color: accountMembers.color })
     .from(accountMembers)
     .where(and(eq(accountMembers.accountId, trainer.id), eq(accountMembers.active, true)))
     .orderBy(sql`${accountMembers.role} = 'owner' desc`, asc(accountMembers.createdAt));
