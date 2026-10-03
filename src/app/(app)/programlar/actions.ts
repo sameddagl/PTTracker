@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { mayOpenClient } from "@/db/team";
 import { can, mayEditShared } from "@/lib/permissions";
 import { withTrainer } from "@/db";
 import {
@@ -67,6 +68,7 @@ export async function saveProgramAction(
 export async function giveProgramAction(clientId: string, templateId: string) {
   if (!uuid.safeParse(clientId).success || !uuid.safeParse(templateId).success) return;
   const id = await withTrainer(async (tx, trainerId, member) => {
+    if (!(await mayOpenClient(tx, member, clientId))) return null;
     const t = await getTrainer(tx, trainerId);
     return copyProgram(tx, trainerId, templateId, clientId, todayISO(t.timezone), member.id);
   });

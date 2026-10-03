@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { NativeSelect } from "@/components/field";
 import { MuscleMap } from "@/components/muscle-map";
+import { PersonChip } from "@/components/person-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Exercise } from "@/db/programs";
@@ -47,7 +48,7 @@ export function ExerciseLibrary({
   /** Exercises this member may change (all when left out). */
   editableIds?: string[];
   /** Studios: who added a custom exercise, by id. */
-  makers?: Record<string, string>;
+  makers?: Record<string, { name: string; color: string }>;
 }) {
   const editable = new Set(editableIds ?? exercises.map((e) => e.id));
   const [q, setQ] = useState("");
@@ -106,11 +107,15 @@ export function ExerciseLibrary({
                       <span className="block text-sm leading-snug font-semibold">{e.name}</span>
                       <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
                         {e.primary.length > 0 ? names(e.primary) : "Kas seçilmedi"}
-                        {makers[e.id] && ` · ${makers[e.id]}`}
                       </span>
                     </span>
                     {e.videoUrl && <PlayCircle className="size-4 shrink-0 text-muted-foreground" aria-label="Video var" />}
                   </span>
+                  {makers[e.id] && (
+                    <span className="self-start">
+                      <PersonChip name={makers[e.id].name} color={makers[e.id].color} />
+                    </span>
+                  )}
                   <MuscleMap primary={e.primary} secondary={e.secondary} compact className="mt-auto rounded-xl bg-canvas px-3 py-2" />
                 </button>
               </li>

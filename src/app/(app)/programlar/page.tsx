@@ -5,7 +5,9 @@ import { ActionTiles } from "@/components/action-tiles";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listMembers } from "@/db/team";
+import { PersonChip } from "@/components/person-chip";
 import { can, mayEditShared } from "@/lib/permissions";
+import { teamColor } from "@/lib/team";
 import { ensureExerciseLibrary, listTemplates } from "@/db/programs";
 import { formatShortDate } from "@/lib/format";
 import { PendingLink } from "@/components/navigation-pending";
@@ -18,11 +20,15 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
   const { templates, canCreate } = await withTrainer(async (tx, trainerId, member) => {
     await ensureExerciseLibrary(tx, trainerId);
     const team = await listMembers(tx, trainerId, { includeInactive: true });
-    const ownerName = team.find((m) => m.role === "owner")?.fullName ?? null;
+    const ownerIndex = team.findIndex((m) => m.role === "owner");
     // Studios: who made each template, and whether this member may change it.
     const templates = (await listTemplates(tx, trainerId, kind)).map((t) => ({
       ...t,
-      maker: team.length > 1 ? (team.find((m) => m.id === t.createdBy)?.fullName ?? ownerName) : null,
+      maker: (() => {
+        if (team.length < 2) return null;
+        const i = Math.max(team.findIndex((m) => m.id === t.createdBy), ownerIndex);
+        return i >= 0 ? { name: team[i].fullName, color: teamColor(team[i].color, i) } : null;
+      })(),
       editable: mayEditShared(member, t.createdBy),
     }));
     return { templates, canCreate: can(member, "createPrograms") };
@@ -72,27 +78,18 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
         <ul className="divide-y overflow-hidden surface">
           {templates.map((t) => (
             <li key={t.id}>
-              {t.editable ? (
-                <Link href={`/programlar/${t.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{t.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {t.maker && `${t.maker} · `}
-                      {t.days} {workout ? "gün" : "öğün"} · {formatShortDate(t.updatedAt.toISOString().slice(0, 10))} güncellendi
+              <Link href={`/programlar/${t.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{t.name}</span>
+                  <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    {t.maker && <PersonChip name={t.maker.name} color={t.maker.color} />}
+                    <span>
+                      {t.days} {workout ? "gün" : "öğün"} · {t.editable ? `${formatShortDate(t.updatedAt.toISOString().slice(0, 10))} güncellendi` : "kopyasını verebilirsin"}
                     </span>
                   </span>
-                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-                </Link>
-              ) : (
-                // Without permission to change templates, an instructor uses them from the client's page.
-                <span className="block px-4 py-3.5">
-                  <span className="block truncate font-medium">{t.name}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {t.maker && `${t.maker} · `}
-                    {t.days} {workout ? "gün" : "öğün"} · danışanın sayfasından kopyalarsın
-                  </span>
                 </span>
-              )}
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+              </Link>
             </li>
           ))}
         </ul>

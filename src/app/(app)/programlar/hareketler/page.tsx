@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { listMembers } from "@/db/team";
 import { can, mayEditShared } from "@/lib/permissions";
+import { teamColor } from "@/lib/team";
 import { ensureExerciseLibrary, listExercises } from "@/db/programs";
 import { EXERCISE_CATEGORIES } from "@/lib/programs";
 import { ExerciseLibrary } from "./exercise-library";
@@ -17,7 +18,12 @@ export default async function ExercisesPage() {
     const list = await listExercises(tx, trainerId);
     const team = await listMembers(tx, trainerId, { includeInactive: true });
     // Studios: who added each custom exercise, and which ones this member may change.
-    const makers = team.length > 1 ? Object.fromEntries(list.filter((e) => e.createdBy).map((e) => [e.id, team.find((m) => m.id === e.createdBy)?.fullName ?? ""])) : {};
+    const makers: Record<string, { name: string; color: string }> = {};
+    if (team.length > 1)
+      for (const e of list) {
+        const i = team.findIndex((m) => m.id === e.createdBy);
+        if (i >= 0) makers[e.id] = { name: team[i].fullName, color: teamColor(team[i].color, i) };
+      }
     return { list, canCreate: can(member, "createPrograms"), editableIds: list.filter((e) => mayEditShared(member, e.createdBy)).map((e) => e.id), makers };
   });
   return (
