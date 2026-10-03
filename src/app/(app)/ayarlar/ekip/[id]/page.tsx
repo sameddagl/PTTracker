@@ -6,13 +6,13 @@ import { authUsers } from "drizzle-orm/supabase";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { adminDb, withTrainer } from "@/db";
-import { getMemberRow, listMembers } from "@/db/team";
+import { getMemberRow, listMembers, listOpenInvites } from "@/db/team";
 import { TEAM_COLORS, isTeamColor } from "@/lib/team";
 import { profileImageUrl } from "@/lib/storage";
 import { setMemberPhotoByOwnerAction } from "../actions";
 import { setMemberPhotoAction } from "../../profil/actions";
 import { ImageUpload } from "../../profil/image-upload";
-import { MemberForm, RemoveMemberButton } from "./member-form";
+import { InviteMemberForm, MemberForm, RemoveMemberButton } from "./member-form";
 
 export const metadata: Metadata = { title: "Eğitmen" };
 
@@ -24,10 +24,11 @@ export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[i
     const row = await getMemberRow(tx, accountId, id);
     if (!row) return null;
     const index = (await listMembers(tx, accountId)).findIndex((m) => m.id === id);
-    return { row, index, me: member };
+    const invite = (await listOpenInvites(tx, accountId)).find((i) => i.memberId === id) ?? null;
+    return { row, index, me: member, invite };
   });
   if (!data) notFound();
-  const { row, index, me } = data;
+  const { row, index, me, invite } = data;
   const isMe = row.id === me.id;
   // The member's login address, so the owner knows which account it is.
   const [user] = row.userId ? await adminDb.select({ email: authUsers.email }).from(authUsers).where(eq(authUsers.id, row.userId)) : [];
@@ -39,7 +40,7 @@ export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[i
         <ChevronLeft className="size-4" aria-hidden />
         Ekip
       </Link>
-      <PageHeader title={row.fullName || "Eğitmen"} description={row.role === "owner" ? "Stüdyonun sahibi" : user?.email ?? undefined} />
+      <PageHeader title={row.fullName || "Eğitmen"} description={row.role === "owner" ? "Stüdyonun sahibi" : (user?.email ?? "Giriş yapmıyor")} />
       <div className="flex flex-col gap-6">
         <section className="flex flex-col gap-4 surface p-5">
           <div className="min-w-0">
@@ -58,6 +59,20 @@ export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[i
           />
           <p className="text-xs text-muted-foreground">Danışanlar eğitmeni derslerinde ve stüdyonun sayfasında bu fotoğrafla görür. Eğitmen kendi profilinden de değiştirebilir.</p>
         </section>
+        {row.role === "instructor" && !row.userId && row.active && (
+          <section aria-labelledby="login-heading" className="flex flex-col gap-3 surface p-5">
+            <div>
+              <h2 id="login-heading" className="text-base font-semibold">
+                Uygulamaya giriş
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {row.fullName} şu an giriş yapmıyor; derslerini sen yönetiyorsun. Kendi derslerini ve yoklamasını görmek isterse e-postasına davet gönder. Geçmiş dersleri ve
+                hakedişi aynen kalır.
+              </p>
+            </div>
+            <InviteMemberForm id={row.id} pendingEmail={invite?.email ?? null} />
+          </section>
+        )}
         <section className="surface p-5">
           <MemberForm id={row.id} color={color} payRule={row.payRule} isOwner={row.role === "owner"} />
         </section>

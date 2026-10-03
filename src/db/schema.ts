@@ -249,6 +249,8 @@ export const accountInvites = pgTable(
     email: text("email").notNull(),
     fullName: text("full_name").notNull(),
     color: text("color"),
+    // An instructor the owner already added without a login: accepting links the login to that row.
+    memberId: uuid("member_id").references(() => accountMembers.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull().unique(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),

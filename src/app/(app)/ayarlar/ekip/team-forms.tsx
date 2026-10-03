@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { RotateCcw, Send, X } from "lucide-react";
+import { RotateCcw, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Field, FormError, NativeSelect } from "@/components/field";
@@ -16,7 +16,7 @@ import { inviteAction, resendInviteAction, revokeInviteAction, saveTeamSettingAc
 type InviteField = "fullName" | "email" | "color" | "form";
 
 export function InviteForm({ suggestedColor }: { suggestedColor: string }) {
-  const [state, action, pending] = useActionState<FormState<InviteField>, FormData>(inviteAction, {});
+  const [state, action, pending] = useActionState<FormState<InviteField> & { invited?: boolean }, FormData>(inviteAction, {});
   const form = useRef<HTMLFormElement>(null);
   // The suggestion follows the team (next free colour) until the owner picks one.
   const [picked, setPicked] = useState<string | null>(null);
@@ -24,9 +24,10 @@ export function InviteForm({ suggestedColor }: { suggestedColor: string }) {
 
   useEffect(() => {
     if (!state.savedAt) return;
-    toast.success("Davet gönderildi", { description: "Eğitmen e-postadaki linkle katılır." });
+    if (state.invited) toast.success("Davet gönderildi", { description: "Eğitmen e-postadaki linkle katılır." });
+    else toast.success("Eğitmen eklendi", { description: "Derslerini sen yönetirsin; isterse sonra giriş daveti gönderebilirsin." });
     form.current?.reset();
-  }, [state.savedAt]);
+  }, [state.savedAt, state.invited]);
 
   return (
     <form ref={form} action={action} onReset={() => setPicked(null)} className="flex flex-col gap-4" noValidate>
@@ -35,8 +36,8 @@ export function InviteForm({ suggestedColor }: { suggestedColor: string }) {
         <Field id="fullName" label="Ad soyad" error={state.errors?.fullName}>
           <Input id="fullName" name="fullName" defaultValue={state.values?.fullName} autoComplete="off" required minLength={2} />
         </Field>
-        <Field id="email" label="E-posta" error={state.errors?.email}>
-          <Input id="email" name="email" type="email" inputMode="email" defaultValue={state.values?.email} autoComplete="off" required />
+        <Field id="email" label="E-posta" hint="isteğe bağlı" error={state.errors?.email}>
+          <Input id="email" name="email" type="email" inputMode="email" defaultValue={state.values?.email} autoComplete="off" />
         </Field>
       </div>
       <Field id="color" label="Takvimdeki rengi" error={state.errors?.color}>
@@ -52,8 +53,8 @@ export function InviteForm({ suggestedColor }: { suggestedColor: string }) {
         </div>
       </Field>
       <FormSubmit loading={pending} className="sm:self-start">
-        <Send />
-        Davet gönder
+        <UserPlus />
+        Eğitmen ekle
       </FormSubmit>
     </form>
   );

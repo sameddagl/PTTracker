@@ -14,7 +14,7 @@ import { pickPackage, sellPackage } from "../src/db/packages";
 import { addDays } from "../src/lib/dates";
 import { closePayrollMonth, payrollFor, setPayrollPaid } from "../src/db/payroll";
 import * as schema from "../src/db/schema";
-import { clientIdsTaughtBy, mayManageLesson, resolveInstructor, updateMember } from "../src/db/team";
+import { addMemberWithoutLogin, clientIdsTaughtBy, mayManageLesson, resolveInstructor, updateMember } from "../src/db/team";
 import { computePayroll, monthRange } from "../src/lib/payroll";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -170,6 +170,19 @@ async function main() {
   assert.equal(await as(A, A, (tx) => pickPackage(tx, ali.id, "private", { instructorId: owner.id })), null);
   assert.equal(await as(A, A, (tx) => pickPackage(tx, ali.id, "private", { instructorId: inst.id })), aliPkg);
   console.log("studio booking and instructor-limited packages ok");
+
+  // An instructor without a login: the owner adds them and plans their lessons.
+  const noLogin = await as(A, A, (tx) => addMemberWithoutLogin(tx, A, { fullName: "Deniz", color: null }));
+  const [noLoginRow] = await asOwner((tx) => tx.select().from(schema.accountMembers).where(sql`id = ${noLogin}`));
+  assert.equal(noLoginRow.userId, null);
+  assert.ok(noLoginRow.color && noLoginRow.color !== "sky", "gets a free colour");
+  assert.equal(await as(A, A, (tx) => resolveInstructor(tx, owner, noLogin)), noLogin, "the owner can plan their lessons");
+  await assert.rejects(
+    as(I, A, (tx) => addMemberWithoutLogin(tx, A, { fullName: "X", color: null })),
+    (e: { cause?: unknown }) => /row-level security/.test(String(e.cause ?? e)),
+    "only the owner adds instructors",
+  );
+  console.log("instructors without a login ok");
   console.log("studio lessons, permissions and pay ok\n\nall studio checks passed");
 }
 

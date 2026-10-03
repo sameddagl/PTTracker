@@ -14,7 +14,7 @@ import type { FormState } from "@/lib/forms";
 import { SESSION_LABELS } from "@/lib/payroll";
 import { TEAM_COLORS, TEAM_COLOR_LABELS, teamColor } from "@/lib/team";
 import { cn } from "@/lib/utils";
-import { saveMemberAction, setMemberActiveAction } from "../actions";
+import { inviteMemberAction, saveMemberAction, setMemberActiveAction } from "../actions";
 
 type F = "payType" | "color" | "private" | "duet" | "trio" | "group" | "percent" | "form";
 const TYPES = ["private", "duet", "trio", "group"] as const;
@@ -148,5 +148,32 @@ export function RemoveMemberButton({ id, name }: { id: string; name: string }) {
         Ekipten çıkar
       </Button>
     </>
+  );
+}
+
+/** Owner: send a login invitation to an instructor who was added without one. */
+export function InviteMemberForm({ id, pendingEmail }: { id: string; pendingEmail: string | null }) {
+  const [state, action, pending] = useActionState(inviteMemberAction.bind(null, id), {});
+  useEffect(() => {
+    if (state.sentAt) toast.success("Giriş daveti gönderildi");
+  }, [state.sentAt]);
+  return (
+    <form action={action} className="flex flex-col gap-3" noValidate>
+      <FormError message={state.error} />
+      {pendingEmail && (
+        <p className="text-sm text-muted-foreground">
+          <strong className="font-medium text-foreground">{pendingEmail}</strong> adresine gönderilmiş bir davet bekliyor. Ekip sayfasından yeniden gönderebilir ya da
+          iptal edebilirsin.
+        </p>
+      )}
+      <div className="flex flex-wrap items-end gap-2">
+        <Field id="invite-email" label="E-posta" className="min-w-56 flex-1">
+          <Input id="invite-email" name="email" type="email" inputMode="email" autoComplete="off" required />
+        </Field>
+        <FormSubmit loading={pending} variant="outline">
+          Davet gönder
+        </FormSubmit>
+      </div>
+    </form>
   );
 }

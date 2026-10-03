@@ -66,7 +66,13 @@ export async function getMemberRow(tx: Tx, accountId: string, id: string) {
 
 // ---- Invitations ----
 
-export type InviteInput = { email: string; fullName: string; color: TeamColor | null };
+export type InviteInput = {
+  email: string;
+  fullName: string;
+  color: TeamColor | null;
+  /** An instructor already on the team without a login: the invitation links a login to them. */
+  memberId?: string;
+};
 
 export type InviteResult = { ok: true; token: string; id: string } | { ok: false; reason: "member" | "pending" };
 
@@ -98,6 +104,7 @@ export async function createInvite(tx: Tx, accountId: string, input: InviteInput
       email,
       fullName: input.fullName.trim(),
       color,
+      memberId: input.memberId ?? null,
       tokenHash: hashToken(token),
       expiresAt: sql`now() + make_interval(days => ${INVITE_DAYS})`,
     })
@@ -109,7 +116,7 @@ const openInvite = () => [isNull(accountInvites.acceptedAt), isNull(accountInvit
 
 export async function listOpenInvites(tx: Tx, accountId: string) {
   return tx
-    .select({ id: accountInvites.id, email: accountInvites.email, fullName: accountInvites.fullName, expiresAt: accountInvites.expiresAt })
+    .select({ id: accountInvites.id, email: accountInvites.email, fullName: accountInvites.fullName, expiresAt: accountInvites.expiresAt, memberId: accountInvites.memberId })
     .from(accountInvites)
     .where(and(eq(accountInvites.accountId, accountId), ...openInvite()))
     .orderBy(desc(accountInvites.createdAt));
@@ -145,6 +152,7 @@ export async function inviteByToken(token: string) {
       email: accountInvites.email,
       fullName: accountInvites.fullName,
       color: accountInvites.color,
+      memberId: accountInvites.memberId,
       studio: sql<string>`coalesce(nullif(${trainers.businessName}, ''), ${trainers.fullName})`,
     })
     .from(accountInvites)
@@ -166,16 +174,38 @@ export async function acceptInvite(token: string, user: { id: string; email: str
     if (!invite) return { ok: false, reason: "invalid" } as const;
     if ((user.email ?? "").toLowerCase() !== invite.email) return { ok: false, reason: "email" } as const;
     if (invite.accountId === user.id) return { ok: false, reason: "owner" } as const;
-    await tx
-      .insert(accountMembers)
-      .values({ accountId: invite.accountId, userId: user.id, role: "instructor", fullName: invite.fullName, color: invite.color })
-      .onConflictDoUpdate({ target: [accountMembers.accountId, accountMembers.userId], set: { active: true, updatedAt: new Date() } });
+    const [already] = await tx
+      .select({ id: accountMembers.id })
+      .from(accountMembers)
+      .where(and(eq(accountMembers.accountId, invite.accountId), eq(accountMembers.userId, user.id)));
+    if (invite.memberId && !already) {
+      // The instructor the owner added without a login: same row, so their lessons and pay stay theirs.
+      await tx
+        .update(accountMembers)
+        .set({ userId: user.id, active: true, updatedAt: new Date() })
+        .where(and(eq(accountMembers.id, invite.memberId), eq(accountMembers.accountId, invite.accountId), isNull(accountMembers.userId)));
+    } else {
+      await tx
+        .insert(accountMembers)
+        .values({ accountId: invite.accountId, userId: user.id, role: "instructor", fullName: invite.fullName, color: invite.color })
+        .onConflictDoUpdate({ target: [accountMembers.accountId, accountMembers.userId], set: { active: true, updatedAt: new Date() } });
+    }
     await tx.update(accountInvites).set({ acceptedAt: new Date() }).where(eq(accountInvites.id, invite.id));
     return { ok: true, accountId: invite.accountId } as const;
   });
 }
 
 // ---- Members ----
+
+/** Owner: an instructor who doesn't sign in; the owner runs their lessons. A login can be linked later with an invitation. */
+export async function addMemberWithoutLogin(tx: Tx, accountId: string, input: { fullName: string; color: TeamColor | null }) {
+  const color = input.color ?? nextTeamColor((await listMembers(tx, accountId)).map((m) => m.color));
+  const [row] = await tx
+    .insert(accountMembers)
+    .values({ accountId, userId: null, role: "instructor", fullName: input.fullName.trim(), color })
+    .returning({ id: accountMembers.id });
+  return row.id;
+}
 
 /** Owner: colour and pay rule of a member. */
 export async function updateMember(tx: Tx, accountId: string, id: string, patch: { color?: TeamColor; payRule?: PayRule | null }) {

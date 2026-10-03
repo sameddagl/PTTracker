@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import { getTrainer } from "@/db/queries";
-import { createInvite, getMemberRow, renewInvite, revokeInvite, setMemberActive, updateMember } from "@/db/team";
+import { addMemberWithoutLogin, createInvite, getMemberRow, renewInvite, revokeInvite, setMemberActive, updateMember } from "@/db/team";
 import { accountMembers, trainers, type PayRule } from "@/db/schema";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 import { isTeamColor, TEAM_COLORS } from "@/lib/team";
@@ -25,18 +25,35 @@ const studioName = (t: { businessName: string | null; fullName: string }) => t.b
 
 const inviteSchema = z.object({
   fullName: z.string().trim().min(2, "Eğitmenin adını yaz.").max(120),
-  email: z.string().trim().toLowerCase().email("Geçerli bir e-posta yaz."),
+  // Optional: without it the instructor is added without a login.
+  email: z.union([z.literal(""), z.string().trim().toLowerCase().email("Geçerli bir e-posta yaz.")]),
   color: z.string().refine((c) => c === "" || isTeamColor(c), "Listeden bir renk seç."),
 });
 const INVITE_FIELDS = ["fullName", "email", "color"] as const;
 
-export async function inviteAction(_prev: FormState<(typeof INVITE_FIELDS)[number] | "form">, formData: FormData) {
+export async function inviteAction(
+  _prev: FormState<(typeof INVITE_FIELDS)[number] | "form"> & { invited?: boolean },
+  formData: FormData,
+): Promise<FormState<(typeof INVITE_FIELDS)[number] | "form"> & { invited?: boolean }> {
   const values = readForm(formData, INVITE_FIELDS);
   const parsed = inviteSchema.safeParse(values);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+  const color = isTeamColor(parsed.data.color) ? parsed.data.color : null;
+
+  if (!parsed.data.email) {
+    const ok = await withTrainer(async (tx, trainerId, member) => {
+      if (member.role !== "owner") return false;
+      await addMemberWithoutLogin(tx, trainerId, { fullName: parsed.data.fullName, color });
+      return true;
+    });
+    if (!ok) return { errors: { form: NOT_OWNER }, values };
+    revalidatePath("/", "layout");
+    return { savedAt: Date.now(), invited: false };
+  }
+
   const out = await withTrainer(async (tx, trainerId, member) => {
     if (member.role !== "owner") return { error: NOT_OWNER } as const;
-    const res = await createInvite(tx, trainerId, { ...parsed.data, color: isTeamColor(parsed.data.color) ? parsed.data.color : null });
+    const res = await createInvite(tx, trainerId, { ...parsed.data, color });
     if (!res.ok) return { error: res.reason === "member" ? "Bu e-posta zaten ekipte." : "Bu e-postaya gönderilmiş bir davet var; listeden yeniden gönderebilirsin." } as const;
     return { token: res.token, studio: studioName(await getTrainer(tx, trainerId)) } as const;
   });
@@ -44,7 +61,26 @@ export async function inviteAction(_prev: FormState<(typeof INVITE_FIELDS)[numbe
   const sent = await sendInviteMail({ to: parsed.data.email, name: parsed.data.fullName, studio: out.studio, token: out.token });
   revalidatePath("/ayarlar/ekip");
   if (!sent) return { errors: { form: "Davet oluşturuldu ama e-posta gönderilemedi. Listeden yeniden göndermeyi dene." } };
-  return { savedAt: Date.now() };
+  return { savedAt: Date.now(), invited: true };
+}
+
+/** Owner: a login for an instructor already on the team (added without one). */
+export async function inviteMemberAction(memberId: string, _prev: { error?: string; sentAt?: number }, formData: FormData): Promise<{ error?: string; sentAt?: number }> {
+  const email = z.string().trim().toLowerCase().email().safeParse(formData.get("email")?.toString() ?? "");
+  if (!email.success) return { error: "Geçerli bir e-posta yaz." };
+  if (!z.uuid().safeParse(memberId).success) return { error: FAIL };
+  const out = await withTrainer(async (tx, trainerId, member) => {
+    if (member.role !== "owner") return { error: NOT_OWNER } as const;
+    const row = await getMemberRow(tx, trainerId, memberId);
+    if (!row || row.userId || row.role !== "instructor") return { error: FAIL } as const;
+    const res = await createInvite(tx, trainerId, { email: email.data, fullName: row.fullName, color: isTeamColor(row.color) ? row.color : null, memberId });
+    if (!res.ok) return { error: res.reason === "member" ? "Bu e-posta zaten ekipte." : "Bu e-postaya gönderilmiş bir davet var; Ekip sayfasından yeniden gönderebilirsin." } as const;
+    return { token: res.token, name: row.fullName, studio: studioName(await getTrainer(tx, trainerId)) } as const;
+  });
+  if ("error" in out) return { error: out.error };
+  const sent = await sendInviteMail({ to: email.data, name: out.name, studio: out.studio, token: out.token });
+  revalidatePath("/ayarlar/ekip", "layout");
+  return sent ? { sentAt: Date.now() } : { error: "Davet oluşturuldu ama e-posta gönderilemedi. Ekip sayfasından yeniden göndermeyi dene." };
 }
 
 export async function resendInviteAction(id: string): Promise<Result> {

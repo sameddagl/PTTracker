@@ -38,7 +38,7 @@ export default async function TeamPage({ searchParams }: PageProps<"/ayarlar/eki
       </Link>
       <PageHeader
         title="Ekip"
-        description="Stüdyonda ders veren eğitmenler. Davet ettiğin eğitmen kendi e-postasıyla giriş yapar; takvimi, derslerini, yoklamayı ve danışanlarının notlarını görür. Ödemeleri, fiyatları ve stüdyo ayarlarını görmez."
+        description="Stüdyonda ders veren eğitmenler. Giriş daveti gönderdiğin eğitmen kendi e-postasıyla girer; takvimi, derslerini, yoklamayı ve danışanlarının notlarını görür, ödemeleri ve fiyatları görmez. Giriş yapmayan eğitmenin derslerini sen yönetirsin."
       />
       <div className="flex flex-col gap-8">
         {ilk === "1" && (
@@ -65,7 +65,7 @@ export default async function TeamPage({ searchParams }: PageProps<"/ayarlar/eki
                       {m.role === "owner" && <span className="ml-2 text-xs font-normal text-muted-foreground">Sahip</span>}
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {m.role === "owner" ? "Bütün ayarlar ve ödemeler" : payRuleLabel(m.payRule, formatTRY)}
+                      {m.role === "owner" ? "Bütün ayarlar ve ödemeler" : `${m.userId ? "" : "Giriş yok · "}${payRuleLabel(m.payRule, formatTRY)}`}
                     </span>
                   </span>
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -97,9 +97,12 @@ export default async function TeamPage({ searchParams }: PageProps<"/ayarlar/eki
         <section aria-labelledby="invite-heading" className="flex flex-col gap-4 surface p-5">
           <div>
             <h2 id="invite-heading" className="text-base font-semibold">
-              Eğitmen davet et
+              Eğitmen ekle
             </h2>
-            <p className="text-sm text-muted-foreground">Eğitmene bir davet e-postası gider; linke tıklayıp bu e-postayla giriş yaptığında ekibe katılır.</p>
+            <p className="text-sm text-muted-foreground">
+              E-posta yazarsan eğitmene giriş daveti gider; linke tıklayıp girdiğinde uygulamayı kullanır. Yazmazsan eğitmen hemen eklenir,
+              derslerini, yoklamasını ve hakedişini sen yönetirsin. Giriş davetini sonra da gönderebilirsin.
+            </p>
           </div>
           <InviteForm suggestedColor={nextTeamColor(active.map((m) => m.color))} />
         </section>

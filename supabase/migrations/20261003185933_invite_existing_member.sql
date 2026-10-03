@@ -1,0 +1,2 @@
+ALTER TABLE "account_invites" ADD COLUMN "member_id" uuid;--> statement-breakpoint
+ALTER TABLE "account_invites" ADD CONSTRAINT "account_invites_member_id_account_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."account_members"("id") ON DELETE cascade ON UPDATE no action;
