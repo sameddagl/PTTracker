@@ -64,6 +64,7 @@ export async function ensureGroupOccurrences(tx: Tx, trainer: TrainerRef, { clas
             occurrenceDate: d,
             capacity: c.capacity,
             title: c.title,
+            instructorId: c.instructorId,
             sessionType: "group" as const,
             startsAt,
             endsAt: sql`${startsAt} + make_interval(mins => ${c.durationMinutes})`,
@@ -145,6 +146,8 @@ export type GroupClassInput = {
   capacity: number;
   joinMode: JoinMode;
   startsOn: string;
+  /** Studio member who teaches it; the owner when left out. */
+  instructorId?: string | null;
 };
 
 export async function listGroupClasses(tx: Tx, trainer: TrainerRef) {
@@ -198,7 +201,7 @@ export async function getGroupClass(tx: Tx, trainer: TrainerRef, id: string) {
   return { ...c, members, upcoming };
 }
 
-export type GroupUpdate = { title: string; capacity: number; joinMode: JoinMode };
+export type GroupUpdate = { title: string; capacity: number; joinMode: JoinMode; instructorId?: string };
 
 /**
  * Renames the class or changes its places or join mode; upcoming occurrences
@@ -219,7 +222,7 @@ export async function updateGroupClass(tx: Tx, trainer: TrainerRef, id: string, 
   if (!row) return { ok: false as const, reason: "not_found" as const };
   await tx
     .update(lessons)
-    .set({ title: input.title, capacity: input.capacity })
+    .set({ title: input.title, capacity: input.capacity, ...(input.instructorId ? { instructorId: input.instructorId } : {}) })
     .where(and(eq(lessons.groupClassId, id), gt(lessons.startsAt, sql`now()`)));
   if (input.joinMode === "drop_in") {
     // No fixed places in drop-in mode; bookings already made stay.

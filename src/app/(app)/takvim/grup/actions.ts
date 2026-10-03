@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireOwner, withTrainer } from "@/db";
 import { addGroupMember, createGroupClass, endGroupClass, removeGroupMember, updateGroupClass } from "@/db/groups";
 import { getTrainer } from "@/db/queries";
+import { resolveInstructor } from "@/db/team";
 import { fieldErrors, type FormState } from "@/lib/forms";
 
 export type GroupField = "title" | "weekdays" | "startTime" | "durationMinutes" | "capacity" | "joinMode" | "startsOn" | "form";
@@ -33,6 +34,7 @@ const rawOf = (formData: FormData) => ({
   capacity: formData.get("capacity")?.toString() ?? "",
   joinMode: formData.get("joinMode")?.toString() ?? "",
   startsOn: formData.get("startsOn")?.toString() ?? "",
+  instructorId: formData.get("instructorId")?.toString() ?? "",
 });
 
 const echo = (raw: ReturnType<typeof rawOf>) => ({ ...raw, weekdays: raw.weekdays.join(",") });
@@ -42,7 +44,9 @@ export async function createGroupAction(_prev: GroupFormState, formData: FormDat
   const raw = rawOf(formData);
   const parsed = createSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: echo(raw) };
-  const id = await withTrainer(async (tx, trainerId) => createGroupClass(tx, await getTrainer(tx, trainerId), parsed.data));
+  const id = await withTrainer(async (tx, trainerId, member) =>
+    createGroupClass(tx, await getTrainer(tx, trainerId), { ...parsed.data, instructorId: await resolveInstructor(tx, member, raw.instructorId || null) }),
+  );
   revalidatePath("/takvim", "layout");
   redirect(`/takvim/grup/${id}`);
 }
@@ -54,7 +58,12 @@ export async function updateGroupAction(id: string, _prev: GroupFormState, formD
   const raw = rawOf(formData);
   const parsed = updateSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: echo(raw) };
-  const res = await withTrainer(async (tx, trainerId) => updateGroupClass(tx, await getTrainer(tx, trainerId), id, parsed.data));
+  const res = await withTrainer(async (tx, trainerId, member) =>
+    updateGroupClass(tx, await getTrainer(tx, trainerId), id, {
+      ...parsed.data,
+      instructorId: raw.instructorId ? await resolveInstructor(tx, member, raw.instructorId) : undefined,
+    }),
+  );
   if (!res.ok) {
     return {
       errors:

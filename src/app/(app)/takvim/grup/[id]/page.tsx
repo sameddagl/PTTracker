@@ -9,6 +9,7 @@ import { withTrainer } from "@/db";
 import { JOIN_MODE_LABELS, ensureGroupOccurrences, getGroupClass } from "@/db/groups";
 import { listClientOptions } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
+import { listMembers } from "@/db/team";
 import { weekdayList } from "@/lib/dates";
 import { formatDayMonth, formatTime, todayISO } from "@/lib/format";
 import { GroupForm } from "../group-form";
@@ -25,10 +26,10 @@ export default async function GroupClassPage({ params }: PageProps<"/takvim/grup
     await ensureGroupOccurrences(tx, trainer, { classId: id });
     const group = await getGroupClass(tx, trainer, id);
     if (!group) return null;
-    return { group, clients: await listClientOptions(tx, trainerId), tz: trainer.timezone, today: todayISO(trainer.timezone) };
+    return { group, clients: await listClientOptions(tx, trainerId), tz: trainer.timezone, today: todayISO(trainer.timezone), team: await listMembers(tx, trainerId) };
   });
   if (!data) notFound();
-  const { group: g, clients, tz, today } = data;
+  const { group: g, clients, tz, today, team } = data;
   const live = !g.endsOn || g.endsOn >= today;
   const memberIds = new Set(g.members.map((m) => m.clientId));
 
@@ -106,7 +107,11 @@ export default async function GroupClassPage({ params }: PageProps<"/takvim/grup
             <p className="text-sm text-muted-foreground">
               {JOIN_MODE_LABELS[g.joinMode]}. Gün ve saati değiştirmek için bu dersi bitirip yenisini oluştur; geçmiş dersler kaybolmaz.
             </p>
-            <GroupForm id={g.id} initial={{ title: g.title, capacity: String(g.capacity), joinMode: g.joinMode }} />
+            <GroupForm
+              id={g.id}
+              initial={{ title: g.title, capacity: String(g.capacity), joinMode: g.joinMode, instructorId: g.instructorId ?? undefined }}
+              instructors={team.map((m) => ({ id: m.id, name: m.fullName || "İsimsiz" }))}
+            />
           </CardContent>
         </Card>
       )}

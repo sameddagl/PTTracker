@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Field, FormError } from "@/components/field";
+import { Field, FormError, NativeSelect } from "@/components/field";
 import { FormSubmit } from "@/components/form-submit";
 import { Input } from "@/components/ui/input";
 import { WEEKDAY_LABELS } from "@/lib/dates";
@@ -30,10 +30,11 @@ export type GroupValues = {
   startTime?: string;
   durationMinutes?: string;
   startsOn?: string;
+  instructorId?: string;
 };
 
 /** New group class, or (with `id`) the editable part of an existing one. */
-export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }) {
+export function GroupForm({ id, initial, instructors = [] }: { id?: string; initial: GroupValues; /** Studio members (empty for a trainer working alone). */ instructors?: { id: string; name: string }[] }) {
   const [state, action, pending] = useActionState<GroupFormState, FormData>(id ? updateGroupAction.bind(null, id) : createGroupAction, {});
   const v = { ...initial, ...state.values };
   const e = state.errors ?? {};
@@ -172,6 +173,18 @@ export function GroupForm({ id, initial }: { id?: string; initial: GroupValues }
         </div>
         {e.joinMode && <p className="mt-2 text-sm text-destructive-strong">{e.joinMode}</p>}
       </fieldset>
+
+      {instructors.length > 1 && (
+        <Field id="instructorId" label="Eğitmen" hint={id ? "değişirse ileriki dersler de yeni eğitmene geçer" : undefined}>
+          <NativeSelect id="instructorId" name="instructorId" defaultValue={v.instructorId} className="max-w-72">
+            {instructors.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+      )}
 
       <FormSubmit size="lg" loading={pending} disabled={!id && days.size === 0} className="sm:self-start">
         {id ? "Kaydet" : "Grup dersini oluştur"}
