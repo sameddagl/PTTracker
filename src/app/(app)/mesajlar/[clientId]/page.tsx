@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { ChevronLeft, Link2 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { withTrainer } from "@/db";
+import { mayOpenClient } from "@/db/team";
 import { getThread } from "@/db/messages";
 import { getActivePortalLink } from "@/db/portal";
 import { getTrainer } from "@/db/queries";
@@ -20,7 +21,8 @@ export default async function ThreadPage({ params, searchParams }: PageProps<"/m
   const draft = typeof taslak === "string" ? taslak.slice(0, 2000) : undefined;
   if (!/^[0-9a-f-]{36}$/i.test(clientId)) notFound();
 
-  const data = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId, member) => {
+    if (!(await mayOpenClient(tx, member, clientId))) return null;
     const [client] = await tx
       .select({ id: clients.id, fullName: clients.fullName, archivedAt: clients.archivedAt })
       .from(clients)

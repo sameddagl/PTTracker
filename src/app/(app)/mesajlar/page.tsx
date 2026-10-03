@@ -4,6 +4,7 @@ import { MessagesSquare } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { clientIdsTaughtBy } from "@/db/team";
 import { listMessageableClients, listThreads } from "@/db/messages";
 import { getTrainer } from "@/db/queries";
 import { formatDayMonth, formatTime } from "@/lib/format";
@@ -25,11 +26,15 @@ function when(d: Date, timeZone: string, now = new Date()) {
 }
 
 export default async function MessagesPage() {
-  const { threads, clients, timezone } = await withTrainer(async (tx, trainerId) => ({
-    threads: await listThreads(tx, trainerId),
-    clients: await listMessageableClients(tx, trainerId),
-    timezone: (await getTrainer(tx, trainerId)).timezone,
-  }));
+  const { threads, clients, timezone } = await withTrainer(async (tx, trainerId, member) => {
+    const threads = await listThreads(tx, trainerId);
+    const clients = await listMessageableClients(tx, trainerId);
+    const timezone = (await getTrainer(tx, trainerId)).timezone;
+    if (member.role === "owner") return { threads, clients, timezone };
+    // An instructor's inbox: the clients they teach.
+    const mine = await clientIdsTaughtBy(tx, trainerId, member.id);
+    return { threads: threads.filter((t) => mine.has(t.clientId)), clients: clients.filter((c) => mine.has(c.id)), timezone };
+  });
   const unread = threads.filter((t) => t.unread > 0).length;
 
   return (

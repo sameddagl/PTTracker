@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { clientIdsTaughtBy } from "@/db/team";
 import { listRecentPayments } from "@/db/payments";
 import { listIntakeAnswers } from "@/db/intake";
 import { getActivePortalLink } from "@/db/portal";
@@ -74,12 +75,15 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
   const tab: Tab = TABS.some((t) => t.key === sekme) ? (sekme as Tab) : "genel";
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const data = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId, member) => {
     const [client] = await tx
       .select()
       .from(clients)
       .where(and(eq(clients.id, id), eq(clients.trainerId, trainerId)));
     if (!client) return null;
+    // A studio may keep instructors to the clients they teach.
+    const owner = member.role === "owner";
+    if (!owner && !(await getTrainer(tx, trainerId)).instructorsSeeAllClients && !(await clientIdsTaughtBy(tx, trainerId, member.id)).has(id)) return null;
     const packages = await tx
       .select({
         id: clientPackages.id,
@@ -149,11 +153,11 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
           checkins: kind === "workout" ? await recentCheckins(tx, id) : [],
         }
       : null;
-    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout };
+    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout, owner };
   });
   if (!data) notFound();
 
-  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout, owner } = data;
   const firstName = client.fullName.split(" ")[0];
   const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
@@ -190,14 +194,19 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
         {!client.archivedAt && (
           <div className="mt-5 border-t pt-4">
             {/* Five actions on a 375px phone: borrow a little of the card's padding so "WhatsApp" fits. */}
-            <div className={`grid ${wa ? "-mx-2 grid-cols-5 gap-1 sm:mx-0 sm:gap-2" : "grid-cols-4 gap-2"}`}>
-              <QuickAction href={`/danisanlar/${client.id}/paket-sat`} icon={<PackagePlus />} label="Paket sat" primary />
-              <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" />
-              <QuickAction
-                href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}
-                icon={<Wallet />}
-                label={totalDue > 0 ? formatTRY(totalDue) : "Ödeme al"}
-              />
+            <div
+              className={`grid ${owner ? (wa ? "-mx-2 grid-cols-5 gap-1 sm:mx-0 sm:gap-2" : "grid-cols-4 gap-2") : wa ? "grid-cols-3 gap-2" : "grid-cols-2 gap-2"}`}
+            >
+              {/* Selling packages and taking payments are the owner's (instructors don't see money). */}
+              {owner && <QuickAction href={`/danisanlar/${client.id}/paket-sat`} icon={<PackagePlus />} label="Paket sat" primary />}
+              <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" primary={!owner} />
+              {owner && (
+                <QuickAction
+                  href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}
+                  icon={<Wallet />}
+                  label={totalDue > 0 ? formatTRY(totalDue) : "Ödeme al"}
+                />
+              )}
               <QuickAction href={`/mesajlar/${client.id}`} icon={<MessagesSquare />} label="Mesaj" />
               {wa && <QuickAction href={wa} external icon={<WhatsAppIcon />} label="WhatsApp" />}
             </div>
@@ -307,7 +316,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
                         <span className="text-3xl font-semibold tracking-tight tabular-nums">{p.remaining}</span>
                         <span className="text-sm text-muted-foreground"> / {p.total} ders kaldı</span>
                       </p>
-                      {Number(p.overdue) > 0 ? (
+                      {!owner ? null : Number(p.overdue) > 0 ? (
                         <span className="text-sm font-medium text-destructive-strong">{formatTRY(p.overdue)} vadesi geldi</span>
                       ) : (
                         Number(p.due) > 0 && <span className="text-sm text-muted-foreground">{formatTRY(p.due)} kalan</span>
@@ -316,12 +325,12 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
                       <div className="h-full rounded-full bg-lime" style={{ width: `${p.total > 0 ? (p.remaining / p.total) * 100 : 0}%` }} />
                     </div>
-                    {p.installments > 1 && (
+                    {owner && p.installments > 1 && (
                       <div className="mt-3">
                         <InstallmentSummary pkg={p} today={today} />
                       </div>
                     )}
-                    {Number(p.due) > 0 && p.state !== "cancelled" && (
+                    {owner && Number(p.due) > 0 && p.state !== "cancelled" && (
                       <p className="mt-3 text-xs text-muted-foreground">
                         Havale açıklama kodu <span className="font-mono font-medium text-foreground">{paymentCode(client.fullName, p.id)}</span>
                       </p>
@@ -393,7 +402,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
             )}
           </section>
 
-          {paymentHistory.length > 0 && (
+          {owner && paymentHistory.length > 0 && (
             <section aria-labelledby="payments-heading" className="mb-8">
               <h2 id="payments-heading" className="mb-3 text-base font-semibold">
                 Ödemeler

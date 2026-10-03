@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { BottomNav, MobileTopBar, SideNav } from "@/components/app-nav";
 import { withTrainer } from "@/db";
 import { countPendingApplications } from "@/db/applications";
-import { countUnread } from "@/db/messages";
+import { countUnread, listThreads } from "@/db/messages";
 import { countPendingPayments } from "@/db/payments";
 import { getTrainer } from "@/db/queries";
-import { isStudio } from "@/db/team";
+import { clientIdsTaughtBy, isStudio } from "@/db/team";
 import { APP_NAME } from "@/lib/config";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -17,7 +17,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     studio: await isStudio(tx, id),
     pending: member.role === "owner" ? await countPendingApplications(tx, id) : 0,
     payments: member.role === "owner" ? await countPendingPayments(tx, id) : 0,
-    unread: await countUnread(tx, id),
+    // An instructor's badge counts the clients they teach.
+    unread:
+      member.role === "owner"
+        ? await countUnread(tx, id)
+        : await (async () => {
+            const mine = await clientIdsTaughtBy(tx, id, member.id);
+            return (await listThreads(tx, id)).filter((t) => mine.has(t.clientId)).reduce((n, t) => n + t.unread, 0);
+          })(),
   }));
   if (!trainer.onboardedAt) redirect("/baslangic");
   const badges = { "/danisanlar": pending, "/odemeler": payments, "/mesajlar": unread };

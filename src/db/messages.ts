@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { Tx } from "./index";
-import { clients, messages } from "./schema";
+import { accountMembers, clients, messages } from "./schema";
 
 // Trainer ↔ client chat, one thread per client. Trainer-side functions take a
 // Tx from withTrainer() (RLS applies); portal-side functions take `who` from a
@@ -11,7 +11,15 @@ export const MESSAGE_MAX_LENGTH = 2000;
 /** Portal senders: at most this many messages per window. */
 export const CLIENT_RATE_LIMIT = { count: 20, minutes: 10 };
 
-export type Message = { id: string; sender: "trainer" | "client"; body: string; createdAt: Date; readAt: Date | null };
+export type Message = {
+  id: string;
+  sender: "trainer" | "client";
+  body: string;
+  createdAt: Date;
+  readAt: Date | null;
+  /** Studios: first name of the team member who wrote a trainer-side message. */
+  senderName?: string | null;
+};
 export type PortalWho = { trainerId: string; clientId: string };
 export type SendResult =
   | { ok: true; message: Message; /** The other side had nothing unread from the last half hour: worth an email. */ firstUnread: boolean }
@@ -42,19 +50,25 @@ const recentUnreadFrom = (tx: Tx, who: PortalWho, sender: Message["sender"]) =>
     )
     .then(([r]) => r.n);
 
-async function insertMessage(tx: Tx, who: PortalWho, sender: Message["sender"], body: string): Promise<SendResult> {
+async function insertMessage(tx: Tx, who: PortalWho, sender: Message["sender"], body: string, senderMemberId: string | null = null): Promise<SendResult> {
   const firstUnread = (await recentUnreadFrom(tx, who, sender)) === 0;
   const [message] = await tx
     .insert(messages)
-    .values({ trainerId: who.trainerId, clientId: who.clientId, sender, body })
+    .values({ trainerId: who.trainerId, clientId: who.clientId, sender, body, senderMemberId })
     .returning(columns);
   return { ok: true, message, firstUnread };
 }
 
 async function threadRows(tx: Tx, who: PortalWho, limit: number) {
   const rows = await tx
-    .select(columns)
+    .select({
+      ...columns,
+      // Names only matter when more than one person writes for the account.
+      senderName: sql<string | null>`case when (select count(*) from ${accountMembers} m where m.account_id = ${who.trainerId} and m.active) > 1
+        then split_part(${accountMembers.fullName}, ' ', 1) end`,
+    })
     .from(messages)
+    .leftJoin(accountMembers, eq(accountMembers.id, messages.senderMemberId))
     .where(and(eq(messages.trainerId, who.trainerId), eq(messages.clientId, who.clientId)))
     .orderBy(desc(messages.createdAt), desc(messages.id))
     .limit(limit);
@@ -110,7 +124,7 @@ export function getThread(tx: Tx, trainerId: string, clientId: string, { limit =
 }
 
 /** Writes as the trainer. Only to the trainer's own, non-archived clients. */
-export async function sendTrainerMessage(tx: Tx, trainerId: string, clientId: string, body: string): Promise<SendResult> {
+export async function sendTrainerMessage(tx: Tx, trainerId: string, clientId: string, body: string, memberId: string | null = null): Promise<SendResult> {
   const clean = cleanBody(body);
   if (!clean.ok) return clean;
   const [client] = await tx
@@ -118,7 +132,7 @@ export async function sendTrainerMessage(tx: Tx, trainerId: string, clientId: st
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId), isNull(clients.archivedAt)));
   if (!client) return { ok: false, reason: "not_found" };
-  return insertMessage(tx, { trainerId, clientId }, "trainer", clean.body);
+  return insertMessage(tx, { trainerId, clientId }, "trainer", clean.body, memberId);
 }
 
 /** Marks the client's messages in this thread as seen by the trainer; returns how many changed. */

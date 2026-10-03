@@ -222,6 +222,7 @@ export function ChatThread({
                     {endsGroup && (
                       <span className="mt-1 px-1 text-xs text-muted-foreground tabular-nums">
                         {m.pending ? "Gönderiliyor…" : formatTime(new Date(m.createdAt), timeZone)}
+                        {m.senderName && ` · ${m.senderName}`}
                         {m.id === lastSeenId && " · Görüldü"}
                       </span>
                     )}

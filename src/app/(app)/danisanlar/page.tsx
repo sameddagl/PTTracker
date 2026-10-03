@@ -10,17 +10,25 @@ import { withTrainer } from "@/db";
 import { ApplicationsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
 import { countArchivedClients } from "@/db/clients";
-import { listClients } from "@/db/queries";
+import { getTrainer, listClients } from "@/db/queries";
+import { clientIdsTaughtBy } from "@/db/team";
+import { cn } from "@/lib/utils";
 import { formatTRY } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Danışanlar" };
 
-export default async function ClientsPage() {
-  const { clients, pending, archived } = await withTrainer(async (tx, trainerId) => ({
-    clients: await listClients(tx, trainerId),
-    pending: await countPendingApplications(tx, trainerId),
-    archived: await countArchivedClients(tx, trainerId),
-  }));
+export default async function ClientsPage({ searchParams }: PageProps<"/danisanlar">) {
+  const { kapsam } = await searchParams;
+  const { clients, pending, archived, owner, mineOnly, canSeeAll } = await withTrainer(async (tx, trainerId, member) => {
+    const owner = member.role === "owner";
+    const all = await listClients(tx, trainerId);
+    if (owner) return { clients: all, pending: await countPendingApplications(tx, trainerId), archived: await countArchivedClients(tx, trainerId), owner, mineOnly: false, canSeeAll: true };
+    // Instructors start on the clients they teach; the studio decides whether they may list everyone.
+    const canSeeAll = (await getTrainer(tx, trainerId)).instructorsSeeAllClients;
+    const mineOnly = !(canSeeAll && kapsam === "tumu");
+    const mine = mineOnly ? await clientIdsTaughtBy(tx, trainerId, member.id) : null;
+    return { clients: mine ? all.filter((c) => mine.has(c.id)) : all, pending: 0, archived: 0, owner, mineOnly, canSeeAll };
+  });
 
   return (
     <>
@@ -28,8 +36,28 @@ export default async function ClientsPage() {
         title="Danışanlar"
         description={clients.length > 0 ? `${clients.length} aktif danışan` : undefined}
       />
+      {!owner && canSeeAll && (
+        <nav aria-label="Liste" className="mb-4 flex gap-2">
+          {[
+            { href: "/danisanlar", label: "Benim danışanlarım", on: mineOnly },
+            { href: "/danisanlar?kapsam=tumu", label: "Tümü", on: !mineOnly },
+          ].map((o) => (
+            <Link
+              key={o.href}
+              href={o.href}
+              aria-current={o.on ? "true" : undefined}
+              className={cn(
+                "flex min-h-11 items-center rounded-full px-4 text-sm font-medium transition-colors md:min-h-9",
+                o.on ? "bg-foreground text-background" : "bg-card text-muted-foreground shadow-card hover:text-foreground",
+              )}
+            >
+              {o.label}
+            </Link>
+          ))}
+        </nav>
+      )}
       {/* The empty state below has its own buttons for these. */}
-      {clients.length > 0 && (
+      {owner && clients.length > 0 && (
         <ActionTiles
           className="mb-6"
           items={[
@@ -42,7 +70,11 @@ export default async function ClientsPage() {
 
       <ApplicationsBanner count={pending} />
 
-      {clients.length === 0 ? (
+      {clients.length === 0 && !owner ? (
+        <EmptyState icon={<Users />} title={mineOnly ? "Henüz ders verdiğin danışan yok" : "Henüz danışan yok"}>
+          {mineOnly ? "Derslerine yazılan danışanlar burada görünür." : "Stüdyoya eklenen danışanlar burada görünür."}
+        </EmptyState>
+      ) : clients.length === 0 ? (
         <EmptyState
           icon={<Users />}
           title="Henüz danışan yok"
@@ -94,7 +126,7 @@ export default async function ClientsPage() {
                     )}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    {due > 0 && <Badge variant="destructive">{formatTRY(due)}</Badge>}
+                    {owner && due > 0 && <Badge variant="destructive">{formatTRY(due)}</Badge>}
                     {pkg?.state === "frozen" && <Badge variant="secondary">Donduruldu</Badge>}
                     {low && <Badge variant="warning">{pkg.remaining === 0 ? "Bitti" : "Azaldı"}</Badge>}
                   </div>

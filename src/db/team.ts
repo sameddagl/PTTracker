@@ -250,3 +250,23 @@ export async function lessonInstructorId(tx: Tx, accountId: string, lessonId: st
   const [row] = await tx.select({ id: lessons.instructorId }).from(lessons).where(and(eq(lessons.id, lessonId), eq(lessons.trainerId, accountId)));
   return row?.id ?? null;
 }
+
+/** Clients an instructor has taught or will teach (any lesson, not cancelled). */
+export async function clientIdsTaughtBy(tx: Tx, accountId: string, memberId: string) {
+  const rows = await tx
+    .selectDistinct({ id: lessonAttendees.clientId })
+    .from(lessonAttendees)
+    .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+    .where(and(eq(lessons.trainerId, accountId), eq(lessons.instructorId, memberId), sql`${lessonAttendees.status} <> 'cancelled'`));
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Whether a member may open a client: the owner always; an instructor if they
+ * teach the client or the studio lets instructors see everyone.
+ */
+export async function mayOpenClient(tx: Tx, member: Member, clientId: string) {
+  if (member.role === "owner") return true;
+  const [t] = await tx.select({ all: trainers.instructorsSeeAllClients }).from(trainers).where(eq(trainers.id, member.accountId));
+  return Boolean(t?.all) || (await clientIdsTaughtBy(tx, member.accountId, member.id)).has(clientId);
+}
