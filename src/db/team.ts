@@ -3,7 +3,8 @@ import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
 import { INVITE_DAYS, INVITE_TOKEN_PATTERN, nextTeamColor, type TeamColor } from "@/lib/team";
-import { adminDb, type Member, type Tx } from "./index";
+import { adminDb, type Tx } from "./client";
+import type { Member } from "./membership";
 import { hashToken } from "./portal";
 import { accountInvites, accountMembers, lessonAttendees, lessons, trainers, type PayRule } from "./schema";
 

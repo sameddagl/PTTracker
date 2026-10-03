@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "db:check": "tsx scripts/check-remote-db.mts",
     "test:logic": "tsx --conditions=react-server scripts/test-logic.ts",
-    "test:features": "tsx --conditions=react-server scripts/test-engagement.ts && tsx --conditions=react-server scripts/test-messages.ts && tsx --conditions=react-server scripts/test-import.ts",
+    "test:features": "tsx --conditions=react-server scripts/test-engagement.ts && tsx --conditions=react-server scripts/test-messages.ts && tsx --conditions=react-server scripts/test-import.ts && tsx --conditions=react-server scripts/test-studio.ts",
     "test": "pnpm test:db && pnpm test:logic && pnpm test:features",
     "mail:test": "tsx --conditions=react-server --env-file=.env.local scripts/send-test-mail.ts"
   },

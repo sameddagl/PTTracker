@@ -1,0 +1,135 @@
+// Studios against PGlite: an owner and an invited instructor working in one
+// account. Lessons carry their instructor, conflicts are per instructor, an
+// instructor manages only their own lessons, and pay is computed and frozen.
+// Run with: npx tsx --conditions=react-server scripts/test-studio.ts
+import assert from "node:assert/strict";
+import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/pglite";
+import type { Member } from "../src/db/membership";
+import { pickMembership } from "../src/db/membership";
+import type { Tx } from "../src/db/client";
+import { createLessons, findConflicts, setAttendance, setLessonInstructor } from "../src/db/lessons";
+import { closePayrollMonth, payrollFor, setPayrollPaid } from "../src/db/payroll";
+import * as schema from "../src/db/schema";
+import { clientIdsTaughtBy, mayManageLesson, resolveInstructor, updateMember } from "../src/db/team";
+import { computePayroll, monthRange } from "../src/lib/payroll";
+import { addUsers, createTestDb } from "./pglite";
+
+const A = "00000000-0000-0000-0000-0000000000a1"; // studio owner
+const I = "00000000-0000-0000-0000-0000000000c1"; // instructor
+const TZ = "Europe/Istanbul";
+
+async function main() {
+  // ---- Pure parts ----
+  const lesson = (sessionType: "private" | "duet" | "group", statuses: string[], price = 6000, total = 12) => ({
+    id: `${sessionType}-${statuses.join()}`,
+    startsAt: new Date("2026-10-05T07:00:00Z"),
+    sessionType,
+    attendees: statuses.map((s) => ({ status: s as "attended", packagePrice: price, packageLessons: total })),
+  });
+  const perLesson = { type: "per_lesson" as const, private: 600, duet: 750, trio: 800, group: 900 };
+  const lessonsIn = [lesson("private", ["attended"]), lesson("duet", ["attended", "late_cancel"]), lesson("group", ["no_show"]), lesson("private", ["cancelled"])];
+  assert.deepEqual(
+    { amount: computePayroll(lessonsIn, perLesson, false).amount, lessons: computePayroll(lessonsIn, perLesson, false).lessons },
+    { amount: 1350, lessons: 2 },
+    "per lesson: only lessons someone came to",
+  );
+  assert.equal(computePayroll(lessonsIn, perLesson, true).amount, 2250, "late cancels and no-shows count when the studio says so");
+  // 6000 / 12 = 500 per client-lesson; duet with one counted client = 500; 40 % of (500 + 500) = 400.
+  assert.equal(computePayroll(lessonsIn, { type: "percent", percent: 40 }, false).amount, 400, "percentage of what the lessons were worth");
+  assert.equal(computePayroll(lessonsIn, null, false).amount, 0, "no rule, no pay");
+  assert.deepEqual(monthRange("2026-12"), { from: "2026-12-01", to: "2027-01-01" });
+
+  const m = (accountId: string, onboarded: boolean): Member & { onboarded: boolean } => ({ id: accountId, userId: I, accountId, role: "instructor", name: "", onboarded });
+  assert.equal(pickMembership([m(I, false), m(A, true)], I, undefined)?.accountId, A, "a new instructor works in the studio, not their empty account");
+  assert.equal(pickMembership([m(I, true), m(A, true)], I, undefined)?.accountId, I, "with their own account set up, that comes first");
+  assert.equal(pickMembership([m(I, true), m(A, true)], I, A)?.accountId, A, "the chosen account wins");
+  assert.equal(pickMembership([m(I, true)], I, A)?.accountId, I, "a chosen account they left is ignored");
+  console.log("payroll and account choice ok");
+
+  // ---- Database ----
+  const pg = await createTestDb();
+  await addUsers(pg, [
+    { id: A, name: "Ayşe Hoca" },
+    { id: I, name: "Mert" },
+  ]);
+  const db = drizzle(pg, { schema });
+  const as = <R>(userId: string, account: string, fn: (tx: Tx) => Promise<R>) =>
+    db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('request.jwt.claim.sub', ${userId}, true), set_config('app.account_id', ${account}, true)`);
+      await tx.execute(sql`set local role authenticated`);
+      return fn(tx as unknown as Tx);
+    });
+  const asOwner = <R>(fn: (tx: Tx) => Promise<R>) => db.transaction((tx) => fn(tx as unknown as Tx));
+
+  await asOwner((tx) => tx.update(schema.trainers).set({ onboardedAt: new Date(), timezone: TZ }).where(sql`id = ${A}`));
+  const [ownerRow] = await asOwner((tx) => tx.select().from(schema.accountMembers).where(sql`account_id = ${A}`));
+  const [instRow] = await asOwner((tx) =>
+    tx.insert(schema.accountMembers).values({ accountId: A, userId: I, role: "instructor", fullName: "Mert", color: "sky" }).returning(),
+  );
+  const owner: Member = { id: ownerRow.id, userId: A, accountId: A, role: "owner", name: "Ayşe Hoca" };
+  const inst: Member = { id: instRow.id, userId: I, accountId: A, role: "instructor", name: "Mert" };
+  const trainer = { id: A, timezone: TZ };
+
+  const [zeynep, ali] = await as(A, A, (tx) =>
+    tx
+      .insert(schema.clients)
+      .values([
+        { trainerId: A, fullName: "Zeynep" },
+        { trainerId: A, fullName: "Ali" },
+      ])
+      .returning({ id: schema.clients.id }),
+  );
+  const [pkg] = await as(A, A, (tx) =>
+    tx
+      .insert(schema.clientPackages)
+      .values({ trainerId: A, clientId: zeynep.id, name: "12 ders", sessionType: "private", totalSessions: 12, price: "6000", startsOn: "2026-10-01" })
+      .returning({ id: schema.clientPackages.id }),
+  );
+  assert.ok(pkg);
+
+  // Who teaches: the owner picks anyone active; an instructor always plans their own.
+  assert.equal(await as(A, A, (tx) => resolveInstructor(tx, owner, inst.id)), inst.id);
+  assert.equal(await as(I, A, (tx) => resolveInstructor(tx, inst, owner.id)), inst.id, "instructors can't plan for others");
+
+  // Same slot for both: no conflict across instructors, a conflict for the same one.
+  const slot = { date: "2026-10-05", time: "10:00", durationMinutes: 60, sessionType: "private" as const, status: "scheduled" as const, note: null, repeat: null };
+  const mine = await as(I, A, (tx) => createLessons(tx, trainer, { ...slot, clientIds: [zeynep.id], instructorId: inst.id }));
+  assert.equal((await as(A, A, (tx) => findConflicts(tx, trainer, { dates: ["2026-10-05"], time: "10:00", durationMinutes: 60, instructorId: owner.id }))).length, 0);
+  assert.equal((await as(A, A, (tx) => findConflicts(tx, trainer, { dates: ["2026-10-05"], time: "10:30", durationMinutes: 60, instructorId: inst.id }))).length, 1);
+  const ownersLesson = await as(A, A, (tx) => createLessons(tx, trainer, { ...slot, clientIds: [ali.id] }));
+  const [ownerLessonRow] = await asOwner((tx) => tx.select({ instructorId: schema.lessons.instructorId }).from(schema.lessons).where(sql`id = ${ownersLesson}`));
+  assert.equal(ownerLessonRow.instructorId, owner.id, "left out, the owner teaches (trigger)");
+
+  assert.equal(await as(I, A, (tx) => mayManageLesson(tx, inst, mine)), true);
+  assert.equal(await as(I, A, (tx) => mayManageLesson(tx, inst, ownersLesson)), false, "an instructor can't change a colleague's lesson");
+  assert.equal(await as(A, A, (tx) => mayManageLesson(tx, owner, mine)), true);
+  assert.deepEqual([...(await as(I, A, (tx) => clientIdsTaughtBy(tx, A, inst.id)))], [zeynep.id]);
+
+  // Pay: Mert teaches Zeynep (12 lessons for 6000) once; she comes.
+  const [att] = await asOwner((tx) => tx.select({ id: schema.lessonAttendees.id }).from(schema.lessonAttendees).where(sql`lesson_id = ${mine}`));
+  await as(I, A, (tx) => setAttendance(tx, A, att.id, "attended"));
+  await as(A, A, (tx) => updateMember(tx, A, inst.id, { payRule: { type: "percent", percent: 40 } }));
+  const [row] = await as(A, A, (tx) => payrollFor(tx, A, "2026-10", { tz: TZ, countsMissed: false }));
+  assert.deepEqual([row.member.id, row.summary.lessons, row.summary.amount], [inst.id, 1, 200], "40 % of a 500 TL lesson");
+  // Closing freezes it: a later rule change doesn't move a closed month.
+  assert.ok(await as(A, A, (tx) => closePayrollMonth(tx, A, inst.id, "2026-10", row.summary)));
+  await as(A, A, (tx) => updateMember(tx, A, inst.id, { payRule: { type: "percent", percent: 90 } }));
+  const [frozen] = await as(A, A, (tx) => payrollFor(tx, A, "2026-10", { tz: TZ, countsMissed: false }));
+  assert.equal(frozen.summary.amount, 200);
+  assert.ok(frozen.closed);
+  // The instructor sees their own closed month but can't mark it paid.
+  const seen = await as(I, A, (tx) => tx.select().from(schema.payrollMonths));
+  assert.equal(seen.length, 1);
+  assert.equal(await as(I, A, (tx) => setPayrollPaid(tx, A, frozen.closed!.id, true)), false, "only the owner marks pay as paid");
+
+  // Handing the lesson to the owner reports the client to tell.
+  const handed = await as(A, A, (tx) => setLessonInstructor(tx, A, mine, owner.id));
+  assert.equal(handed?.lessons.length, 1);
+  console.log("studio lessons, permissions and pay ok\n\nall studio checks passed");
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

@@ -1,25 +1,18 @@
 import "server-only";
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import postgres from "postgres";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import * as schema from "./schema";
 
-const globalForDb = globalThis as unknown as { pg?: postgres.Sql };
+import { adminDb, type Tx } from "./client";
+import { pickMembership, type Member, type Membership } from "./membership";
 
-// Transaction pooler (Supavisor, port 6543) does not support prepared statements.
-const pg = globalForDb.pg ?? postgres(process.env.DATABASE_URL!, { prepare: false, max: 5 });
-if (process.env.NODE_ENV !== "production") globalForDb.pg = pg;
+export { adminDb, type Tx } from "./client";
+export { pickMembership, type Member } from "./membership";
 
-// Connects as the database owner and bypasses RLS. Only for code paths with
-// no signed-in trainer, e.g. resolving a client portal token. Never pass
-// user-controlled ids to it without checking ownership first.
-export const adminDb = drizzle(pg, { schema });
-
-export type Tx = Parameters<Parameters<typeof adminDb.transaction>[0]>[0];
+/** Cookie holding the account a person who belongs to several has chosen (Ayarlar → Hesap). */
+export const ACCOUNT_COOKIE = "hesap";
 
 /** Verified claims of the signed-in trainer, or null. Deduplicated per request. */
 export const getClaims = cache(async () => {
@@ -27,28 +20,6 @@ export const getClaims = cache(async () => {
   const { data } = await supabase.auth.getClaims();
   return data?.claims ?? null;
 });
-
-/** The signed-in person inside the account a request works in. */
-export type Member = { id: string; userId: string; accountId: string; role: "owner" | "instructor"; name: string };
-
-/** Cookie holding the account a person who belongs to several has chosen (Ayarlar → Hesap). */
-export const ACCOUNT_COOKIE = "hesap";
-
-type Membership = Member & { onboarded: boolean };
-
-/**
- * The account a user works in: the one they picked if they still belong to it,
- * else their own account once it is set up, else the first account they joined.
- */
-export function pickMembership(list: Membership[], userId: string, chosen: string | undefined) {
-  return (
-    list.find((m) => m.accountId === chosen) ??
-    list.find((m) => m.accountId === userId && m.onboarded) ??
-    list.find((m) => m.onboarded) ??
-    list.find((m) => m.accountId === userId) ??
-    null
-  );
-}
 
 async function memberships(tx: Tx, userId: string): Promise<Membership[]> {
   const rows = await tx.execute<{ id: string; account_id: string; role: Member["role"]; full_name: string; onboarded: boolean }>(sql`
