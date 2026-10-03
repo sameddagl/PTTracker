@@ -155,7 +155,7 @@ const GROUPS: Group[] = [
     lead: "Instagram'dan gelen danışanı tek linkle karşılayın: stüdyonuzu ve ekibinizi tanısın, paketini seçsin, kaydını yapsın.",
     Demo: PublicPageDemo,
     features: [
-      { icon: Globe, title: "Stüdyo sayfanız", text: "studyomapp.com/stüdyonuz: tanıtımınız, fotoğraflar, eğitmenleriniz, uzmanlık alanlarınız ve iletişim bilgileriniz tek sayfada." },
+      { icon: Globe, title: "Stüdyo sayfanız", text: "studyomapp.com/studyonuz: tanıtımınız, fotoğraflar, eğitmenleriniz, uzmanlık alanlarınız ve iletişim bilgileriniz tek sayfada." },
       { icon: Package, title: "Paketler ve fiyatlar", text: "Peşin, taksitli ya da indirimli fiyatlarınız sayfanızda. Danışan paketini seçip başvurur." },
       { icon: ClipboardList, title: "Online kayıt formu", text: "Soruları siz belirlersiniz. Sağlık soruları danışanın açık rızasıyla sorulur." },
       { icon: Gift, title: "Deneme dersi", text: "İlk kez gelenlere deneme dersi gösterin; aynı numara bir kez alabilir." },

@@ -241,7 +241,7 @@ const FAQ = [
   },
   {
     q: "Yalnızca pilates stüdyoları için mi?",
-    a: "Hayır. Reformer ve mat pilates stüdyoları da, personal training stüdyoları da, grup dersi yapan stüdyolar da kullanabilir. Özel, düet ve grup derslerini aynı yerden takip edersiniz.",
+    a: "Hayır. Reformer ve mat pilates stüdyoları da, personal training stüdyoları da, grup dersi yapan stüdyolar da kullanabilir. Özel, düet ve grup derslerini aynı yerden takip edersiniz. Tek başınıza ders veriyorsanız ekip eklemeden de kullanırsınız; ekip ekranları siz eğitmen ekleyince açılır.",
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
