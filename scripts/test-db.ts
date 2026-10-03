@@ -6,6 +6,8 @@ import { createTestDb } from "./pglite";
 
 const A = "00000000-0000-0000-0000-00000000000a";
 const B = "00000000-0000-0000-0000-00000000000b";
+// An instructor who works in A's studio.
+const I = "00000000-0000-0000-0000-0000000000c1";
 
 async function main() {
   const db = await createTestDb({ log: true });
@@ -23,8 +25,10 @@ async function main() {
     "trigger creates trainer rows",
   );
 
-  const asTrainer = async <T>(id: string, fn: () => Promise<T>) => {
-    await db.exec(`BEGIN; SELECT set_config('request.jwt.claim.sub', '${id}', true); SET LOCAL ROLE authenticated;`);
+  const asTrainer = async <T>(id: string, fn: () => Promise<T>, account?: string) => {
+    await db.exec(
+      `BEGIN; SELECT set_config('request.jwt.claim.sub', '${id}', true), set_config('app.account_id', '${account ?? ""}', true); SET LOCAL ROLE authenticated;`,
+    );
     try {
       const out = await fn();
       await db.exec("COMMIT");
@@ -131,6 +135,54 @@ async function main() {
     /foreign key/,
   );
   console.log("cross-tenant writes blocked");
+
+  // Studios: every account has its owner as a member (trigger and backfill).
+  const owners = await db.query<{ account_id: string; role: string }>("SELECT account_id, role FROM account_members ORDER BY account_id");
+  assert.deepEqual(owners.rows, [{ account_id: A, role: "owner" }, { account_id: B, role: "owner" }]);
+  await asTrainer(B, () => db.query(`UPDATE trainers SET full_name = 'Barış' WHERE id = $1`, [B]));
+  assert.equal((await db.query<{ full_name: string }>(`SELECT full_name FROM account_members WHERE user_id = $1`, [B])).rows[0].full_name, "Barış", "owner name synced");
+
+  // A invites instructor I. I signs up (gets their own empty account) and joins A as instructor.
+  await db.exec(`INSERT INTO auth.users (id, email) VALUES ('${I}', 'i@test')`);
+  await asTrainer(A, () => db.query(`INSERT INTO account_members (account_id, user_id, role, full_name) VALUES ($1, $2, 'instructor', 'Mert')`, [A, I]));
+  const inStudio = await asTrainer(
+    I,
+    async () => ({
+      clients: (await db.query("SELECT 1 FROM clients")).rows.length,
+      trainers: (await db.query<{ id: string }>("SELECT id FROM trainers")).rows.map((r) => r.id),
+      members: (await db.query("SELECT 1 FROM account_members")).rows.length,
+      payments: (await db.query("SELECT 1 FROM payments")).rows.length,
+      balances: (await db.query("SELECT 1 FROM client_package_balances")).rows.length,
+    }),
+    A,
+  );
+  assert.deepEqual(inStudio, { clients: 1, trainers: [A], members: 2, payments: 0, balances: 1 }, "instructor sees the studio but no payments");
+  // Without the studio selected, I is in their own (empty) account.
+  assert.equal((await asTrainer(I, async () => (await db.query("SELECT 1 FROM clients")).rows.length)), 0);
+  // A forged account id the user isn't a member of reaches nothing.
+  assert.equal((await asTrainer(B, async () => (await db.query("SELECT 1 FROM clients")).rows.length, A)), 0, "non-member can't select a studio");
+  // Instructors can't change settings, the team or money; they can edit their own profile row.
+  await asTrainer(I, () => db.query(`UPDATE trainers SET business_name = 'x' WHERE id = $1`, [A]), A);
+  assert.equal((await db.query<{ business_name: string | null }>(`SELECT business_name FROM trainers WHERE id = $1`, [A])).rows[0].business_name, null);
+  await assert.rejects(
+    asTrainer(I, () => db.query(`INSERT INTO account_members (account_id, user_id, role) VALUES ($1, $2, 'owner')`, [A, B]), A),
+    /row-level security/,
+  );
+  await assert.rejects(
+    asTrainer(I, () => db.query(`INSERT INTO payments (trainer_id, client_id, amount) VALUES ($1, $2, 100)`, [A, ids.clientId]), A),
+    /row-level security/,
+  );
+  await asTrainer(I, () => db.query(`UPDATE account_members SET bio = 'Reformer' WHERE user_id = $1`, [I]), A);
+  await asTrainer(I, () => db.query(`UPDATE account_members SET role = 'instructor' WHERE user_id = $1`, [A]), A);
+  await assert.rejects(asTrainer(I, () => db.query(`UPDATE account_members SET role = 'owner' WHERE user_id = $1`, [I]), A), /only the owner/);
+  const team = await db.query<{ user_id: string; role: string; bio: string | null }>(`SELECT user_id, role, bio FROM account_members WHERE account_id = $1 ORDER BY role`, [A]);
+  assert.deepEqual(team.rows, [{ user_id: A, role: "owner", bio: null }, { user_id: I, role: "instructor", bio: "Reformer" }]);
+  // The owner sees the money in the studio context too.
+  assert.equal((await asTrainer(A, async () => (await db.query("SELECT 1 FROM payments")).rows.length, A)), 1);
+  // A deactivated instructor loses access.
+  await db.query(`UPDATE account_members SET active = false WHERE user_id = $1 AND account_id = $2`, [I, A]);
+  assert.equal((await asTrainer(I, async () => (await db.query("SELECT 1 FROM clients")).rows.length, A)), 0, "deactivated member sees nothing");
+  console.log("studio members: instructor sees the studio, not money or settings");
 
   // A package with lessons or payments can't be hard-deleted (it gets cancelled instead)...
   await assert.rejects(

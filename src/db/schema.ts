@@ -23,11 +23,15 @@ import type { NotifyPrefs } from "../lib/notify-prefs";
 import type { MessageTemplates } from "../lib/templates";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
-// Multi-tenancy: every row belongs to a trainer (trainer_id = auth.uid()).
-// RLS enforces this per table, and composite foreign keys that include
-// trainer_id stop a row from pointing at another trainer's data (FK checks
-// bypass RLS, so this has to be a constraint).
+// Multi-tenancy: every row belongs to an account (trainer_id). An account is a
+// trainer working alone or a studio; its id is the owner's auth user id, and
+// the people who work in it are account_members. RLS lets a signed-in member
+// see the rows of the account selected for the request (current_account(),
+// see withTrainer), and composite foreign keys that include trainer_id stop a
+// row from pointing at another account's data (FK checks bypass RLS, so this
+// has to be a constraint).
 
+export const memberRoleEnum = pgEnum("member_role", ["owner", "instructor"]);
 export const disciplineEnum = pgEnum("discipline", ["pt", "pilates", "both"]);
 export const sessionTypeEnum = pgEnum("session_type", ["private", "duet", "trio", "group"]);
 export const packageStatusEnum = pgEnum("package_status", ["active", "cancelled"]);
@@ -75,12 +79,26 @@ const timestamps = {
 
 const money = (name: string) => numeric(name, { precision: 12, scale: 2 });
 
+// SQL functions from the account_members migration: the account this request
+// works in (only if the signed-in user is an active member of it) and their role there.
+const currentAccount = sql`(select public.current_account())`;
+const isOwner = sql`(select public.current_member_role()) = 'owner'`;
+
 const ownRows = (name: string, column: { name: string }) =>
   pgPolicy(name, {
     for: "all",
     to: authenticatedRole,
-    using: sql`${sql.identifier(column.name)} = ${authUid}`,
-    withCheck: sql`${sql.identifier(column.name)} = ${authUid}`,
+    using: sql`${sql.identifier(column.name)} = ${currentAccount}`,
+    withCheck: sql`${sql.identifier(column.name)} = ${currentAccount}`,
+  });
+
+/** Rows only the account's owner may touch (money, the support thread). */
+const ownerRows = (name: string, column: { name: string }) =>
+  pgPolicy(name, {
+    for: "all",
+    to: authenticatedRole,
+    using: sql`${sql.identifier(column.name)} = ${currentAccount} and ${isOwner}`,
+    withCheck: sql`${sql.identifier(column.name)} = ${currentAccount} and ${isOwner}`,
   });
 
 export const trainers = pgTable(
@@ -151,12 +169,65 @@ export const trainers = pgTable(
     check("trainers_reminder_hours", sql`${t.reminderHours} between 1 and 72`),
     check("trainers_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$'`),
     // Rows are created by the on_auth_user_created trigger, never by the client.
-    pgPolicy("trainers_select_own", { for: "select", to: authenticatedRole, using: sql`${t.id} = ${authUid}` }),
+    // Every member reads the account's settings; only the owner changes them.
+    pgPolicy("trainers_select_own", { for: "select", to: authenticatedRole, using: sql`${t.id} = ${currentAccount}` }),
     pgPolicy("trainers_update_own", {
       for: "update",
       to: authenticatedRole,
-      using: sql`${t.id} = ${authUid}`,
-      withCheck: sql`${t.id} = ${authUid}`,
+      using: sql`${t.id} = ${currentAccount} and ${isOwner}`,
+      withCheck: sql`${t.id} = ${currentAccount} and ${isOwner}`,
+    }),
+  ],
+);
+
+/** How a studio pays an instructor (see src/lib/payroll.ts). */
+export type PayRule =
+  | { type: "per_lesson"; private: number; duet: number; trio: number; group: number }
+  | { type: "percent"; percent: number };
+
+// People who work in an account. Every account has its owner as a member (the
+// signup trigger adds it); a studio invites instructors. Members are never
+// deleted, only deactivated, so past lessons keep their instructor.
+export const accountMembers = pgTable(
+  "account_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    role: memberRoleEnum("role").notNull(),
+    fullName: text("full_name").notNull().default(""),
+    bio: text("bio"),
+    // Path inside the "profile" storage bucket (the member's own folder).
+    photoPath: text("photo_path"),
+    // Calendar colour key (see src/lib/team.ts).
+    color: text("color"),
+    payRule: jsonb("pay_rule").$type<PayRule>(),
+    active: boolean("active").notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [
+    unique("account_members_account_user_key").on(t.accountId, t.userId),
+    unique("account_members_id_account_key").on(t.id, t.accountId),
+    index("account_members_user_idx").on(t.userId),
+    pgPolicy("account_members_select", { for: "select", to: authenticatedRole, using: sql`${t.accountId} = ${currentAccount}` }),
+    // The owner manages the team; an instructor may edit their own profile row
+    // (the app limits which columns). Only the app sets app.account_id, so a
+    // direct API call can never reach a studio's rows.
+    pgPolicy("account_members_owner_write", {
+      for: "all",
+      to: authenticatedRole,
+      using: sql`${t.accountId} = ${currentAccount} and ${isOwner}`,
+      withCheck: sql`${t.accountId} = ${currentAccount} and ${isOwner}`,
+    }),
+    pgPolicy("account_members_self_update", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${t.accountId} = ${currentAccount} and ${t.userId} = ${authUid}`,
+      withCheck: sql`${t.accountId} = ${currentAccount} and ${t.userId} = ${authUid}`,
     }),
   ],
 );
@@ -504,7 +575,7 @@ export const payments = pgTable(
     }),
     index("payments_trainer_paid_idx").on(t.trainerId, t.paidOn),
     index("payments_package_idx").on(t.clientPackageId),
-    ownRows("payments_own", t.trainerId),
+    ownerRows("payments_own", t.trainerId),
   ],
 );
 
@@ -524,7 +595,7 @@ export const paymentReceipts = pgTable(
     data: bytea("data").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [ownRows("payment_receipts_own", t.trainerId)],
+  (t) => [ownerRows("payment_receipts_own", t.trainerId)],
 );
 
 // Read-only client portal links. Only the SHA-256 hash of the token is stored.
@@ -963,7 +1034,7 @@ export const supportThreads = pgTable(
     check("support_threads_name_length", sql`char_length(${t.name}) between 1 and 120`),
     index("support_threads_last_idx").on(t.lastMessageAt),
     unique("support_threads_one_per_trainer").on(t.trainerId),
-    ownRows("support_threads_own", t.trainerId),
+    ownerRows("support_threads_own", t.trainerId),
   ],
 );
 
@@ -985,7 +1056,7 @@ export const supportMessages = pgTable(
   (t) => [
     check("support_messages_body_length", sql`char_length(${t.body}) between 1 and 4000`),
     index("support_messages_thread_idx").on(t.threadId, t.createdAt),
-    ownRows("support_messages_own", t.trainerId),
+    ownerRows("support_messages_own", t.trainerId),
   ],
 );
 
