@@ -25,11 +25,12 @@ async function notifyTrainer(clientId: string, heading: string, line: string, ab
   }, { clientId, ...about });
 }
 
-const bookInput = z.object({ date: z.iso.date(), minute: z.number().int().min(0).max(1439) });
+const bookInput = z.object({ date: z.iso.date(), minute: z.number().int().min(0).max(1439), instructorId: z.uuid().nullable() });
 
-export async function bookSlotAction(token: string, date: string, minute: number): Promise<{ ok: true } | { ok: false; error: string }> {
+/** Books a private lesson; in a studio with `instructorId` (null: whoever is free). */
+export async function bookSlotAction(token: string, date: string, minute: number, instructorId: string | null = null): Promise<{ ok: true } | { ok: false; error: string }> {
   const link = await resolvePortalToken(token);
-  const parsed = bookInput.safeParse({ date, minute });
+  const parsed = bookInput.safeParse({ date, minute, instructorId });
   if (!link || !parsed.success) return { ok: false, error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
   const result = await adminDb.transaction((tx) => bookSlot(tx as unknown as Tx, link, parsed.data));
@@ -45,7 +46,7 @@ export async function bookSlotAction(token: string, date: string, minute: number
   }
 
   const when = `${dayLong(parsed.data.date)} ${toHHMM(parsed.data.minute)}`;
-  await notifyTrainer(link.clientId, "Yeni randevu", `${when} için randevu aldı (${result.packageName}).`);
+  await notifyTrainer(link.clientId, "Yeni randevu", `${when} için randevu aldı (${result.packageName}).`, { lessonId: result.lessonId });
   revalidatePath(`/p/${token}`);
   return { ok: true };
 }

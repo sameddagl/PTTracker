@@ -8,7 +8,10 @@ import { drizzle } from "drizzle-orm/pglite";
 import type { Member } from "../src/db/membership";
 import { pickMembership } from "../src/db/membership";
 import type { Tx } from "../src/db/client";
+import { bookSlot, getBookingView, replaceAvailabilityRules } from "../src/db/booking";
 import { createLessons, findConflicts, setAttendance, setLessonInstructor } from "../src/db/lessons";
+import { pickPackage, sellPackage } from "../src/db/packages";
+import { addDays } from "../src/lib/dates";
 import { closePayrollMonth, payrollFor, setPayrollPaid } from "../src/db/payroll";
 import * as schema from "../src/db/schema";
 import { clientIdsTaughtBy, mayManageLesson, resolveInstructor, updateMember } from "../src/db/team";
@@ -126,6 +129,47 @@ async function main() {
   // Handing the lesson to the owner reports the client to tell.
   const handed = await as(A, A, (tx) => setLessonInstructor(tx, A, mine, owner.id));
   assert.equal(handed?.lessons.length, 1);
+
+  // ---- Booking in a studio ----
+  // Both teach every day 00:00–24:00 (real clock); slots at 21:00 stay clear of the lessons above.
+  await as(A, A, (tx) =>
+    tx.update(schema.trainers).set({ bookingEnabled: true, bookingLessonMinutes: 60, bookingMinNoticeHours: 0, bookingHorizonDays: 14 }).where(sql`id = ${A}`),
+  );
+  const allWeek = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, startMinute: 0, endMinute: 1440 }));
+  await as(A, A, (tx) => replaceAvailabilityRules(tx, A, allWeek, owner.id));
+  await as(A, A, (tx) => replaceAvailabilityRules(tx, A, allWeek, inst.id));
+  const who = { trainerId: A, clientId: ali.id };
+  // Ali's package is for Mert only.
+  const [tpl] = await as(A, A, (tx) =>
+    tx
+      .insert(schema.packageTemplates)
+      .values({ trainerId: A, name: "Mert özel", sessionType: "private", sessionCount: 4, price: "4000", instructorIds: [inst.id] })
+      .returning({ id: schema.packageTemplates.id }),
+  );
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
+  const day = addDays(today, 3);
+  const aliPkg = await as(A, A, (tx) =>
+    sellPackage(tx, A, { clientId: ali.id, templateId: tpl.id, name: "Mert özel", sessionType: "private", totalSessions: 4, startsOn: today, expiresOn: null, price: 4000, makeupAllowance: 0, installments: 1, payment: null }),
+  );
+  const [aliRow] = await asOwner((tx) => tx.select({ ids: schema.clientPackages.instructorIds }).from(schema.clientPackages).where(sql`id = ${aliPkg}`));
+  assert.deepEqual(aliRow.ids, [inst.id], "the template's instructor limit comes along with the sale");
+  const view = await asOwner((tx) => getBookingView(tx, who));
+  assert.deepEqual(view?.instructors.map((i) => i.id) ?? [], [], "only Mert is bookable with this package, so there is no choice to make");
+  assert.ok(view!.days.length > 0);
+  // Asking for the owner fails (package doesn't allow); "fark etmez" goes to Mert.
+  assert.deepEqual(await asOwner((tx) => bookSlot(tx, who, { date: day, minute: 1260, instructorId: owner.id })), { ok: false, reason: "no_credit" });
+  const booked = await asOwner((tx) => bookSlot(tx, who, { date: day, minute: 1260, instructorId: null }));
+  assert.equal(booked.ok && booked.instructorId, inst.id);
+  // A second client with an open package can pick either; at Mert's taken hour the owner is still free.
+  const zWho = { trainerId: A, clientId: zeynep.id };
+  const both = await asOwner((tx) => getBookingView(tx, zWho));
+  assert.deepEqual(both?.instructors.map((i) => i.id).sort(), [owner.id, inst.id].sort(), "two bookable instructors to pick from");
+  const z1 = await asOwner((tx) => bookSlot(tx, zWho, { date: day, minute: 1260, instructorId: null }));
+  assert.equal(z1.ok && z1.instructorId, owner.id, "whoever is free takes it");
+  // Lessons with Mert draw only on packages that allow him; the owner's lessons skip Ali's package.
+  assert.equal(await as(A, A, (tx) => pickPackage(tx, ali.id, "private", { instructorId: owner.id })), null);
+  assert.equal(await as(A, A, (tx) => pickPackage(tx, ali.id, "private", { instructorId: inst.id })), aliPkg);
+  console.log("studio booking and instructor-limited packages ok");
   console.log("studio lessons, permissions and pay ok\n\nall studio checks passed");
 }
 

@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { getTemplate } from "@/db/packages";
+import { listMembers } from "@/db/team";
 import { TemplateForm } from "../template-form";
 
 export const metadata: Metadata = { title: "Paketi düzenle" };
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "Paketi düzenle" };
 export default async function EditTemplatePage({ params }: PageProps<"/paketler/[id]">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const t = await withTrainer((tx, trainerId) => getTemplate(tx, trainerId, id));
+  const { t, team } = await withTrainer(async (tx, trainerId) => ({ t: await getTemplate(tx, trainerId, id), team: await listMembers(tx, trainerId) }));
   if (!t) notFound();
 
   return (
@@ -24,6 +25,8 @@ export default async function EditTemplatePage({ params }: PageProps<"/paketler/
       <PageHeader title={t.name} description="Değişiklikler daha önce sattığın paketleri etkilemez." />
       <TemplateForm
         id={t.id}
+        instructors={team.map((m) => ({ id: m.id, name: m.fullName || "İsimsiz" }))}
+        instructorIds={t.instructorIds ?? []}
         initial={{
           name: t.name,
           sessionType: t.sessionType,

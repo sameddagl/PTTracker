@@ -41,6 +41,8 @@ export type TemplateInput = {
   isTrial: boolean;
   description: string | null;
   features: string[];
+  /** Studios: only lessons with these instructors use it (null/empty = anyone). */
+  instructorIds?: string[] | null;
 };
 
 const toMoney = (v: number | null) => (v === null ? null : v.toFixed(2));
@@ -120,9 +122,13 @@ export type SellInput = {
 
 export async function sellPackage(tx: Tx, trainerId: string, input: SellInput) {
   const { payment, price, ...pkg } = input;
+  // A template limited to some instructors passes that on to what it sells.
+  const [tpl] = input.templateId
+    ? await tx.select({ instructorIds: packageTemplates.instructorIds }).from(packageTemplates).where(and(eq(packageTemplates.id, input.templateId), eq(packageTemplates.trainerId, trainerId)))
+    : [];
   const [row] = await tx
     .insert(clientPackages)
-    .values({ ...pkg, price: price.toFixed(2), trainerId })
+    .values({ ...pkg, price: price.toFixed(2), trainerId, instructorIds: tpl?.instructorIds?.length ? tpl.instructorIds : null })
     .returning({ id: clientPackages.id });
 
   if (payment && payment.amount > 0) {
@@ -143,7 +149,12 @@ export async function sellPackage(tx: Tx, trainerId: string, input: SellInput) {
  * type if possible, soonest to expire first (so older packages are used up
  * before newer ones).
  */
-export async function pickPackage(tx: Tx, clientId: string, sessionType: SessionType, { strict = false } = {}) {
+export async function pickPackage(
+  tx: Tx,
+  clientId: string,
+  sessionType: SessionType,
+  { strict = false, instructorId = null }: { strict?: boolean; /** Studios: skip packages limited to other instructors. */ instructorId?: string | null } = {},
+) {
   const candidates = await tx
     .select({
       id: clientPackages.id,
@@ -157,6 +168,9 @@ export async function pickPackage(tx: Tx, clientId: string, sessionType: Session
         inArray(clientPackageBalances.state, ["active"]),
         // Lessons already booked count against the balance too.
         sql`${clientPackageBalances.remainingSessions} - ${clientPackageBalances.scheduledSessions} > 0`,
+        instructorId
+          ? sql`(${clientPackages.instructorIds} is null or cardinality(${clientPackages.instructorIds}) = 0 or ${instructorId}::uuid = any(${clientPackages.instructorIds}))`
+          : undefined,
       ),
     )
     .orderBy(

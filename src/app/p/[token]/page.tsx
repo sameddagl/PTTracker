@@ -73,7 +73,12 @@ export default async function PortalPage({ params, searchParams }: PageProps<"/p
   const localDate = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
   const priv =
     booking?.enabled && booking.packages.length > 0
-      ? { days: booking.days, lessonMinutes: booking.lessonMinutes, credits: booking.packages.reduce((sum, p) => sum + p.free, 0) }
+      ? {
+          days: booking.days,
+          lessonMinutes: booking.lessonMinutes,
+          credits: booking.packages.reduce((sum, p) => sum + p.free, 0),
+          instructors: booking.instructors,
+        }
       : null;
   // Only for clients group classes are for: a group package, a fixed place, or a booking already.
   const group =

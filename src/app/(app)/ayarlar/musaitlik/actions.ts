@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireOwner, withTrainer } from "@/db";
 import { addTimeOff, deleteTimeOff, replaceAvailabilityRules } from "@/db/booking";
 import { trainers } from "@/db/schema";
+import { resolveInstructor } from "@/db/team";
 import type { FormState } from "@/lib/forms";
 
 const ruleSchema = z
@@ -54,9 +55,10 @@ export async function saveAvailabilityAction(
     return { errors: { rules: "Randevuyu açmak için en az bir saat aralığı ekle." } };
   }
 
-  await withTrainer(async (tx, trainerId) => {
+  const requested = formData.get("instructorId")?.toString() || null;
+  await withTrainer(async (tx, trainerId, member) => {
     await tx.update(trainers).set(settings).where(eq(trainers.id, trainerId));
-    await replaceAvailabilityRules(tx, trainerId, ruleList);
+    await replaceAvailabilityRules(tx, trainerId, ruleList, await resolveInstructor(tx, member, requested));
   });
   revalidatePath("/ayarlar", "layout");
   return { savedAt: Date.now() };
@@ -85,7 +87,8 @@ export async function addTimeOffAction(_prev: FormState<"startsOn" | "endsOn">, 
     const i = parsed.error.issues[0];
     return { errors: { [i.path[0] as "startsOn" | "endsOn"]: i.message } };
   }
-  await withTrainer((tx, trainerId) => addTimeOff(tx, trainerId, parsed.data));
+  const requested = formData.get("instructorId")?.toString() || null;
+  await withTrainer(async (tx, trainerId, member) => addTimeOff(tx, trainerId, parsed.data, await resolveInstructor(tx, member, requested)));
   revalidatePath("/ayarlar/musaitlik");
   return { savedAt: Date.now() };
 }

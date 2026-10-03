@@ -11,7 +11,16 @@ import { formatShortDate } from "@/lib/format";
 import type { FormState } from "@/lib/forms";
 import { addTimeOffAction, deleteTimeOffAction } from "./actions";
 
-export function TimeOff({ items, today }: { items: { id: string; startsOn: string; endsOn: string; note: string | null }[]; today: string }) {
+export function TimeOff({
+  items,
+  today,
+  instructorId,
+}: {
+  items: { id: string; startsOn: string; endsOn: string; note: string | null }[];
+  today: string;
+  /** Studios: whose days off these are. */
+  instructorId?: string;
+}) {
   const [state, action, pending] = useActionState<FormState<"startsOn" | "endsOn">, FormData>(addTimeOffAction, {});
   const [removing, startTransition] = useTransition();
   const form = useRef<HTMLFormElement>(null);
@@ -48,6 +57,7 @@ export function TimeOff({ items, today }: { items: { id: string; startsOn: strin
         </ul>
       )}
       <form ref={form} action={action} onReset={() => setStart("")} className="flex flex-col gap-3 surface p-4" noValidate>
+        {instructorId && <input type="hidden" name="instructorId" value={instructorId} />}
         <div className="grid grid-cols-2 gap-3">
           <Field id="startsOn" label="Başlangıç" error={e.startsOn}>
             <Input

@@ -37,28 +37,31 @@ export function LessonPicker({
   group,
 }: {
   token: string;
-  /** Private booking, when open and the client has private credits. */
-  priv: { days: DaySlots[]; lessonMinutes: number; credits: number } | null;
+  /** Private booking, when open and the client has private credits. `instructors`: studios, to pick who. */
+  priv: { days: DaySlots[]; lessonMinutes: number; credits: number; instructors: { id: string; name: string; days: DaySlots[] }[] } | null;
   /** Group classes, when the client has group credits, a fixed place or a booking. */
   group: { credits: number; fixed: { title: string; weekdays: number[]; startTime: string }[]; slots: GroupSlotView[] } | null;
 }) {
+  // Studios: "Fark etmez" shows everyone's free times; picking an instructor narrows them.
+  const [who, setWho] = useState<string | null>(null);
+  const privDays = (who && priv?.instructors.find((i) => i.id === who)?.days) || priv?.days || [];
   const days = useMemo(() => {
-    const dates = new Set([...(priv?.days.map((d) => d.date) ?? []), ...(group?.slots.map((s) => s.date) ?? [])]);
+    const dates = new Set([...privDays.map((d) => d.date), ...(group?.slots.map((s) => s.date) ?? [])]);
     return [...dates].sort();
-  }, [priv, group]);
+  }, [privDays, group]);
   const [day, setDay] = useState(days[0] ?? "");
   const [picked, setPicked] = useState<number | null>(null);
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
 
-  const privDay = priv?.days.find((d) => d.date === day);
+  const privDay = privDays.find((d) => d.date === day);
   const groupDay = group?.slots.filter((s) => s.date === day) ?? [];
 
   function book() {
     if (picked === null) return;
     setBusy("private");
     start(async () => {
-      const res = await bookSlotAction(token, day, picked);
+      const res = await bookSlotAction(token, day, picked, who);
       if (res.ok) {
         toast.success(`${dayLong(day)} ${toHHMM(picked)} randevun alındı`);
         setPicked(null);
@@ -105,6 +108,34 @@ export function LessonPicker({
           </p>
         ))}
 
+        {priv && priv.instructors.length > 1 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium">Eğitmen</p>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5" role="group" aria-label="Eğitmen">
+              {[{ id: null as string | null, name: "Fark etmez" }, ...priv.instructors.map((i) => ({ id: i.id as string | null, name: i.name }))].map((i) => (
+                <button
+                  key={i.id ?? "any"}
+                  type="button"
+                  aria-pressed={who === i.id}
+                  onClick={() => {
+                    setWho(i.id);
+                    setPicked(null);
+                    // Stay on the day if this instructor (or a group class) has something then; else jump to their first free day.
+                    const next = (i.id && priv.instructors.find((x) => x.id === i.id)?.days) || priv.days;
+                    if (!next.some((d) => d.date === day) && !group?.slots.some((sl) => sl.date === day)) setDay(next[0]?.date ?? day);
+                  }}
+                  className={cn(
+                    "h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors",
+                    who === i.id ? "border-transparent bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+                  )}
+                >
+                  {i.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {days.length === 0 ? (
           <p className="rounded-xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">Önümüzdeki günlerde uygun ders yok.</p>
         ) : (
@@ -113,7 +144,7 @@ export function LessonPicker({
               {days.map((d) => {
                 const on = d === day;
                 const hasGroup = group?.slots.some((s) => s.date === d);
-                const hasPrivate = priv?.days.some((p) => p.date === d);
+                const hasPrivate = privDays.some((p) => p.date === d);
                 return (
                   <li key={d} className="snap-start">
                     <button

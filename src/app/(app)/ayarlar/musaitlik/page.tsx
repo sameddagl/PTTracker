@@ -6,18 +6,26 @@ import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { getAvailability } from "@/db/booking";
 import { getTrainer } from "@/db/queries";
+import { listMembers } from "@/db/team";
+import { teamColor } from "@/lib/team";
+import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/format";
 import { AvailabilityForm } from "./availability-form";
 import { TimeOff } from "./time-off";
 
 export const metadata: Metadata = { title: "Müsaitlik" };
 
-export default async function AvailabilityPage() {
-  const { trainer, rules, off } = await withTrainer(async (tx, trainerId) => {
+export default async function AvailabilityPage({ searchParams }: PageProps<"/ayarlar/musaitlik">) {
+  const { egitmen } = await searchParams;
+  const { trainer, rules, off, team, selected } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
-    const { rules, off } = await getAvailability(tx, trainerId);
-    return { trainer, rules, off };
+    const team = await listMembers(tx, trainerId);
+    // Studios: each instructor has their own hours; the page edits one at a time.
+    const selected = team.find((m) => m.id === egitmen) ?? team.find((m) => m.id === member.id) ?? team[0];
+    const { rules, off } = await getAvailability(tx, trainerId, selected.id);
+    return { trainer, rules, off, team, selected };
   });
+  const studio = team.length > 1;
 
   return (
     <>
@@ -33,7 +41,32 @@ export default async function AvailabilityPage() {
             : `Dersten ${trainer.lateCancelHours} saat öncesine kadar ücretsiz iptal edebilirler.`
         }`}
       />
+      {studio && (
+        <nav aria-label="Eğitmen" className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+          {team.map((m, i) => (
+            <Link
+              key={m.id}
+              href={`/ayarlar/musaitlik?egitmen=${m.id}`}
+              aria-current={m.id === selected.id ? "true" : undefined}
+              className={cn(
+                "flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors md:min-h-9",
+                m.id === selected.id ? "bg-foreground text-background" : "bg-card text-muted-foreground shadow-card hover:text-foreground",
+              )}
+            >
+              <span className="size-2.5 rounded-full" style={{ background: teamColor(m.color, i) }} aria-hidden />
+              {m.fullName || "İsimsiz"}
+            </Link>
+          ))}
+        </nav>
+      )}
+      {studio && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          {selected.fullName} için çalışma saatleri. Randevu ayarları (ders süresi, ne kadar önceden) bütün stüdyo için ortak.
+        </p>
+      )}
       <AvailabilityForm
+        key={selected.id}
+        instructorId={studio ? selected.id : undefined}
         initial={{
           bookingEnabled: trainer.bookingEnabled,
           bookingLessonMinutes: trainer.bookingLessonMinutes,
@@ -47,7 +80,7 @@ export default async function AvailabilityPage() {
           <CardTitle className="text-base">İzin günleri</CardTitle>
         </CardHeader>
         <CardContent>
-          <TimeOff items={off} today={todayISO(trainer.timezone)} />
+          <TimeOff key={selected.id} items={off} today={todayISO(trainer.timezone)} instructorId={studio ? selected.id : undefined} />
         </CardContent>
       </Card>
     </>

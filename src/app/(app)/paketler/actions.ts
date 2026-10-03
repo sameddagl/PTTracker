@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireOwner, withTrainer } from "@/db";
 import { createTemplate, reorderTemplates, setTemplateActive, updateTemplate } from "@/db/packages";
+import { listMembers } from "@/db/team";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 
 const FIELDS = [
@@ -87,12 +88,17 @@ export async function saveTemplateAction(
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
 
   const id = z.uuid().safeParse(formData.get("id"));
-  if (id.success) {
-    const ok = await withTrainer((tx, trainerId) => updateTemplate(tx, trainerId, id.data, parsed.data));
-    if (!ok) return { errors: { name: "Paket bulunamadı." }, values: raw };
-  } else {
-    await withTrainer((tx, trainerId) => createTemplate(tx, trainerId, parsed.data));
-  }
+  const picked = formData.getAll("instructorIds").map(String);
+  const ok = await withTrainer(async (tx, trainerId) => {
+    // Only this studio's instructors; none picked means anyone.
+    const team = new Set((await listMembers(tx, trainerId)).map((m) => m.id));
+    const instructorIds = picked.filter((i) => team.has(i));
+    const input = { ...parsed.data, instructorIds: instructorIds.length > 0 ? instructorIds : null };
+    if (id.success) return updateTemplate(tx, trainerId, id.data, input);
+    await createTemplate(tx, trainerId, input);
+    return true;
+  });
+  if (!ok) return { errors: { name: "Paket bulunamadı." }, values: raw };
   revalidatePath("/paketler", "layout");
   redirect("/paketler");
 }

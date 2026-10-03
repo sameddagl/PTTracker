@@ -77,7 +77,7 @@ export async function ensureGroupOccurrences(tx: Tx, trainer: TrainerRef, { clas
   // Fixed members missing from upcoming occurrences (never re-added once they cancelled one).
   const ids = classes.map((c) => c.id);
   const missing = await tx
-    .select({ lessonId: lessons.id, clientId: groupClassMembers.clientId, capacity: lessons.capacity, taken: takenCount })
+    .select({ lessonId: lessons.id, instructorId: lessons.instructorId, clientId: groupClassMembers.clientId, capacity: lessons.capacity, taken: takenCount })
     .from(lessons)
     .innerJoin(
       groupClassMembers,
@@ -105,14 +105,14 @@ export async function ensureGroupOccurrences(tx: Tx, trainer: TrainerRef, { clas
       trainerId: trainer.id,
       lessonId: m.lessonId,
       clientId: m.clientId,
-      clientPackageId: await pickPackage(tx, m.clientId, "group", { strict: true }),
+      clientPackageId: await pickPackage(tx, m.clientId, "group", { strict: true, instructorId: m.instructorId }),
     });
     added.set(m.lessonId, (added.get(m.lessonId) ?? 0) + 1);
   }
 
   // A member booked while out of credit gets the package bought since.
   const unpaid = await tx
-    .select({ id: lessonAttendees.id, clientId: lessonAttendees.clientId })
+    .select({ id: lessonAttendees.id, clientId: lessonAttendees.clientId, instructorId: lessons.instructorId })
     .from(lessonAttendees)
     .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
     .where(
@@ -125,7 +125,7 @@ export async function ensureGroupOccurrences(tx: Tx, trainer: TrainerRef, { clas
     )
     .orderBy(asc(lessons.startsAt));
   for (const a of unpaid) {
-    const pkg = await pickPackage(tx, a.clientId, "group", { strict: true });
+    const pkg = await pickPackage(tx, a.clientId, "group", { strict: true, instructorId: a.instructorId });
     if (pkg) await tx.update(lessonAttendees).set({ clientPackageId: pkg }).where(eq(lessonAttendees.id, a.id));
   }
 }
@@ -326,13 +326,20 @@ export type AddAttendeeResult = { ok: true } | { ok: false; reason: "not_found" 
 /** Trainer adds a client to one lesson (any lesson; group lessons respect their places). */
 export async function addAttendee(tx: Tx, trainer: TrainerRef, lessonId: string, clientId: string): Promise<AddAttendeeResult> {
   const [l] = await tx
-    .select({ id: lessons.id, capacity: lessons.capacity, sessionType: lessons.sessionType, groupClassId: lessons.groupClassId, taken: takenCount })
+    .select({
+      id: lessons.id,
+      capacity: lessons.capacity,
+      sessionType: lessons.sessionType,
+      groupClassId: lessons.groupClassId,
+      instructorId: lessons.instructorId,
+      taken: takenCount,
+    })
     .from(lessons)
     .where(and(eq(lessons.id, lessonId), eq(lessons.trainerId, trainer.id), eq(lessons.status, "scheduled")))
     .for("update");
   if (!l) return { ok: false, reason: "not_found" };
   if (l.capacity !== null && l.taken >= l.capacity) return { ok: false, reason: "full" };
-  const clientPackageId = await pickPackage(tx, clientId, l.sessionType, { strict: l.groupClassId !== null });
+  const clientPackageId = await pickPackage(tx, clientId, l.sessionType, { strict: l.groupClassId !== null, instructorId: l.instructorId });
   const [existing] = await tx
     .select({ id: lessonAttendees.id, status: lessonAttendees.status })
     .from(lessonAttendees)
@@ -360,6 +367,7 @@ async function groupCredits(tx: Tx, who: Who) {
       id: clientPackages.id,
       expiresOn: clientPackageBalances.effectiveExpiresOn,
       free: sql<number>`(${clientPackageBalances.remainingSessions} - ${clientPackageBalances.scheduledSessions})::int`,
+      instructorIds: clientPackages.instructorIds,
     })
     .from(clientPackages)
     .innerJoin(clientPackageBalances, eq(clientPackageBalances.clientPackageId, clientPackages.id))
@@ -374,6 +382,10 @@ async function groupCredits(tx: Tx, who: Who) {
     )
     .orderBy(sql`${clientPackageBalances.effectiveExpiresOn} asc nulls last`);
 }
+
+/** Studios: a package limited to some instructors only pays for their lessons. */
+const creditFits = (c: { instructorIds: string[] | null }, instructorId: string | null) =>
+  !c.instructorIds || c.instructorIds.length === 0 || (instructorId !== null && c.instructorIds.includes(instructorId));
 
 export type GroupSlot = {
   lessonId: string;
@@ -417,6 +429,7 @@ export async function getGroupView(tx: Tx, who: Who): Promise<GroupView | null> 
       taken: takenCount,
       joinMode: groupClasses.joinMode,
       groupClassId: groupClasses.id,
+      instructorId: lessons.instructorId,
       mine: sql<string | null>`(select la.status::text from ${lessonAttendees} la where la.lesson_id = "lessons"."id" and la.client_id = ${who.clientId})`,
     })
     .from(lessons)
@@ -441,7 +454,7 @@ export async function getGroupView(tx: Tx, who: Who): Promise<GroupView | null> 
     // Once cancelled late, the credit is used; taking the place again would bill it twice.
     const lateCancelled = r.mine === "late_cancel";
     const room = r.capacity === null || r.taken < r.capacity;
-    const hasCredit = credits.some((c) => !c.expiresOn || c.expiresOn >= r.startsAt.toISOString().slice(0, 10));
+    const hasCredit = credits.some((c) => (!c.expiresOn || c.expiresOn >= r.startsAt.toISOString().slice(0, 10)) && creditFits(c, r.instructorId));
     return {
       lessonId: r.lessonId,
       title: r.title ?? "Grup dersi",
@@ -468,6 +481,7 @@ export async function joinGroupLesson(tx: Tx, who: Who, lessonId: string): Promi
       capacity: lessons.capacity,
       joinMode: groupClasses.joinMode,
       groupClassId: groupClasses.id,
+      instructorId: lessons.instructorId,
       minNotice: trainers.bookingMinNoticeHours,
       taken: takenCount,
     })
@@ -495,7 +509,7 @@ export async function joinGroupLesson(tx: Tx, who: Who, lessonId: string): Promi
   if (l.capacity !== null && l.taken >= l.capacity) return { ok: false, reason: "full" };
 
   const day = l.startsAt.toISOString().slice(0, 10);
-  const pkg = (await groupCredits(tx, who)).find((c) => !c.expiresOn || c.expiresOn >= day);
+  const pkg = (await groupCredits(tx, who)).find((c) => (!c.expiresOn || c.expiresOn >= day) && creditFits(c, l.instructorId));
   if (!pkg) return { ok: false, reason: "no_credit" };
 
   if (existing) {

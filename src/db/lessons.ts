@@ -130,7 +130,7 @@ export async function createLessons(tx: Tx, trainer: TrainerRef, input: LessonIn
     firstId ??= lesson.id;
 
     for (const clientId of input.clientIds) {
-      const clientPackageId = await pickPackage(tx, clientId, input.sessionType);
+      const clientPackageId = await pickPackage(tx, clientId, input.sessionType, { instructorId: input.instructorId });
       await tx.insert(lessonAttendees).values({
         trainerId: trainer.id,
         lessonId: lesson.id,

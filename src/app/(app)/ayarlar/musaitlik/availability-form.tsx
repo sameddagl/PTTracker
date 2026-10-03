@@ -27,7 +27,7 @@ export type AvailabilityInitial = {
   rules: { weekday: number; startMinute: number; endMinute: number }[];
 };
 
-export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) {
+export function AvailabilityForm({ initial, instructorId }: { initial: AvailabilityInitial; /** Studios: whose weekly hours these are. */ instructorId?: string }) {
   const [state, action, pending] = useActionState<FormState<AvailabilityField>, FormData>(saveAvailabilityAction, {});
   const e = state.errors ?? {};
   const [enabled, setEnabled] = useState(initial.bookingEnabled);
@@ -55,6 +55,7 @@ export function AvailabilityForm({ initial }: { initial: AvailabilityInitial }) 
 
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-6" noValidate>
+      {instructorId && <input type="hidden" name="instructorId" value={instructorId} />}
       <input type="hidden" name="rules" value={JSON.stringify(rules)} />
 
       <label className="flex items-start gap-3 surface p-4">

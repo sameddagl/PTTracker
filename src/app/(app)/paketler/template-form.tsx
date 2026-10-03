@@ -52,7 +52,18 @@ const amount = (v: string) => {
   return n !== null && Number.isFinite(n) && n > 0 ? n : null;
 };
 
-export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; initial?: TemplateValues }) {
+export function TemplateForm({
+  id,
+  initial = EMPTY_TEMPLATE,
+  instructors = [],
+  instructorIds = [],
+}: {
+  id?: string;
+  initial?: TemplateValues;
+  /** Studios: the team, to limit the package to some instructors. */
+  instructors?: { id: string; name: string }[];
+  instructorIds?: string[];
+}) {
   const [state, action, pending] = useActionState<FormState<TemplateField>, FormData>(saveTemplateAction, {});
   const formRef = useRef<HTMLFormElement>(null);
   const v = state.values ?? {};
@@ -297,6 +308,21 @@ export function TemplateForm({ id, initial = EMPTY_TEMPLATE }: { id?: string; in
           />
         </Field>
       </fieldset>
+
+      {instructors.length > 1 && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm font-medium">Hangi eğitmenlerle?</legend>
+          <p className="text-xs text-muted-foreground">Hiçbirini seçmezsen paket bütün eğitmenlerin derslerinde kullanılır.</p>
+          <div className="flex flex-wrap gap-2">
+            {instructors.map((i) => (
+              <label key={i.id} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full border bg-card px-4 text-sm has-[:checked]:border-foreground has-[:checked]:bg-muted/60">
+                <input type="checkbox" name="instructorIds" value={i.id} defaultChecked={instructorIds.includes(i.id)} className="size-4 accent-foreground" />
+                {i.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       <FormSubmit size="lg" loading={pending} className="sm:self-start">
         {id ? "Değişiklikleri kaydet" : "Paketi ekle"}
