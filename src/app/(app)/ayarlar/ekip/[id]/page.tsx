@@ -1,0 +1,55 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { authUsers } from "drizzle-orm/supabase";
+import { ChevronLeft } from "lucide-react";
+import { Avatar } from "@/components/avatar";
+import { PageHeader } from "@/components/page-header";
+import { adminDb, withTrainer } from "@/db";
+import { getMemberRow, listMembers } from "@/db/team";
+import { TEAM_COLORS, isTeamColor } from "@/lib/team";
+import { MemberForm, RemoveMemberButton } from "./member-form";
+
+export const metadata: Metadata = { title: "Eğitmen" };
+
+export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[id]">) {
+  const { id } = await params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const data = await withTrainer(async (tx, accountId, member) => {
+    if (member.role !== "owner") return null;
+    const row = await getMemberRow(tx, accountId, id);
+    if (!row) return null;
+    const index = (await listMembers(tx, accountId)).findIndex((m) => m.id === id);
+    return { row, index };
+  });
+  if (!data) notFound();
+  const { row, index } = data;
+  // The member's login address, so the owner knows which account it is.
+  const [user] = row.userId ? await adminDb.select({ email: authUsers.email }).from(authUsers).where(eq(authUsers.id, row.userId)) : [];
+  const color = isTeamColor(row.color) ? row.color : TEAM_COLORS[Math.max(index, 0) % TEAM_COLORS.length];
+
+  return (
+    <>
+      <Link href="/ayarlar/ekip" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ChevronLeft className="size-4" aria-hidden />
+        Ekip
+      </Link>
+      <PageHeader title={row.fullName || "Eğitmen"} description={row.role === "owner" ? "Stüdyonun sahibi" : user?.email ?? undefined} />
+      <div className="flex flex-col gap-6">
+        <section className="flex items-center gap-4 surface p-5">
+          <Avatar name={row.fullName || "?"} size="lg" />
+          <div className="min-w-0">
+            <p className="truncate font-semibold">{row.fullName}</p>
+            {row.bio && <p className="text-sm text-muted-foreground">{row.bio}</p>}
+            {!row.active && <p className="text-sm text-destructive-strong">Ekipten çıkarıldı</p>}
+          </div>
+        </section>
+        <section className="surface p-5">
+          <MemberForm id={row.id} color={color} payRule={row.payRule} isOwner={row.role === "owner"} />
+        </section>
+        {row.role === "instructor" && row.active && <RemoveMemberButton id={row.id} name={row.fullName || "Eğitmen"} />}
+      </div>
+    </>
+  );
+}

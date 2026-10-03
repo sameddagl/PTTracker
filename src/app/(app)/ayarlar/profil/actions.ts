@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import { ensureDefaultIntakeFields } from "@/db/intake";
+import { getMemberRow, updateOwnProfile } from "@/db/team";
 import { trainers } from "@/db/schema";
 import { fieldErrors, readForm, type FormState } from "@/lib/forms";
 import { isValidIban, normalizeIban } from "@/lib/iban";
@@ -133,5 +134,39 @@ export async function setProfileImageAction(kind: string, path: string | null): 
     await supabase.storage.from(PROFILE_BUCKET).remove([previous]);
   }
   revalidatePath("/ayarlar", "layout");
+  return { ok: true };
+}
+
+// ---- An instructor's own profile in a studio (account_members) ----
+
+const memberProfileSchema = z.object({
+  fullName: z.string().trim().min(2, "Adını yaz.").max(120),
+  bio: z.string().trim().max(300, "En fazla 300 karakter."),
+});
+const MEMBER_PROFILE_FIELDS = ["fullName", "bio"] as const;
+
+export async function saveMemberProfileAction(_prev: FormState<(typeof MEMBER_PROFILE_FIELDS)[number]>, formData: FormData) {
+  const values = readForm(formData, MEMBER_PROFILE_FIELDS);
+  const parsed = memberProfileSchema.safeParse(values);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
+  await withTrainer((tx, _accountId, member) => updateOwnProfile(tx, member, { fullName: parsed.data.fullName, bio: parsed.data.bio || null }));
+  revalidatePath("/", "layout");
+  return { savedAt: Date.now() };
+}
+
+/** An instructor's photo, uploaded to their own storage folder like the studio's photos. */
+export async function setMemberPhotoAction(path: string | null): Promise<{ ok: boolean }> {
+  const previous = await withTrainer(async (tx, accountId, member) => {
+    if (path !== null && !new RegExp(`^${member.userId}/member-\\d+\\.webp$`).test(path)) return undefined;
+    const row = await getMemberRow(tx, accountId, member.id);
+    await updateOwnProfile(tx, member, { photoPath: path });
+    return row?.photoPath ?? null;
+  });
+  if (previous === undefined) return { ok: false };
+  if (previous && previous !== path) {
+    const supabase = await createClient();
+    await supabase.storage.from(PROFILE_BUCKET).remove([previous]);
+  }
+  revalidatePath("/", "layout");
   return { ok: true };
 }

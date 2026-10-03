@@ -1,9 +1,9 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
 import { adminDb, type Tx } from "@/db";
 import { getActivePortalTokens } from "@/db/portal";
-import { clients, trainers } from "@/db/schema";
+import { accountMembers, clients, lessonAttendees, lessons, trainers } from "@/db/schema";
 import { siteUrl } from "./config";
 import { layout, sendMail } from "./mail";
 import { clientWants, trainerWants, type ClientKind, type TrainerKind } from "./notify-prefs";
@@ -18,15 +18,50 @@ import { sendPush } from "./push";
 
 type EmailContent = { subject: string; heading: string; lines: string[]; cta: string };
 
-/** Tells the trainer something. `path` is an in-app path such as "/danisanlar/basvurular". */
+/** What a notification is about, so a studio's instructors who teach it hear about it too. */
+export type NotifyAbout = { lessonId?: string; attendeeId?: string; clientId?: string };
+
+/**
+ * Members whose devices get a push: the owner always; in a studio also the
+ * instructor of the lesson, or the instructors who taught or will teach the
+ * client within two months.
+ */
+async function recipients(trainerId: string, about: NotifyAbout = {}) {
+  const rows = await adminDb.execute<{ id: string }>(sql`
+    select m.id from ${accountMembers} m
+    where m.account_id = ${trainerId} and m.active and (
+      m.role = 'owner'
+      ${about.lessonId ? sql`or m.id = (select l.instructor_id from ${lessons} l where l.id = ${about.lessonId} and l.trainer_id = ${trainerId})` : sql``}
+      ${
+        about.attendeeId
+          ? sql`or m.id = (select l.instructor_id from ${lessonAttendees} la join ${lessons} l on l.id = la.lesson_id where la.id = ${about.attendeeId} and la.trainer_id = ${trainerId})`
+          : sql``
+      }
+      ${
+        about.clientId
+          ? sql`or m.id in (select l.instructor_id from ${lessonAttendees} la join ${lessons} l on l.id = la.lesson_id
+                 where la.client_id = ${about.clientId} and la.trainer_id = ${trainerId}
+                   and l.starts_at between now() - interval '60 days' and now() + interval '60 days')`
+          : sql``
+      }
+    )
+  `);
+  return rows.map((r) => r.id);
+}
+
+/** Tells the trainer (and, in a studio, the instructors concerned) something. `path` is an in-app path such as "/danisanlar/basvurular". */
 export async function notifyTrainer(
   trainerId: string,
   kind: TrainerKind,
   msg: { title: string; body: string; path: string; tag?: string; email?: EmailContent },
+  about?: NotifyAbout,
 ) {
   const [t] = await adminDb.select({ prefs: trainers.notifyPrefs }).from(trainers).where(eq(trainers.id, trainerId));
   if (!t) return;
-  if (trainerWants(t.prefs, kind, "push")) await sendPush({ trainerId, clientId: null }, { title: msg.title, body: msg.body, url: msg.path, tag: msg.tag });
+  if (trainerWants(t.prefs, kind, "push")) {
+    const memberIds = await recipients(trainerId, about);
+    await sendPush({ trainerId, clientId: null, memberIds }, { title: msg.title, body: msg.body, url: msg.path, tag: msg.tag });
+  }
   if (msg.email && trainerWants(t.prefs, kind, "email")) {
     const to = await trainerEmail(trainerId);
     if (!to) return;

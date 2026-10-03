@@ -9,13 +9,14 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { setProfileImageAction } from "./actions";
 
-type Kind = "avatar" | "cover";
+type Kind = "avatar" | "cover" | "member";
 
 // Avatar: square crop. Cover: wide crop. Both re-encoded to WebP in the
 // browser, so phone photos (often 5–10 MB) upload as ~100 KB.
 const TARGET: Record<Kind, { width: number; height: number }> = {
   avatar: { width: 512, height: 512 },
   cover: { width: 1600, height: 600 },
+  member: { width: 512, height: 512 },
 };
 
 async function toWebp(file: File, kind: Kind): Promise<Blob> {
@@ -39,11 +40,15 @@ export function ImageUpload({
   trainerId,
   url: initialUrl,
   label,
+  save = (path) => setProfileImageAction(kind, path),
 }: {
   kind: Kind;
+  /** Storage folder: the signed-in user's id (storage RLS only lets them write there). */
   trainerId: string;
   url: string | null;
   label: string;
+  /** Records the uploaded path (or null to remove); the studio's photos by default. */
+  save?: (path: string | null) => Promise<{ ok: boolean }>;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(initialUrl);
@@ -60,7 +65,7 @@ export function ImageUpload({
           .storage.from(PROFILE_BUCKET)
           .upload(path, blob, { contentType: "image/webp", cacheControl: "31536000" });
         if (error) throw error;
-        const res = await setProfileImageAction(kind, path);
+        const res = await save(path);
         if (!res.ok) throw new Error("save failed");
         setUrl(URL.createObjectURL(blob));
         toast.success("Fotoğraf güncellendi");
@@ -75,7 +80,7 @@ export function ImageUpload({
 
   function remove() {
     startTransition(async () => {
-      const res = await setProfileImageAction(kind, null);
+      const res = await save(null);
       if (res.ok) setUrl(null);
       else toast.error("Fotoğraf kaldırılamadı.");
     });
@@ -90,7 +95,7 @@ export function ImageUpload({
         aria-label={`${label} seç`}
         className={cn(
           "relative flex shrink-0 items-center justify-center overflow-hidden border bg-muted text-muted-foreground transition-opacity hover:opacity-90 disabled:opacity-60",
-          kind === "avatar" ? "size-20 rounded-full" : "aspect-[8/3] w-40 rounded-lg",
+          kind !== "cover" ? "size-20 rounded-full" : "aspect-[8/3] w-40 rounded-lg",
         )}
       >
         {url ? (

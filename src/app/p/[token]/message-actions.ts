@@ -37,7 +37,7 @@ export async function sendClientMessageAction(token: string, body: string): Prom
       body: preview(message.body),
       path: `/mesajlar/${who.clientId}`,
       tag: `message-${who.clientId}`,
-    });
+    }, { clientId: who.clientId });
   });
   return { ok: true, message };
 }

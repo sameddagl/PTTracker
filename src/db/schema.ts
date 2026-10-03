@@ -200,9 +200,9 @@ export const accountMembers = pgTable(
     accountId: uuid("account_id")
       .notNull()
       .references(() => trainers.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => authUsers.id, { onDelete: "cascade" }),
+    // Null once the person deletes their login: the row stays so past lessons
+    // and pay keep their instructor's name.
+    userId: uuid("user_id").references(() => authUsers.id, { onDelete: "set null" }),
     role: memberRoleEnum("role").notNull(),
     fullName: text("full_name").notNull().default(""),
     bio: text("bio"),

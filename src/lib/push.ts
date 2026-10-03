@@ -15,7 +15,12 @@ const configured = Boolean(publicKey && privateKey);
 if (configured) webpush.setVapidDetails(subject ?? "https://studyomapp.com", publicKey!, privateKey!);
 
 /** A trainer's own devices (`clientId` null) or one client's devices. */
-export type PushTarget = { trainerId: string; clientId: string | null };
+/**
+ * Who a push goes to: a client's devices (clientId), or devices of the
+ * account's team (clientId null). `memberIds` narrows the team to those
+ * members; when saving, `memberId` says whose device it is.
+ */
+export type PushTarget = { trainerId: string; clientId: string | null; memberIds?: string[]; memberId?: string | null };
 
 export async function sendPush(target: PushTarget, payload: PushPayload): Promise<number> {
   if (!configured) {
@@ -29,6 +34,7 @@ export async function sendPush(target: PushTarget, payload: PushPayload): Promis
       and(
         eq(pushSubscriptions.trainerId, target.trainerId),
         target.clientId ? eq(pushSubscriptions.clientId, target.clientId) : isNull(pushSubscriptions.clientId),
+        target.memberIds ? inArray(pushSubscriptions.memberId, target.memberIds.length ? target.memberIds : ["00000000-0000-0000-0000-000000000000"]) : undefined,
       ),
     );
   const gone: string[] = [];
@@ -59,10 +65,10 @@ export type SubscriptionInput = { endpoint: string; keys: { p256dh: string; auth
 export async function saveSubscription(target: PushTarget, sub: SubscriptionInput) {
   await adminDb
     .insert(pushSubscriptions)
-    .values({ ...target, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth })
+    .values({ trainerId: target.trainerId, clientId: target.clientId, memberId: target.memberId ?? null, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth })
     .onConflictDoUpdate({
       target: pushSubscriptions.endpoint,
-      set: { trainerId: target.trainerId, clientId: target.clientId, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+      set: { trainerId: target.trainerId, clientId: target.clientId, memberId: target.memberId ?? null, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
     });
 }
 

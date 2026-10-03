@@ -10,11 +10,11 @@ import { joinGroupLesson } from "@/db/groups";
 import { clients, trainers } from "@/db/schema";
 import { dayLong } from "@/lib/dates";
 import { formatLongDate, formatTime } from "@/lib/format";
-import { notifyTrainer as tellTrainer } from "@/lib/notify";
+import { notifyTrainer as tellTrainer, type NotifyAbout } from "@/lib/notify";
 import { resolvePortalToken } from "@/lib/portal";
 import { toHHMM } from "@/lib/slots";
 
-async function notifyTrainer(clientId: string, heading: string, line: string) {
+async function notifyTrainer(clientId: string, heading: string, line: string, about: NotifyAbout = {}) {
   const [who] = await adminDb.select({ name: clients.fullName, trainerId: clients.trainerId }).from(clients).where(eq(clients.id, clientId));
   if (!who) return;
   await tellTrainer(who.trainerId, "booking", {
@@ -22,7 +22,7 @@ async function notifyTrainer(clientId: string, heading: string, line: string) {
     body: `${who.name} ${line}`,
     path: "/takvim",
     email: { subject: `${heading}: ${who.name}`, heading, lines: [`${who.name} ${line}`], cta: "Takvimi aç" },
-  });
+  }, { clientId, ...about });
 }
 
 const bookInput = z.object({ date: z.iso.date(), minute: z.number().int().min(0).max(1439) });
@@ -70,6 +70,7 @@ export async function cancelBookingAction(
     link.clientId,
     result.late ? "Geç iptal" : "Randevu iptali",
     `${formatLongDate(result.startsAt, tz)} ${formatTime(result.startsAt, tz)} dersini iptal etti${result.late ? (result.makeupUsed ? " (telafi hakkını kullandı)" : " (ders paketten düştü)") : ""}.`,
+    { attendeeId },
   );
   revalidatePath(`/p/${token}`);
   return { ok: true, late: result.late, makeupUsed: result.makeupUsed };

@@ -103,6 +103,13 @@
   --primary-foreground: #ffffff;
   --lime: #c6f24e;
   --lime-foreground: #1d1d1f;
+  /* Instructor colours in a studio calendar (src/lib/team.ts). */
+  --team-lime: #a3d12a;
+  --team-sky: #4aa3f0;
+  --team-rose: #f0628c;
+  --team-amber: #f2a33a;
+  --team-violet: #9b7bf2;
+  --team-teal: #2fbfae;
   --ring: #1d1d1f;
 
   /* Status */
@@ -154,6 +161,12 @@
     --primary-foreground: #0a0a0b;
     --lime: #c6f24e;
     --lime-foreground: #0a0a0b;
+    --team-lime: #c6f24e;
+    --team-sky: #6cb8ff;
+    --team-rose: #ff7fa6;
+    --team-amber: #ffb65c;
+    --team-violet: #b49cff;
+    --team-teal: #4fd8c6;
     --ring: #c6f24e;
 
     --success: #22c55e;
