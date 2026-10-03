@@ -17,8 +17,13 @@ const initials = (name: string) =>
     .map((w) => w.charAt(0).toLocaleUpperCase("tr"))
     .join("");
 
-/** Initials in a tinted circle; the tint is stable per name. */
-export function Avatar({ name, size = "md", className }: { name: string; size?: "sm" | "md" | "lg"; className?: string }) {
+/** A photo when there is one, else initials in a tinted circle; the tint is stable per name. */
+export function Avatar({ name, size = "md", className, src }: { name: string; size?: "sm" | "md" | "lg"; className?: string; src?: string | null }) {
+  const sizeClass = size === "sm" ? "size-8" : size === "md" ? "size-10" : "size-14";
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element -- storage URL, resized to 512px on upload
+    return <img src={src} alt="" aria-hidden className={cn("shrink-0 rounded-full object-cover", sizeClass, className)} />;
+  }
   const tint = TINTS[[...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % TINTS.length];
   return (
     <span

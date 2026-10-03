@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
 import { ChevronLeft } from "lucide-react";
-import { Avatar } from "@/components/avatar";
 import { PageHeader } from "@/components/page-header";
 import { adminDb, withTrainer } from "@/db";
 import { getMemberRow, listMembers } from "@/db/team";
 import { TEAM_COLORS, isTeamColor } from "@/lib/team";
+import { profileImageUrl } from "@/lib/storage";
+import { setMemberPhotoByOwnerAction } from "../actions";
+import { setMemberPhotoAction } from "../../profil/actions";
+import { ImageUpload } from "../../profil/image-upload";
 import { MemberForm, RemoveMemberButton } from "./member-form";
 
 export const metadata: Metadata = { title: "Eğitmen" };
@@ -21,10 +24,11 @@ export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[i
     const row = await getMemberRow(tx, accountId, id);
     if (!row) return null;
     const index = (await listMembers(tx, accountId)).findIndex((m) => m.id === id);
-    return { row, index };
+    return { row, index, me: member };
   });
   if (!data) notFound();
-  const { row, index } = data;
+  const { row, index, me } = data;
+  const isMe = row.id === me.id;
   // The member's login address, so the owner knows which account it is.
   const [user] = row.userId ? await adminDb.select({ email: authUsers.email }).from(authUsers).where(eq(authUsers.id, row.userId)) : [];
   const color = isTeamColor(row.color) ? row.color : TEAM_COLORS[Math.max(index, 0) % TEAM_COLORS.length];
@@ -37,13 +41,22 @@ export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[i
       </Link>
       <PageHeader title={row.fullName || "Eğitmen"} description={row.role === "owner" ? "Stüdyonun sahibi" : user?.email ?? undefined} />
       <div className="flex flex-col gap-6">
-        <section className="flex items-center gap-4 surface p-5">
-          <Avatar name={row.fullName || "?"} size="lg" />
+        <section className="flex flex-col gap-4 surface p-5">
           <div className="min-w-0">
             <p className="truncate font-semibold">{row.fullName}</p>
             {row.bio && <p className="text-sm text-muted-foreground">{row.bio}</p>}
             {!row.active && <p className="text-sm text-destructive-strong">Ekipten çıkarıldı</p>}
           </div>
+          {/* The owner's own photo goes through their profile action; an instructor's is kept in the owner's folder. */}
+          <ImageUpload
+            kind="member"
+            trainerId={me.userId}
+            url={profileImageUrl(row.photoPath)}
+            label="Fotoğraf"
+            prefix={isMe ? "member" : `member-${row.id}`}
+            save={isMe ? setMemberPhotoAction : setMemberPhotoByOwnerAction.bind(null, row.id)}
+          />
+          <p className="text-xs text-muted-foreground">Danışanlar eğitmeni derslerinde ve stüdyonun sayfasında bu fotoğrafla görür. Eğitmen kendi profilinden de değiştirebilir.</p>
         </section>
         <section className="surface p-5">
           <MemberForm id={row.id} color={color} payRule={row.payRule} isOwner={row.role === "owner"} />

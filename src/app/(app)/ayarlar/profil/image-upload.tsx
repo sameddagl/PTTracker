@@ -41,6 +41,7 @@ export function ImageUpload({
   url: initialUrl,
   label,
   save = (path) => setProfileImageAction(kind, path),
+  prefix = kind,
 }: {
   kind: Kind;
   /** Storage folder: the signed-in user's id (storage RLS only lets them write there). */
@@ -49,6 +50,8 @@ export function ImageUpload({
   label: string;
   /** Records the uploaded path (or null to remove); the studio's photos by default. */
   save?: (path: string | null) => Promise<{ ok: boolean }>;
+  /** File name start inside the folder (default: the kind). */
+  prefix?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(initialUrl);
@@ -60,7 +63,7 @@ export function ImageUpload({
     startTransition(async () => {
       try {
         const blob = await toWebp(file, kind);
-        const path = `${trainerId}/${kind}-${Date.now()}.webp`;
+        const path = `${trainerId}/${prefix}-${Date.now()}.webp`;
         const { error } = await createClient()
           .storage.from(PROFILE_BUCKET)
           .upload(path, blob, { contentType: "image/webp", cacheControl: "31536000" });

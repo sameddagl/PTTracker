@@ -5,10 +5,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import { getTrainer } from "@/db/queries";
-import { createInvite, renewInvite, revokeInvite, setMemberActive, updateMember } from "@/db/team";
-import { trainers, type PayRule } from "@/db/schema";
+import { createInvite, getMemberRow, renewInvite, revokeInvite, setMemberActive, updateMember } from "@/db/team";
+import { accountMembers, trainers, type PayRule } from "@/db/schema";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 import { isTeamColor, TEAM_COLORS } from "@/lib/team";
+import { PROFILE_BUCKET } from "@/lib/storage";
+import { createClient } from "@/lib/supabase/server";
 import { sendInviteMail } from "@/lib/team-mail";
 
 // Ayarlar → Ekip: everything here is the owner's. RLS already refuses an
@@ -123,6 +125,30 @@ export async function saveTeamSettingAction(name: "instructorsSeeAllClients" | "
     return true;
   });
   if (!ok) return { ok: false, error: NOT_OWNER };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/**
+ * Owner: an instructor's photo, uploaded into the owner's own storage folder
+ * (storage RLS only lets a user write to theirs) as member-<id>-<time>.webp.
+ */
+export async function setMemberPhotoByOwnerAction(memberId: string, path: string | null): Promise<{ ok: boolean }> {
+  if (!z.uuid().safeParse(memberId).success) return { ok: false };
+  const previous = await withTrainer(async (tx, trainerId, member) => {
+    if (member.role !== "owner") return undefined;
+    if (path !== null && !new RegExp(`^${member.userId}/member-${memberId}-\\d+\\.webp$`).test(path)) return undefined;
+    const row = await getMemberRow(tx, trainerId, memberId);
+    if (!row) return undefined;
+    await tx.update(accountMembers).set({ photoPath: path, updatedAt: new Date() }).where(eq(accountMembers.id, memberId));
+    return { old: row.photoPath, mine: member.userId };
+  });
+  if (previous === undefined) return { ok: false };
+  // Only files in the owner's own folder can be removed from here.
+  if (previous.old && previous.old !== path && previous.old.startsWith(`${previous.mine}/`)) {
+    const supabase = await createClient();
+    await supabase.storage.from(PROFILE_BUCKET).remove([previous.old]);
+  }
   revalidatePath("/", "layout");
   return { ok: true };
 }

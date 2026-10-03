@@ -11,6 +11,7 @@ import { getTrainer } from "@/db/queries";
 import { isStudio } from "@/db/team";
 import { formatShortDate, formatTRY, formatTime, todayISO } from "@/lib/format";
 import { MONTH_PATTERN, SESSION_LABELS, payRuleLabel, type SessionType } from "@/lib/payroll";
+import { profileImageUrl } from "@/lib/storage";
 import { teamColor } from "@/lib/team";
 import { PayrollButtons } from "./payroll-actions";
 
@@ -100,7 +101,7 @@ export default async function PayrollPage({ searchParams }: PageProps<"/hakedis"
             <section key={r.member.id} aria-label={r.member.fullName} className="surface p-5">
               <div className="flex flex-wrap items-start gap-3">
                 <span className="relative shrink-0">
-                  <Avatar name={r.member.fullName || "?"} />
+                  <Avatar name={r.member.fullName || "?"} src={profileImageUrl(r.member.photoPath)} />
                   <span className="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full ring-2 ring-card" style={{ background: teamColor(r.member.color, i + 1) }} aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">

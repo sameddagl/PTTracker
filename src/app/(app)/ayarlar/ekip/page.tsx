@@ -9,6 +9,7 @@ import { getTrainer } from "@/db/queries";
 import { listMembers, listOpenInvites } from "@/db/team";
 import { formatShortDate, formatTRY } from "@/lib/format";
 import { payRuleLabel } from "@/lib/payroll";
+import { profileImageUrl } from "@/lib/storage";
 import { nextTeamColor, teamColor } from "@/lib/team";
 import { InviteActions, InviteForm, ReactivateButton, TeamSetting } from "./team-forms";
 
@@ -55,7 +56,7 @@ export default async function TeamPage({ searchParams }: PageProps<"/ayarlar/eki
               <li key={m.id}>
                 <Link href={`/ayarlar/ekip/${m.id}`} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50">
                   <span className="relative shrink-0">
-                    <Avatar name={m.fullName || "?"} />
+                    <Avatar name={m.fullName || "?"} src={profileImageUrl(m.photoPath)} />
                     <span className="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full ring-2 ring-card" style={{ background: teamColor(m.color, i) }} aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
