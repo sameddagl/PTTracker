@@ -164,6 +164,11 @@ export const trainers = pgTable(
     measureMetrics: text("measure_metrics").array(),
     clientsSelfWeigh: boolean("clients_self_weigh").notNull().default(true),
     ...timestamps,
+
+    // Studios: may instructors switch their client list to everyone in the
+    // studio, and do late cancels / no-shows count towards instructor pay.
+    instructorsSeeAllClients: boolean("instructors_see_all_clients").notNull().default(true),
+    payrollCountsMissed: boolean("payroll_counts_missed").notNull().default(false),
   },
   (t) => [
     check("trainers_reminder_hours", sql`${t.reminderHours} between 1 and 72`),
@@ -228,6 +233,57 @@ export const accountMembers = pgTable(
       to: authenticatedRole,
       using: sql`${t.accountId} = ${currentAccount} and ${t.userId} = ${authUid}`,
       withCheck: sql`${t.accountId} = ${currentAccount} and ${t.userId} = ${authUid}`,
+    }),
+  ],
+);
+
+// Invitations to join an account as an instructor. Only a hash of the token is
+// stored; the link in the e-mail is /davet/<token>.
+export const accountInvites = pgTable(
+  "account_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    fullName: text("full_name").notNull(),
+    color: text("color"),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("account_invites_account_idx").on(t.accountId), ownerRows("account_invites_owner", t.accountId)],
+);
+
+// A month of instructor pay, frozen when the owner closes it (src/lib/payroll.ts
+// computes open months on the fly). `detail` keeps the lesson lines as computed.
+export const payrollMonths = pgTable(
+  "payroll_months",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    memberId: uuid("member_id").notNull(),
+    month: date("month").notNull(), // first day of the month
+    lessons: integer("lessons").notNull(),
+    amount: money("amount").notNull(),
+    detail: jsonb("detail").notNull(),
+    closedAt: timestamp("closed_at", { withTimezone: true }).notNull().defaultNow(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+  },
+  (t) => [
+    unique("payroll_months_member_month_key").on(t.memberId, t.month),
+    foreignKey({ name: "payroll_months_member_fk", columns: [t.memberId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
+    ownerRows("payroll_months_owner", t.trainerId),
+    // An instructor sees their own closed months.
+    pgPolicy("payroll_months_self_select", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${t.trainerId} = ${currentAccount} and ${t.memberId} in (select m.id from public.account_members m where m.user_id = ${authUid})`,
     }),
   ],
 );
@@ -299,6 +355,8 @@ export const packageTemplates = pgTable(
     // Monthly installments of the installment option (1 = cash only).
     installments: smallint("installments").notNull().default(1),
     ...timestamps,
+    // Studios: the package can only be used with these instructors (null = anyone).
+    instructorIds: uuid("instructor_ids").array(),
   },
   (t) => [
     check("package_templates_installments_range", sql`${t.installments} between 1 and 12`),
@@ -337,6 +395,8 @@ export const clientPackages = pgTable(
     installmentRemindedSeq: smallint("installment_reminded_seq").notNull().default(0),
     installmentLateRemindedSeq: smallint("installment_late_reminded_seq").notNull().default(0),
     ...timestamps,
+    // Copied from the template when sold; null = usable with any instructor.
+    instructorIds: uuid("instructor_ids").array(),
   },
   (t) => [
     check("client_packages_installments_range", sql`${t.installments} between 1 and 12`),
@@ -396,10 +456,14 @@ export const lessonSeries = pgTable(
     startsOn: date("starts_on").notNull(),
     endsOn: date("ends_on"),
     ...timestamps,
+    // Who teaches it (a member of the account). Filled with the owner by a
+    // trigger when left out, so a trainer working alone never has to set it.
+    instructorId: uuid("instructor_id"),
   },
   (t) => [
     unique("lesson_series_id_trainer_key").on(t.id, t.trainerId),
     ownRows("lesson_series_own", t.trainerId),
+    foreignKey({ name: "lesson_series_instructor_fk", columns: [t.instructorId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
   ],
 );
 
@@ -424,11 +488,15 @@ export const groupClasses = pgTable(
     // Set when the trainer ends the class; no occurrences after it.
     endsOn: date("ends_on"),
     ...timestamps,
+    // Who teaches it (a member of the account). Filled with the owner by a
+    // trigger when left out, so a trainer working alone never has to set it.
+    instructorId: uuid("instructor_id"),
   },
   (t) => [
     check("group_classes_capacity_range", sql`${t.capacity} between 1 and 100`),
     unique("group_classes_id_trainer_key").on(t.id, t.trainerId),
     ownRows("group_classes_own", t.trainerId),
+    foreignKey({ name: "group_classes_instructor_fk", columns: [t.instructorId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
   ],
 );
 
@@ -483,6 +551,9 @@ export const lessons = pgTable(
     occurrenceDate: date("occurrence_date"),
     capacity: smallint("capacity"),
     ...timestamps,
+    // Who teaches it (a member of the account). Filled with the owner by a
+    // trigger when left out, so a trainer working alone never has to set it.
+    instructorId: uuid("instructor_id"),
   },
   (t) => [
     unique("lessons_id_trainer_key").on(t.id, t.trainerId),
@@ -497,6 +568,8 @@ export const lessons = pgTable(
     ),
     index("lessons_trainer_starts_idx").on(t.trainerId, t.startsAt),
     ownRows("lessons_own", t.trainerId),
+    foreignKey({ name: "lessons_instructor_fk", columns: [t.instructorId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
+    index("lessons_instructor_starts_idx").on(t.instructorId, t.startsAt),
   ],
 );
 
@@ -670,12 +743,15 @@ export const availabilityRules = pgTable(
     startMinute: smallint("start_minute").notNull(),
     endMinute: smallint("end_minute").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Whose hours these are (a member); the owner's when left out.
+    instructorId: uuid("instructor_id"),
   },
   (t) => [
     check("availability_rules_weekday", sql`${t.weekday} between 1 and 7`),
     check("availability_rules_range", sql`${t.startMinute} >= 0 and ${t.endMinute} <= 1440 and ${t.endMinute} > ${t.startMinute}`),
     index("availability_rules_trainer_idx").on(t.trainerId, t.weekday),
     ownRows("availability_rules_own", t.trainerId),
+    foreignKey({ name: "availability_rules_instructor_fk", columns: [t.instructorId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
   ],
 );
 
@@ -691,11 +767,14 @@ export const timeOff = pgTable(
     endsOn: date("ends_on").notNull(),
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Whose hours these are (a member); the owner's when left out.
+    instructorId: uuid("instructor_id"),
   },
   (t) => [
     check("time_off_range", sql`${t.endsOn} >= ${t.startsOn}`),
     index("time_off_trainer_idx").on(t.trainerId, t.endsOn),
     ownRows("time_off_own", t.trainerId),
+    foreignKey({ name: "time_off_instructor_fk", columns: [t.instructorId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
   ],
 );
 
@@ -783,6 +862,8 @@ export const messages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     // Set when the other side has seen it.
     readAt: timestamp("read_at", { withTimezone: true }),
+    // Which member wrote a trainer-side message (studios show the name).
+    senderMemberId: uuid("sender_member_id"),
   },
   (t) => [
     check("messages_body_length", sql`char_length(${t.body}) between 1 and 2000`),
@@ -792,6 +873,7 @@ export const messages = pgTable(
     index("messages_thread_idx").on(t.clientId, t.createdAt),
     index("messages_trainer_unread_idx").on(t.trainerId, t.sender, t.readAt),
     ownRows("messages_own", t.trainerId),
+    foreignKey({ name: "messages_sender_member_fk", columns: [t.senderMemberId, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
   ],
 );
 
@@ -808,6 +890,8 @@ export const pushSubscriptions = pgTable(
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // The member whose device this is (null for a client's device).
+    memberId: uuid("member_id").references(() => accountMembers.id, { onDelete: "cascade" }),
   },
   (t) => [
     foreignKey({ name: "push_subscriptions_client_fk", columns: [t.clientId, t.trainerId], foreignColumns: [clients.id, clients.trainerId] }).onDelete(
