@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { cache } from "react";
 import { adminDb } from "@/db";
-import { groupClasses, packageTemplates, trainers } from "@/db/schema";
+import { accountMembers, groupClasses, packageTemplates, trainers } from "@/db/schema";
 import { SLUG_PATTERN } from "./slug";
 
 /**
@@ -78,7 +78,15 @@ export const getPublicPage = cache(async (slug: string) => {
     )
     .orderBy(asc(groupClasses.startTime));
 
-  return { trainer, packages, groups };
+  // Studios list their team; a trainer working alone is the page itself.
+  const teamRows = await adminDb
+    .select({ id: accountMembers.id, fullName: accountMembers.fullName, bio: accountMembers.bio, photoPath: accountMembers.photoPath })
+    .from(accountMembers)
+    .where(and(eq(accountMembers.accountId, trainer.id), eq(accountMembers.active, true)))
+    .orderBy(sql`${accountMembers.role} = 'owner' desc`, asc(accountMembers.createdAt));
+  const team = teamRows.length > 1 ? teamRows : [];
+
+  return { trainer, packages, groups, team };
 });
 
 export type PublicPage = NonNullable<Awaited<ReturnType<typeof getPublicPage>>>;

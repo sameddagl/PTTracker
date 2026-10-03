@@ -14,7 +14,8 @@ import { InviteActions, InviteForm, ReactivateButton, TeamSetting } from "./team
 
 export const metadata: Metadata = { title: "Ekip" };
 
-export default async function TeamPage() {
+export default async function TeamPage({ searchParams }: PageProps<"/ayarlar/ekip">) {
+  const { ilk } = await searchParams;
   const data = await withTrainer(async (tx, id, member) => {
     if (member.role !== "owner") return null;
     return {
@@ -39,6 +40,14 @@ export default async function TeamPage() {
         description="Stüdyonda ders veren eğitmenler. Davet ettiğin eğitmen kendi e-postasıyla giriş yapar; takvimi, derslerini, yoklamayı ve danışanlarının notlarını görür. Ödemeleri, fiyatları ve stüdyo ayarlarını görmez."
       />
       <div className="flex flex-col gap-8">
+        {ilk === "1" && (
+          <p role="status" className="rounded-2xl bg-lime px-4 py-3 text-sm text-lime-foreground">
+            Stüdyon hazır. Birlikte çalıştığın eğitmenleri aşağıdan davet et; istersen bunu sonra da yapabilirsin.{" "}
+            <Link href="/bugun" className="font-medium underline underline-offset-2">
+              Şimdilik geç
+            </Link>
+          </p>
+        )}
         <section aria-labelledby="members-heading">
           <SectionTitle id="members-heading">Eğitmenler</SectionTitle>
           <ul className="divide-y overflow-hidden surface">

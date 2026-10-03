@@ -14,6 +14,11 @@ const DISCIPLINES = [
   { value: "both", label: "İkisi de" },
 ] as const;
 
+const TEAM = [
+  { value: "solo", label: "Tek başıma" },
+  { value: "studio", label: "Başka eğitmenlerle" },
+] as const;
+
 export function ProfileForm({ defaultName }: { defaultName: string }) {
   const [state, action, pending] = useActionState<ProfileFormState, FormData>(saveProfile, {});
   const v = state.values ?? { fullName: defaultName };
@@ -74,6 +79,25 @@ export function ProfileForm({ defaultName }: { defaultName: string }) {
           ))}
         </div>
         <FieldError id="discipline-pt" error={e.discipline} />
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium">Nasıl çalışıyorsun?</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {TEAM.map((t) => (
+            <label
+              key={t.value}
+              className={cn(
+                "flex min-h-12 cursor-pointer flex-col items-center justify-center rounded-xl border bg-card px-2 py-3 text-center text-sm font-medium transition-colors hover:bg-muted/60",
+                "has-[:checked]:border-transparent has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
+              )}
+            >
+              <input type="radio" name="team" value={t.value} defaultChecked={(v.team ?? "solo") === t.value} className="sr-only" />
+              {t.label}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Stüdyonda başka eğitmenler varsa onları bir sonraki adımda davet edersin. Sonradan da ekleyebilirsin.</p>
       </fieldset>
 
       <FormSubmit size="lg" loading={pending}>

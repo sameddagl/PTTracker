@@ -10,7 +10,7 @@ import { formatLongDate, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { cancelBookingAction, confirmAttendanceAction } from "./booking-actions";
 
-type Lesson = { attendeeId: string; startsAt: Date; title: string | null; lateIfCancelledNow: boolean; confirmed: boolean };
+type Lesson = { attendeeId: string; startsAt: Date; title: string | null; lateIfCancelledNow: boolean; confirmed: boolean; instructor?: string | null };
 
 /** "Geliyorum" and "Gelemiyorum / İptal et" for a booked lesson, shared by the list and the prompt at the top. */
 function useLessonAnswers(token: string, timezone: string, lateCancelHours: number) {
@@ -152,6 +152,7 @@ export function UpcomingLessons({
                   <span className="block truncate text-xs text-muted-foreground">
                     <span className="tabular-nums">{formatTime(l.startsAt, timezone)}</span>
                     {l.title && <> · {l.title}</>}
+                    {l.instructor && <> · {l.instructor}</>}
                   </span>
                 </span>
               </div>

@@ -28,7 +28,7 @@ export default async function OnboardingPage() {
           <div className="flex flex-col gap-2">
             <p className="eyebrow">Hoş geldin</p>
             <h1 className="text-3xl font-semibold">Seni tanıyalım</h1>
-            <p className="text-sm text-muted-foreground">İki bilgi yeter, sonra ilk danışanını ekleyebilirsin.</p>
+            <p className="text-sm text-muted-foreground">Birkaç bilgi yeter, sonra ilk danışanını ekleyebilirsin.</p>
           </div>
           <ProfileForm defaultName={trainer.fullName} />
         </div>

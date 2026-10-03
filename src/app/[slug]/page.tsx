@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Avatar } from "@/components/avatar";
 import { Activity, ArrowRight, AtSign, CalendarDays, Check, Clock, MapPin, Sparkles, UsersRound } from "lucide-react";
 import { Analytics } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +43,7 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
   const page = await getPublicPage(slug);
   if (!page) notFound();
 
-  const { trainer, packages, groups } = page;
+  const { trainer, packages, groups, team } = page;
   const displayName = trainer.businessName || trainer.fullName;
   const cover = profileImageUrl(trainer.coverPath);
   const avatar = profileImageUrl(trainer.avatarPath);
@@ -174,6 +175,36 @@ export default async function TrainerPublicPage({ params }: PageProps<"/[slug]">
             </div>
           </div>
         </header>
+
+        {team.length > 0 && (
+          <section aria-labelledby="team-heading" className="mt-10">
+            <div className="mb-4 px-1">
+              <p className="eyebrow">Ekip</p>
+              <h2 id="team-heading" className="text-2xl font-semibold tracking-tight">
+                Eğitmenler
+              </h2>
+            </div>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {team.map((m) => {
+                const photo = profileImageUrl(m.photoPath);
+                return (
+                  <li key={m.id} className="flex gap-4 surface p-4">
+                    {photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- storage URL, already resized on upload
+                      <img src={photo} alt="" className="size-16 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <Avatar name={m.fullName || "?"} size="lg" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold">{m.fullName}</p>
+                      {m.bio && <p className="mt-1 text-sm text-muted-foreground">{m.bio}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         <section aria-labelledby="packages-heading" className="mt-10">
           <div className="mb-4 px-1">

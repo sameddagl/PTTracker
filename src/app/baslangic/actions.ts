@@ -15,12 +15,13 @@ const profileSchema = z.object({
 
 const FIELDS = ["fullName", "businessName", "discipline"] as const;
 
-export type ProfileFormState = FormState<(typeof FIELDS)[number]>;
+export type ProfileFormState = FormState<(typeof FIELDS)[number]> & { values?: Record<string, string> };
 
 export async function saveProfile(_prev: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
   const raw = readForm(formData, FIELDS);
+  const team = formData.get("team") === "studio" ? "studio" : "solo";
   const parsed = profileSchema.safeParse(raw);
-  if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values: { ...raw, team } };
 
   await withTrainer((tx, trainerId) =>
     tx
@@ -28,5 +29,6 @@ export async function saveProfile(_prev: ProfileFormState, formData: FormData): 
       .set({ ...parsed.data, onboardedAt: new Date() })
       .where(eq(trainers.id, trainerId)),
   );
-  redirect("/bugun");
+  // A studio goes straight on to inviting its instructors.
+  redirect(team === "studio" ? "/ayarlar/ekip?ilk=1" : "/bugun");
 }

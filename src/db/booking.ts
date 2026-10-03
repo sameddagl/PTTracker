@@ -4,15 +4,7 @@ import { addDays } from "@/lib/dates";
 import { computeSlots, toHHMM, type Busy, type DaySlots } from "@/lib/slots";
 import type { Tx } from "./index";
 import { setAttendance } from "./lessons";
-import {
-  availabilityRules,
-  clientPackageBalances,
-  clientPackages,
-  lessonAttendees,
-  lessons,
-  timeOff,
-  trainers,
-} from "./schema";
+import { accountMembers, availabilityRules, clientPackageBalances, clientPackages, lessonAttendees, lessons, timeOff, trainers } from "./schema";
 
 // ---- Trainer settings (RLS transaction) ----
 
@@ -252,10 +244,14 @@ export async function upcomingForClient(tx: Tx, who: Who) {
       title: lessons.title,
       lateCancelHours: trainers.lateCancelHours,
       confirmedAt: lessonAttendees.confirmedAt,
+      // Studios: who teaches it (null for a trainer working alone).
+      instructor: sql<string | null>`case when (select count(*) from ${accountMembers} m where m.account_id = ${lessons.trainerId} and m.active) > 1
+        then ${accountMembers.fullName} end`,
     })
     .from(lessonAttendees)
     .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
     .innerJoin(trainers, eq(trainers.id, lessons.trainerId))
+    .leftJoin(accountMembers, eq(accountMembers.id, lessons.instructorId))
     .where(
       and(
         eq(lessonAttendees.clientId, who.clientId),
