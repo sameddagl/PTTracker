@@ -26,6 +26,8 @@ export type LessonInput = {
   note: string | null;
   /** Weekly repeat starting at `date`. Only for scheduled lessons. */
   repeat: Repeat | null;
+  /** Studio member who teaches it; the account's owner when left out. */
+  instructorId?: string | null;
 };
 
 /** The concrete dates a lesson input produces (one, or every occurrence of a weekly repeat). */
@@ -38,13 +40,20 @@ export function lessonDates(input: Pick<LessonInput, "date" | "repeat">) {
 export type Conflict = { date: string; startsAt: Date; endsAt: Date; names: string };
 
 /**
- * The trainer's other scheduled lessons overlapping any of the given slots
+ * Other scheduled lessons of the same instructor (or, without one, the whole
+ * account) overlapping any of the given slots
  * (same time and duration on each date). One query for the whole series.
  */
 export async function findConflicts(
   tx: Tx,
   trainer: TrainerRef,
-  { dates, time, durationMinutes, excludeLessonId }: { dates: string[]; time: string; durationMinutes: number; excludeLessonId?: string },
+  {
+    dates,
+    time,
+    durationMinutes,
+    excludeLessonId,
+    instructorId,
+  }: { dates: string[]; time: string; durationMinutes: number; excludeLessonId?: string; instructorId?: string | null },
 ): Promise<Conflict[]> {
   if (dates.length === 0) return [];
   const slotStart = sql`((s.d + ${time}::time) at time zone ${trainer.timezone})`;
@@ -63,6 +72,7 @@ export async function findConflicts(
      and l.starts_at < ${slotStart} + make_interval(mins => ${durationMinutes})
      and l.ends_at > ${slotStart}
      ${excludeLessonId ? sql`and l.id <> ${excludeLessonId}` : sql``}
+     ${instructorId ? sql`and l.instructor_id = ${instructorId}` : sql``}
     order by l.starts_at
   `);
   // postgres-js returns the rows array; PGlite wraps it in { rows }.
@@ -95,6 +105,7 @@ export async function createLessons(tx: Tx, trainer: TrainerRef, input: LessonIn
         durationMinutes: input.durationMinutes,
         startsOn: dates[0],
         endsOn: dates.at(-1)!,
+        instructorId: input.instructorId ?? null,
       })
       .returning({ id: lessonSeries.id });
     seriesId = series.id;
@@ -113,6 +124,7 @@ export async function createLessons(tx: Tx, trainer: TrainerRef, input: LessonIn
         startsAt,
         endsAt: sql`${startsAt} + make_interval(mins => ${input.durationMinutes})`,
         notes: input.note,
+        instructorId: input.instructorId ?? null,
       })
       .returning({ id: lessons.id });
     firstId ??= lesson.id;
@@ -139,7 +151,12 @@ export type CalendarAttendee = CalendarLesson["attendees"][number];
 export async function getLessons(
   tx: Tx,
   trainer: TrainerRef,
-  { from, to, includeCancelled = false }: { from: string; to: string; includeCancelled?: boolean },
+  {
+    from,
+    to,
+    includeCancelled = false,
+    instructorId,
+  }: { from: string; to: string; includeCancelled?: boolean; /** Only this studio member's lessons. */ instructorId?: string | null },
 ) {
   const tz = trainer.timezone;
   const rangeStart = sql`(${from}::date::timestamp at time zone ${tz})`;
@@ -150,6 +167,7 @@ export async function getLessons(
     .select({
       lessonId: lessons.id,
       seriesId: lessons.seriesId,
+      instructorId: lessons.instructorId,
       title: lessons.title,
       notes: lessons.notes,
       sessionType: lessons.sessionType,
@@ -182,6 +200,7 @@ export async function getLessons(
       and(
         eq(lessons.trainerId, trainer.id),
         includeCancelled ? undefined : eq(lessons.status, "scheduled"),
+        instructorId ? eq(lessons.instructorId, instructorId) : undefined,
         gte(lessons.startsAt, rangeStart),
         lt(lessons.startsAt, rangeEnd),
       ),
@@ -388,4 +407,36 @@ export async function countPendingAttendance(tx: Tx, trainer: TrainerRef, days =
       ),
     );
   return row?.n ?? 0;
+}
+
+/**
+ * Hands a lesson (and, with `following`, the rest of its series) to another
+ * instructor. Returns the clients booked in the lessons that changed, so they
+ * can be told who is teaching.
+ */
+export async function setLessonInstructor(tx: Tx, trainerId: string, lessonId: string, instructorId: string, { following = false } = {}) {
+  const [lesson] = await tx
+    .select({ seriesId: lessons.seriesId, startsAt: lessons.startsAt })
+    .from(lessons)
+    .where(and(eq(lessons.id, lessonId), eq(lessons.trainerId, trainerId)));
+  if (!lesson) return null;
+  const changed = await tx
+    .update(lessons)
+    .set({ instructorId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(lessons.trainerId, trainerId),
+        following && lesson.seriesId ? and(eq(lessons.seriesId, lesson.seriesId), gte(lessons.startsAt, lesson.startsAt)) : eq(lessons.id, lessonId),
+        ne(lessons.instructorId, instructorId),
+      ),
+    )
+    .returning({ id: lessons.id, startsAt: lessons.startsAt });
+  if (following && lesson.seriesId) await tx.update(lessonSeries).set({ instructorId }).where(and(eq(lessonSeries.id, lesson.seriesId), eq(lessonSeries.trainerId, trainerId)));
+  if (changed.length === 0) return { lessons: changed, attendees: [] };
+  const attendees = await tx
+    .select({ clientId: lessonAttendees.clientId, startsAt: lessons.startsAt })
+    .from(lessonAttendees)
+    .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+    .where(and(inArray(lessonAttendees.lessonId, changed.map((c) => c.id)), eq(lessonAttendees.status, "scheduled"), gte(lessons.startsAt, sql`now()`)));
+  return { lessons: changed, attendees };
 }

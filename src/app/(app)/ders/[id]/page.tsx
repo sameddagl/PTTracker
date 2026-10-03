@@ -9,11 +9,14 @@ import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { getLesson, listClientOptions } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
+import { listMembers } from "@/db/team";
+import { teamColor } from "@/lib/team";
 import { dayLong } from "@/lib/dates";
 import { SESSION_TYPE_LABELS } from "@/lib/format";
 import { lessonTitle, minutesToTime, takenPlaces } from "../../takvim/lesson-summary";
 import { cancelLessonAction, restoreLessonAction } from "./actions";
 import { AddAttendee } from "./add-attendee";
+import { InstructorPicker } from "./instructor-picker";
 import { RescheduleForm } from "./reschedule-form";
 
 export const metadata: Metadata = { title: "Ders" };
@@ -22,13 +25,18 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const data = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
     const lesson = await getLesson(tx, trainer, id);
-    return lesson && { lesson, clients: await listClientOptions(tx, trainerId) };
+    if (!lesson) return null;
+    return { lesson, member, team: await listMembers(tx, trainerId), clients: await listClientOptions(tx, trainerId) };
   });
   if (!data) notFound();
-  const { lesson } = data;
+  const { lesson, member, team } = data;
+  const studio = team.length > 1;
+  const instructor = team.find((m) => m.id === lesson.instructorId);
+  // An instructor sees colleagues' lessons but changes only their own.
+  const canManage = member.role === "owner" || lesson.instructorId === member.id;
   const inLesson = new Set(lesson.attendees.filter((a) => a.status !== "cancelled").map((a) => a.clientId));
   const addable = data.clients.filter((c) => !inLesson.has(c.id));
   const full = lesson.capacity !== null && takenPlaces(lesson) >= lesson.capacity;
@@ -53,6 +61,12 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
             </span>
             · {SESSION_TYPE_LABELS[lesson.sessionType]}
             {lesson.bookedByClient && <span>· Danışan randevusu</span>}
+            {studio && instructor && (
+              <span className="inline-flex items-center gap-1.5">
+                · <span className="size-2.5 rounded-full" style={{ background: teamColor(instructor.color, team.indexOf(instructor)) }} aria-hidden />
+                {instructor.fullName}
+              </span>
+            )}
             {lesson.seriesId && (
               <span className="inline-flex items-center gap-1">
                 · <Repeat className="size-3.5" aria-hidden /> Tekrarlayan
@@ -67,7 +81,29 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
         }
       />
 
-      {cancelled ? (
+      {studio && member.role === "owner" && !cancelled && (
+        <section aria-label="Eğitmen" className="mb-6 surface p-4">
+          <InstructorPicker
+            lessonId={lesson.lessonId}
+            current={lesson.instructorId}
+            instructors={team.map((m) => ({ id: m.id, name: m.fullName || "İsimsiz" }))}
+            series={Boolean(lesson.seriesId)}
+          />
+        </section>
+      )}
+
+      {!canManage ? (
+        <section aria-label="Danışanlar" className="mb-8">
+          <p className="mb-3 text-sm text-muted-foreground">Bu dersi {instructor?.fullName ?? "başka bir eğitmen"} veriyor; yoklamayı o alır.</p>
+          <ul className="divide-y overflow-hidden surface">
+            {lesson.attendees.map((a) => (
+              <li key={a.id} className="px-4 py-3 text-sm font-medium">
+                {a.name}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : cancelled ? (
         <Card className="mb-6 border-dashed">
           <CardContent className="flex items-center gap-3">
             <Ban className="size-4 text-muted-foreground" aria-hidden />
@@ -118,7 +154,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
         </section>
       )}
 
-      {!cancelled && (
+      {!cancelled && canManage && (
         <section aria-label="Ders işlemleri" className="flex flex-col gap-3">
           <RescheduleForm
             lessonId={lesson.lessonId}

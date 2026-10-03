@@ -9,6 +9,7 @@ import { MANUAL_REMINDER_GAP_HOURS, tomorrowAttendees } from "@/db/engagement";
 import { setAttendance, type AttendanceResult } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { lessonAttendees } from "@/db/schema";
+import { mayManageAttendee } from "@/db/team";
 import { sendLessonReminder } from "@/lib/reminder";
 
 const input = z.object({
@@ -20,8 +21,8 @@ export async function markAttendanceAction(attendeeId: string, status: string): 
   const parsed = input.safeParse({ attendeeId, status });
   if (!parsed.success) return { error: "Bir sorun oldu. Sayfayı yenileyip tekrar dene." };
 
-  const result = await withTrainer((tx, trainerId) =>
-    setAttendance(tx, trainerId, parsed.data.attendeeId, parsed.data.status),
+  const result = await withTrainer(async (tx, trainerId, member) =>
+    (await mayManageAttendee(tx, member, parsed.data.attendeeId)) ? setAttendance(tx, trainerId, parsed.data.attendeeId, parsed.data.status) : null,
   );
   if (!result) return { error: "Kayıt bulunamadı." };
 

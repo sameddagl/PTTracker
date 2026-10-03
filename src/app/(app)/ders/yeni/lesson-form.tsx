@@ -28,7 +28,12 @@ export function LessonForm({
   defaultDate,
   defaultTime,
   next,
+  instructors = [],
+  defaultInstructor,
 }: {
+  /** Studio members the owner can pick from (empty: no choice to make). */
+  instructors?: { id: string; name: string }[];
+  defaultInstructor?: string;
   clients: { id: string; fullName: string }[];
   preselected: string[];
   today: string;
@@ -125,6 +130,18 @@ export function LessonForm({
           selected.length === 0 && <p className="text-sm text-muted-foreground">En az bir danışan seç.</p>
         )}
       </fieldset>
+
+      {instructors.length > 1 && (
+        <Field id="instructorId" label="Eğitmen">
+          <NativeSelect id="instructorId" name="instructorId" defaultValue={defaultInstructor} className="max-w-72">
+            {instructors.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <Field id="date" label={repeat ? "Başlangıç" : "Tarih"} error={e.date}>

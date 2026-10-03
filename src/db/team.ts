@@ -5,7 +5,7 @@ import { authUsers } from "drizzle-orm/supabase";
 import { INVITE_DAYS, INVITE_TOKEN_PATTERN, nextTeamColor, type TeamColor } from "@/lib/team";
 import { adminDb, type Member, type Tx } from "./index";
 import { hashToken } from "./portal";
-import { accountInvites, accountMembers, trainers, type PayRule } from "./schema";
+import { accountInvites, accountMembers, lessonAttendees, lessons, trainers, type PayRule } from "./schema";
 
 // A studio's team: its members (the owner and invited instructors) and the
 // invitations still open. Everything with `tx` runs under RLS in the current
@@ -216,4 +216,37 @@ export async function myAccounts(userId: string) {
     .innerJoin(trainers, eq(trainers.id, accountMembers.accountId))
     .where(and(eq(accountMembers.userId, userId), eq(accountMembers.active, true), sql`${trainers.onboardedAt} is not null`))
     .orderBy(asc(accountMembers.createdAt));
+}
+
+/**
+ * Who teaches a lesson being planned: an instructor always plans their own;
+ * the owner may pick any active member (themselves by default).
+ */
+export async function resolveInstructor(tx: Tx, member: Member, requested: string | null | undefined) {
+  if (member.role !== "owner" || !requested || requested === member.id) return member.id;
+  const row = await getMemberRow(tx, member.accountId, requested);
+  return row?.active ? row.id : member.id;
+}
+
+/** The owner manages every lesson; an instructor only the ones they teach. */
+export async function mayManageLesson(tx: Tx, member: Member, lessonId: string) {
+  if (member.role === "owner") return true;
+  const [row] = await tx.select({ instructorId: lessons.instructorId }).from(lessons).where(and(eq(lessons.id, lessonId), eq(lessons.trainerId, member.accountId)));
+  return row?.instructorId === member.id;
+}
+
+/** Same rule, by a place in a lesson (attendance, notes). */
+export async function mayManageAttendee(tx: Tx, member: Member, attendeeId: string) {
+  if (member.role === "owner") return true;
+  const [row] = await tx
+    .select({ instructorId: lessons.instructorId })
+    .from(lessonAttendees)
+    .innerJoin(lessons, eq(lessons.id, lessonAttendees.lessonId))
+    .where(and(eq(lessonAttendees.id, attendeeId), eq(lessonAttendees.trainerId, member.accountId)));
+  return row?.instructorId === member.id;
+}
+
+export async function lessonInstructorId(tx: Tx, accountId: string, lessonId: string) {
+  const [row] = await tx.select({ id: lessons.instructorId }).from(lessons).where(and(eq(lessons.id, lessonId), eq(lessons.trainerId, accountId)));
+  return row?.id ?? null;
 }

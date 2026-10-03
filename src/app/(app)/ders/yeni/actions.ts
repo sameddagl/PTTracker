@@ -6,6 +6,7 @@ import { z } from "zod";
 import { withTrainer } from "@/db";
 import { createLessons, findConflicts, lessonDates } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
+import { resolveInstructor } from "@/db/team";
 import { safeNext } from "@/lib/config";
 import { dayShort } from "@/lib/dates";
 import { formatTime } from "@/lib/format";
@@ -65,6 +66,7 @@ export async function createLessonAction(_prev: LessonFormState, formData: FormD
     weekdays: formData.getAll("weekdays").map(String),
     weeks: formData.get("weeks")?.toString() || "4",
   };
+  const requestedInstructor = formData.get("instructorId")?.toString() || null;
   const parsed = lessonSchema.safeParse(raw);
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
@@ -72,8 +74,9 @@ export async function createLessonAction(_prev: LessonFormState, formData: FormD
   const input = { ...rest, repeat: repeat ? { weekdays, weeks } : null };
   const force = formData.get("intent") === "force";
 
-  const outcome = await withTrainer(async (tx, trainerId) => {
+  const outcome = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
+    const instructorId = await resolveInstructor(tx, member, requestedInstructor);
     const dates = lessonDates(input);
     if (dates.length === 0) return { kind: "empty" as const };
 
@@ -82,6 +85,7 @@ export async function createLessonAction(_prev: LessonFormState, formData: FormD
         dates,
         time: input.time,
         durationMinutes: input.durationMinutes,
+        instructorId,
       });
       if (conflicts.length > 0) {
         return {
@@ -94,7 +98,7 @@ export async function createLessonAction(_prev: LessonFormState, formData: FormD
         };
       }
     }
-    await createLessons(tx, trainer, input);
+    await createLessons(tx, trainer, { ...input, instructorId });
     return { kind: "created" as const };
   });
 
