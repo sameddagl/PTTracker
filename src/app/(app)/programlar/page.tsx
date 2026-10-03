@@ -4,7 +4,8 @@ import { ChevronRight, Dumbbell, ListChecks, Plus, Salad } from "lucide-react";
 import { ActionTiles } from "@/components/action-tiles";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { can } from "@/lib/permissions";
+import { listMembers } from "@/db/team";
+import { can, mayEditShared } from "@/lib/permissions";
 import { ensureExerciseLibrary, listTemplates } from "@/db/programs";
 import { formatShortDate } from "@/lib/format";
 
@@ -13,9 +14,17 @@ export const metadata: Metadata = { title: "Programlar" };
 export default async function ProgramsPage({ searchParams }: PageProps<"/programlar">) {
   const { tur } = await searchParams;
   const kind = tur === "beslenme" ? "nutrition" : "workout";
-  const { templates, canEdit } = await withTrainer(async (tx, trainerId, member) => {
+  const { templates, canCreate } = await withTrainer(async (tx, trainerId, member) => {
     await ensureExerciseLibrary(tx, trainerId);
-    return { templates: await listTemplates(tx, trainerId, kind), canEdit: can(member, "editPrograms") };
+    const team = await listMembers(tx, trainerId, { includeInactive: true });
+    const ownerName = team.find((m) => m.role === "owner")?.fullName ?? null;
+    // Studios: who made each template, and whether this member may change it.
+    const templates = (await listTemplates(tx, trainerId, kind)).map((t) => ({
+      ...t,
+      maker: team.length > 1 ? (team.find((m) => m.id === t.createdBy)?.fullName ?? ownerName) : null,
+      editable: mayEditShared(member, t.createdBy),
+    }));
+    return { templates, canCreate: can(member, "createPrograms") };
   });
   const workout = kind === "workout";
 
@@ -44,7 +53,7 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
       <ActionTiles
         className="mb-6"
         items={[
-          ...(canEdit
+          ...(canCreate
             ? [{ href: `/programlar/yeni${workout ? "" : "?tur=beslenme"}`, icon: <Plus />, title: workout ? "Yeni şablon" : "Yeni plan şablonu", primary: true }]
             : []),
           ...(workout ? [{ href: "/programlar/hareketler", icon: <ListChecks />, title: "Hareketler" }] : []),
@@ -62,11 +71,12 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
         <ul className="divide-y overflow-hidden surface">
           {templates.map((t) => (
             <li key={t.id}>
-              {canEdit ? (
+              {t.editable ? (
                 <Link href={`/programlar/${t.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{t.name}</span>
                     <span className="block text-xs text-muted-foreground">
+                      {t.maker && `${t.maker} · `}
                       {t.days} {workout ? "gün" : "öğün"} · {formatShortDate(t.updatedAt.toISOString().slice(0, 10))} güncellendi
                     </span>
                   </span>
@@ -77,6 +87,7 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
                 <span className="block px-4 py-3.5">
                   <span className="block truncate font-medium">{t.name}</span>
                   <span className="block text-xs text-muted-foreground">
+                    {t.maker && `${t.maker} · `}
                     {t.days} {workout ? "gün" : "öğün"} · danışanın sayfasından kopyalarsın
                   </span>
                 </span>

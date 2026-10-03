@@ -28,10 +28,16 @@ export const PERMISSIONS = [
     default: false,
   },
   {
-    key: "editPrograms",
-    title: "Program şablonlarını ve hareketleri düzenleyebilsin",
-    hint: "Kapalıysa şablonları sadece kullanır, danışana kopyasını verir.",
+    key: "createPrograms",
+    title: "Kendi program şablonlarını ve hareketlerini oluşturabilsin",
+    hint: "Kendi hazırladıklarını düzenleyip silebilir.",
     default: true,
+  },
+  {
+    key: "editAllPrograms",
+    title: "Başkalarının şablonlarını ve hareketlerini düzenleyip silebilsin",
+    hint: "Senin ve diğer eğitmenlerin hazırladıkları dahil. Kapalıysa onları sadece kullanır, danışana kopyasını verir.",
+    default: false,
   },
   {
     key: "seeOthersLessons",
@@ -50,4 +56,15 @@ export const isPermission = (k: unknown): k is Permission => PERMISSIONS.some((p
 export function can(member: { role: "owner" | "instructor"; permissions?: Permissions | null }, key: Permission) {
   if (member.role === "owner") return true;
   return member.permissions?.[key] ?? PERMISSIONS.find((p) => p.key === key)!.default;
+}
+
+/**
+ * A shared template or exercise: the owner changes any; an instructor their
+ * own (with permission to create) or anyone's (with permission to edit all).
+ * `createdBy` null means the owner's or the starter list.
+ */
+export function mayEditShared(member: { id: string; role: "owner" | "instructor"; permissions?: Permissions | null }, createdBy: string | null) {
+  if (member.role === "owner") return true;
+  if (createdBy === member.id) return can(member, "createPrograms");
+  return can(member, "editAllPrograms");
 }

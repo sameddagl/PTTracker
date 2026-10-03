@@ -4,18 +4,19 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { can } from "@/lib/permissions";
-import { requirePermission, withTrainer } from "@/db";
+import { can, mayEditShared } from "@/lib/permissions";
+import { withTrainer } from "@/db";
 import {
   archiveExercise,
   archiveProgram,
   copyProgram,
   createProgram,
+  exerciseCreator,
   getProgram,
   saveExercise,
   sendProgram,
-  updateProgram,
   type ProgramKind,
+  updateProgram,
 } from "@/db/programs";
 import { getTrainer } from "@/db/queries";
 import { safeNext } from "@/lib/config";
@@ -43,14 +44,17 @@ export async function saveProgramAction(
   if (target.clientId && !uuid.safeParse(target.clientId).success) return { ok: false, error: FAIL };
 
   const saved = await withTrainer(async (tx, trainerId, member) => {
-    // Templates (no client) are shared by the studio; changing them needs permission.
-    const editsTemplate = target.id ? (await getProgram(tx, trainerId, target.id))?.clientId === null : !target.clientId;
-    if (editsTemplate && !can(member, "editPrograms")) return null;
+    // Templates (no client) are shared by the studio: new ones need permission to create,
+    // changing one needs to be its maker (with that permission) or allowed to edit everyone's.
+    if (target.id) {
+      const current = await getProgram(tx, trainerId, target.id);
+      if (!current || (current.clientId === null && !mayEditShared(member, current.createdBy))) return null;
+    } else if (!target.clientId && !can(member, "createPrograms")) return null;
     if (target.id) {
       const p = await updateProgram(tx, trainerId, target.id, parsed.data);
       return p ? { id: target.id, clientId: p.clientId } : null;
     }
-    const id = await createProgram(tx, trainerId, { ...parsed.data, kind: kind.data, clientId: target.clientId ?? null });
+    const id = await createProgram(tx, trainerId, { ...parsed.data, kind: kind.data, clientId: target.clientId ?? null, createdBy: member.id });
     return id ? { id, clientId: target.clientId ?? null } : null;
   });
   if (!saved) return { ok: false, error: FAIL };
@@ -62,9 +66,9 @@ export async function saveProgramAction(
 /** "Program ver" with a template: the client gets an unsent copy, opened for editing. */
 export async function giveProgramAction(clientId: string, templateId: string) {
   if (!uuid.safeParse(clientId).success || !uuid.safeParse(templateId).success) return;
-  const id = await withTrainer(async (tx, trainerId) => {
+  const id = await withTrainer(async (tx, trainerId, member) => {
     const t = await getTrainer(tx, trainerId);
-    return copyProgram(tx, trainerId, templateId, clientId, todayISO(t.timezone));
+    return copyProgram(tx, trainerId, templateId, clientId, todayISO(t.timezone), member.id);
   });
   if (!id) return;
   redirect(`/programlar/${id}`);
@@ -74,7 +78,7 @@ export async function giveProgramAction(clientId: string, templateId: string) {
 export async function saveAsTemplateAction(programId: string): Promise<Result> {
   if (!uuid.safeParse(programId).success) return { ok: false, error: FAIL };
   const id = await withTrainer(async (tx, trainerId, member) => {
-    if (!can(member, "editPrograms")) return null;
+    if (!can(member, "createPrograms")) return null;
     const p = await getProgram(tx, trainerId, programId);
     if (!p) return null;
     return createProgram(tx, trainerId, {
@@ -85,6 +89,7 @@ export async function saveAsTemplateAction(programId: string): Promise<Result> {
       targets: p.targets,
       startsOn: null,
       days: toInputDays(p.days),
+      createdBy: member.id,
     });
   });
   if (!id) return { ok: false, error: FAIL };
@@ -117,7 +122,8 @@ export async function sendProgramAction(programId: string): Promise<Result> {
 export async function archiveProgramAction(programId: string): Promise<Result> {
   if (!uuid.safeParse(programId).success) return { ok: false, error: FAIL };
   const p = await withTrainer(async (tx, trainerId, member) => {
-    if (!can(member, "editPrograms") && (await getProgram(tx, trainerId, programId))?.clientId === null) return null;
+    const current = await getProgram(tx, trainerId, programId);
+    if (current?.clientId === null && !mayEditShared(member, current.createdBy)) return null;
     return archiveProgram(tx, trainerId, programId);
   });
   if (!p) return { ok: false, error: FAIL };
@@ -144,29 +150,41 @@ const exerciseSchema = z.object({
 });
 
 export async function saveExerciseAction(input: unknown): Promise<Result> {
-  await requirePermission("editPrograms");
   const parsed = exerciseSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-  const id = await withTrainer((tx, trainerId) =>
-    saveExercise(tx, trainerId, {
+  const id = await withTrainer(async (tx, trainerId, member) => {
+    // A new exercise needs permission to create; changing one, to be its maker or allowed to edit everyone's.
+    if (parsed.data.id) {
+      const createdBy = await exerciseCreator(tx, trainerId, parsed.data.id);
+      if (createdBy === undefined || !mayEditShared(member, createdBy)) return null;
+    } else if (!can(member, "createPrograms")) return null;
+    return saveExercise(
+      tx,
+      trainerId,
+      {
       id: parsed.data.id ?? null,
       name: parsed.data.name,
       category: parsed.data.category,
       videoUrl: parsed.data.videoUrl,
       note: parsed.data.note,
-      primary: parsed.data.primary,
-      secondary: parsed.data.secondary,
-    }),
-  );
-  if (!id) return { ok: false, error: FAIL };
+        primary: parsed.data.primary,
+        secondary: parsed.data.secondary,
+      },
+      member.id,
+    );
+  });
+  if (!id) return { ok: false, error: "Bu hareketi değiştirme iznin yok." };
   revalidatePath("/programlar/hareketler");
   return { ok: true };
 }
 
 export async function archiveExerciseAction(id: string): Promise<Result> {
-  await requirePermission("editPrograms");
   if (!uuid.safeParse(id).success) return { ok: false, error: FAIL };
-  const ok = await withTrainer((tx, trainerId) => archiveExercise(tx, trainerId, id));
+  const ok = await withTrainer(async (tx, trainerId, member) => {
+    const createdBy = await exerciseCreator(tx, trainerId, id);
+    if (createdBy === undefined || !mayEditShared(member, createdBy)) return false;
+    return archiveExercise(tx, trainerId, id);
+  });
   if (!ok) return { ok: false, error: FAIL };
   revalidatePath("/programlar/hareketler");
   return { ok: true };

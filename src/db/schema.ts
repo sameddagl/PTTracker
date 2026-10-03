@@ -991,11 +991,14 @@ export const exercises = pgTable(
     // Muscle groups for the body figure (keys in src/lib/muscles.ts).
     primaryMuscles: text("primary_muscles").array().notNull().default(sql`'{}'::text[]`),
     secondaryMuscles: text("secondary_muscles").array().notNull().default(sql`'{}'::text[]`),
+    // Studios: the member who added it (null = the starter list or the owner).
+    createdBy: uuid("created_by"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     check("exercises_name_length", sql`char_length(${t.name}) between 1 and 80`),
+    foreignKey({ name: "exercises_created_by_fk", columns: [t.createdBy, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
     check("exercises_video_url", sql`${t.videoUrl} is null or ${t.videoUrl} ~ '^https://'`),
     index("exercises_trainer_idx").on(t.trainerId),
     ownRows("exercises_own", t.trainerId),
@@ -1023,6 +1026,8 @@ export const programs = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     ...timestamps,
+    // Studios: the member who made it (null = the owner, or made before studios).
+    createdBy: uuid("created_by"),
   },
   (t) => [
     check("programs_name_length", sql`char_length(${t.name}) between 1 and 80`),
@@ -1031,6 +1036,7 @@ export const programs = pgTable(
     ),
     index("programs_client_idx").on(t.clientId, t.kind),
     ownRows("programs_own", t.trainerId),
+    foreignKey({ name: "programs_created_by_fk", columns: [t.createdBy, t.trainerId], foreignColumns: [accountMembers.id, accountMembers.accountId] }),
   ],
 );
 

@@ -21,7 +21,7 @@ export default async function NewProgramPage({ searchParams }: PageProps<"/progr
   const clientId = typeof danisan === "string" && /^[0-9a-f-]{36}$/i.test(danisan) ? danisan : null;
   const data = await withTrainer(async (tx, trainerId, member) => {
     // A new template needs permission; a program for a client doesn't.
-    if (!clientId && !can(member, "editPrograms")) return null;
+    if (!clientId && !can(member, "createPrograms")) return null;
     await ensureExerciseLibrary(tx, trainerId);
     const library = await listExercises(tx, trainerId);
     const trainer = await getTrainer(tx, trainerId);

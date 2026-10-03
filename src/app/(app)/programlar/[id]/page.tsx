@@ -5,7 +5,8 @@ import { and, eq } from "drizzle-orm";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { can } from "@/lib/permissions";
+import { listMembers } from "@/db/team";
+import { can, mayEditShared } from "@/lib/permissions";
 import { getProgram, listExercises } from "@/db/programs";
 import { clients } from "@/db/schema";
 import { toInputDays } from "@/lib/programs";
@@ -20,16 +21,19 @@ export default async function ProgramPage({ params }: PageProps<"/programlar/[id
   const data = await withTrainer(async (tx, trainerId, member) => {
     const program = await getProgram(tx, trainerId, id);
     if (!program) return null;
-    // Shared templates are editable only with permission; a client's own program always.
-    if (program.clientId === null && !can(member, "editPrograms")) return null;
+    // A shared template: its maker (with permission) or someone allowed to edit everyone's; a client's program always.
+    if (program.clientId === null && !mayEditShared(member, program.createdBy)) return null;
+    const team = await listMembers(tx, trainerId, { includeInactive: true });
+    const owner = team.find((m) => m.role === "owner");
+    const maker = team.length > 1 ? (team.find((m) => m.id === program.createdBy) ?? owner)?.fullName : null;
     const library = program.kind === "workout" ? await listExercises(tx, trainerId) : [];
     const [client] = program.clientId
       ? await tx.select({ id: clients.id, name: clients.fullName }).from(clients).where(and(eq(clients.id, program.clientId), eq(clients.trainerId, trainerId)))
       : [];
-    return { program, library, client: client ?? null, canTemplate: can(member, "editPrograms") };
+    return { program, library, client: client ?? null, canTemplate: can(member, "createPrograms"), maker };
   });
   if (!data) notFound();
-  const { program, library, client, canTemplate } = data;
+  const { program, library, client, canTemplate, maker } = data;
   const workout = program.kind === "workout";
   const back = client ? `/danisanlar/${client.id}?sekme=${workout ? "program" : "beslenme"}` : `/programlar${workout ? "" : "?tur=beslenme"}`;
 
@@ -46,7 +50,7 @@ export default async function ProgramPage({ params }: PageProps<"/programlar/[id
             ? program.sentAt
               ? `${client.name.split(" ")[0]} bu programı sayfasında görüyor. Değişiklikleri kaydedince o da görür.`
               : `Taslak: ${client.name.split(" ")[0]} henüz görmüyor. Danışanın Program sekmesinden gönderebilirsin.`
-            : "Şablon. Danışana verdiğinde kopyası oluşur; şablonu değiştirmek verilen programları etkilemez."
+            : `${maker ? `${maker} hazırladı. ` : ""}Şablon. Danışana verdiğinde kopyası oluşur; şablonu değiştirmek verilen programları etkilemez.`
         }
         action={<ProgramHeaderActions id={program.id} isTemplate={!client} canTemplate={canTemplate} />}
       />

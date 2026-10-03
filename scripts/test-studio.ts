@@ -15,7 +15,7 @@ import { addDays } from "../src/lib/dates";
 import { closePayrollMonth, payrollFor, setPayrollPaid } from "../src/db/payroll";
 import * as schema from "../src/db/schema";
 import { addMemberWithoutLogin, clientIdsTaughtBy, mayManageLesson, mayOpenClient, resolveInstructor, setMemberPermission, updateMember } from "../src/db/team";
-import { can } from "../src/lib/permissions";
+import { can, mayEditShared } from "../src/lib/permissions";
 import { computePayroll, monthRange } from "../src/lib/payroll";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -188,8 +188,8 @@ async function main() {
   // ---- Per-instructor permissions ----
   assert.equal(can(owner, "editClients"), true, "the owner can do everything");
   assert.deepEqual(
-    [can(inst, "seeAllClients"), can(inst, "editClients"), can(inst, "manageLessons"), can(inst, "editAvailability"), can(inst, "editPrograms"), can(inst, "seeOthersLessons")],
-    [true, false, true, false, true, true],
+    [can(inst, "seeAllClients"), can(inst, "editClients"), can(inst, "manageLessons"), can(inst, "editAvailability"), can(inst, "createPrograms"), can(inst, "editAllPrograms"), can(inst, "seeOthersLessons")],
+    [true, false, true, false, true, false, true],
     "defaults",
   );
   const [extra] = await as(A, A, (tx) => tx.insert(schema.clients).values({ trainerId: A, fullName: "Ece" }).returning({ id: schema.clients.id }));
@@ -210,6 +210,13 @@ async function main() {
     as(I, A, (tx) => tx.update(schema.accountMembers).set({ permissions: { editClients: true } }).where(sql`id = ${inst.id}`)),
     (e: { cause?: unknown }) => /only the owner/.test(String(e.cause ?? e)),
   );
+  // Templates and exercises: own ones with permission to create, everyone's only with permission to edit all.
+  assert.equal(mayEditShared(owner, inst.id), true, "the owner changes anyone's");
+  assert.equal(mayEditShared(inst, inst.id), true, "own template by default");
+  assert.equal(mayEditShared(inst, null), false, "not the owner's or the starter list by default");
+  assert.equal(mayEditShared(inst, owner.id), false);
+  assert.equal(mayEditShared({ ...inst, permissions: { editAllPrograms: true } }, owner.id), true);
+  assert.equal(mayEditShared({ ...inst, permissions: { createPrograms: false } }, inst.id), false, "can't even change their own without permission to create");
   console.log("per-instructor permissions ok");
   console.log("studio lessons, permissions and pay ok\n\nall studio checks passed");
 }

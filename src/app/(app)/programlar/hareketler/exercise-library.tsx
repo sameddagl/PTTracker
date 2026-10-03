@@ -33,7 +33,23 @@ function cycle(d: Draft, m: MuscleKey): Draft {
 const names = (list: MuscleKey[]) => list.map((m) => MUSCLES[m]).join(", ");
 
 /** The library as a grid per category: name, muscles and the figure; a card opens the editor. */
-export function ExerciseLibrary({ exercises, categories, readOnly = false }: { exercises: Exercise[]; categories: string[]; /** Instructors without permission see the list but don't change it. */ readOnly?: boolean }) {
+export function ExerciseLibrary({
+  exercises,
+  categories,
+  canCreate = true,
+  editableIds,
+  makers = {},
+}: {
+  exercises: Exercise[];
+  categories: string[];
+  /** May add new exercises. */
+  canCreate?: boolean;
+  /** Exercises this member may change (all when left out). */
+  editableIds?: string[];
+  /** Studios: who added a custom exercise, by id. */
+  makers?: Record<string, string>;
+}) {
+  const editable = new Set(editableIds ?? exercises.map((e) => e.id));
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Draft | null>(null);
 
@@ -60,7 +76,7 @@ export function ExerciseLibrary({ exercises, categories, readOnly = false }: { e
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hareket ya da kas ara" className="pl-10" />
         </label>
-        {!readOnly && (
+        {canCreate && (
           <Button type="button" onClick={() => setEditing(toDraft())}>
             <Plus />
             Ekle
@@ -81,7 +97,7 @@ export function ExerciseLibrary({ exercises, categories, readOnly = false }: { e
               <li key={e.id}>
                 <button
                   type="button"
-                  disabled={readOnly}
+                  disabled={!editable.has(e.id)}
                   onClick={() => setEditing(toDraft(e))}
                   className="flex h-full w-full flex-col gap-3 rounded-2xl border bg-card p-3 text-left shadow-card transition-shadow outline-none hover:shadow-float focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
@@ -90,6 +106,7 @@ export function ExerciseLibrary({ exercises, categories, readOnly = false }: { e
                       <span className="block text-sm leading-snug font-semibold">{e.name}</span>
                       <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
                         {e.primary.length > 0 ? names(e.primary) : "Kas seçilmedi"}
+                        {makers[e.id] && ` · ${makers[e.id]}`}
                       </span>
                     </span>
                     {e.videoUrl && <PlayCircle className="size-4 shrink-0 text-muted-foreground" aria-label="Video var" />}

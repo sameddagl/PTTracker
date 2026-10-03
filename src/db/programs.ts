@@ -13,7 +13,17 @@ export type ProgramKind = "workout" | "nutrition";
 
 // ---- Exercise library ----
 
-export type Exercise = { id: string; name: string; category: string | null; videoUrl: string | null; note: string | null; primary: MuscleKey[]; secondary: MuscleKey[] };
+export type Exercise = {
+  id: string;
+  name: string;
+  category: string | null;
+  videoUrl: string | null;
+  note: string | null;
+  primary: MuscleKey[];
+  secondary: MuscleKey[];
+  /** Studios: the member who added it (null = starter list or the owner). */
+  createdBy: string | null;
+};
 
 /**
  * Adds the starter exercises this trainer doesn't have yet: all of them for a
@@ -41,6 +51,7 @@ export async function listExercises(tx: Tx, trainerId: string): Promise<Exercise
       note: exercises.note,
       primary: exercises.primaryMuscles,
       secondary: exercises.secondaryMuscles,
+      createdBy: exercises.createdBy,
     })
     .from(exercises)
     .where(and(eq(exercises.trainerId, trainerId), isNull(exercises.archivedAt)))
@@ -52,6 +63,7 @@ export async function saveExercise(
   tx: Tx,
   trainerId: string,
   input: { id?: string | null; name: string; category: string | null; videoUrl: string | null; note: string | null; primary?: string[]; secondary?: string[] },
+  createdBy: string | null = null,
 ) {
   const primaryMuscles = cleanMuscles(input.primary);
   const values = {
@@ -70,8 +82,14 @@ export async function saveExercise(
       .returning({ id: exercises.id });
     return rows[0]?.id ?? null;
   }
-  const [row] = await tx.insert(exercises).values({ trainerId, ...values }).returning({ id: exercises.id });
+  const [row] = await tx.insert(exercises).values({ trainerId, ...values, createdBy }).returning({ id: exercises.id });
   return row.id;
+}
+
+/** Who added an exercise (null = starter list or owner), or undefined if it isn't this account's. */
+export async function exerciseCreator(tx: Tx, trainerId: string, id: string) {
+  const [row] = await tx.select({ createdBy: exercises.createdBy }).from(exercises).where(and(eq(exercises.id, id), eq(exercises.trainerId, trainerId)));
+  return row ? row.createdBy : undefined;
 }
 
 /** Archived, not deleted: programs keep their copy of the name either way. */
@@ -114,6 +132,8 @@ export type Program = {
   startsOn: string | null;
   sentAt: Date | null;
   updatedAt: Date;
+  /** Studios: the member who made it (null = the owner, or before studios). */
+  createdBy: string | null;
   days: ProgramDay[];
 };
 
@@ -127,6 +147,7 @@ const programCols = {
   startsOn: programs.startsOn,
   sentAt: programs.sentAt,
   updatedAt: programs.updatedAt,
+  createdBy: programs.createdBy,
 };
 
 async function withDays(tx: Tx, rows: Omit<Program, "days">[]): Promise<Program[]> {
@@ -180,13 +201,14 @@ export async function getProgram(tx: Tx, trainerId: string, id: string) {
   return (await withDays(tx, rows))[0] ?? null;
 }
 
-/** Templates (no client) of one kind, with a count of their days for the list. */
+/** Templates (no client) of one kind, with a count of their days and who made them. */
 export async function listTemplates(tx: Tx, trainerId: string, kind: ProgramKind) {
   return tx
     .select({
       id: programs.id,
       name: programs.name,
       updatedAt: programs.updatedAt,
+      createdBy: programs.createdBy,
       days: sql<number>`(select count(*)::int from ${programDays} where ${programDays.programId} = "programs"."id")`,
     })
     .from(programs)
@@ -241,7 +263,7 @@ async function linkExercises(tx: Tx, trainerId: string, kind: ProgramKind, days:
 export async function createProgram(
   tx: Tx,
   trainerId: string,
-  input: ProgramInput & { kind: ProgramKind; clientId: string | null },
+  input: ProgramInput & { kind: ProgramKind; clientId: string | null; createdBy?: string | null },
 ): Promise<string | null> {
   if (input.clientId) {
     const [c] = await tx.select({ id: clients.id }).from(clients).where(and(eq(clients.id, input.clientId), eq(clients.trainerId, trainerId)));
@@ -249,7 +271,16 @@ export async function createProgram(
   }
   const [row] = await tx
     .insert(programs)
-    .values({ trainerId, clientId: input.clientId, kind: input.kind, name: input.name, note: input.note, targets: input.targets, startsOn: input.startsOn })
+    .values({
+      trainerId,
+      clientId: input.clientId,
+      kind: input.kind,
+      name: input.name,
+      note: input.note,
+      targets: input.targets,
+      startsOn: input.startsOn,
+      createdBy: input.createdBy ?? null,
+    })
     .returning({ id: programs.id });
   await writeDays(tx, trainerId, row.id, await linkExercises(tx, trainerId, input.kind, input.days));
   return row.id;
@@ -279,7 +310,7 @@ export async function updateProgram(tx: Tx, trainerId: string, id: string, input
 }
 
 /** A copy of a template (or another client's program) for one client, not sent yet. */
-export async function copyProgram(tx: Tx, trainerId: string, sourceId: string, clientId: string, startsOn: string) {
+export async function copyProgram(tx: Tx, trainerId: string, sourceId: string, clientId: string, startsOn: string, createdBy: string | null = null) {
   const src = await getProgram(tx, trainerId, sourceId);
   if (!src) return null;
   const id = await createProgram(tx, trainerId, {
@@ -290,6 +321,7 @@ export async function copyProgram(tx: Tx, trainerId: string, sourceId: string, c
     targets: src.targets,
     startsOn,
     days: toInputDays(src.days),
+    createdBy,
   });
   return id;
 }
