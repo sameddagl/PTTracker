@@ -27,7 +27,17 @@ export type AvailabilityInitial = {
   rules: { weekday: number; startMinute: number; endMinute: number }[];
 };
 
-export function AvailabilityForm({ initial, instructorId }: { initial: AvailabilityInitial; /** Studios: whose weekly hours these are. */ instructorId?: string }) {
+export function AvailabilityForm({
+  initial,
+  instructorId,
+  hoursOnly = false,
+}: {
+  initial: AvailabilityInitial;
+  /** Studios: whose weekly hours these are. */
+  instructorId?: string;
+  /** An instructor editing their own hours: the studio's booking settings stay with the owner. */
+  hoursOnly?: boolean;
+}) {
   const [state, action, pending] = useActionState<FormState<AvailabilityField>, FormData>(saveAvailabilityAction, {});
   const e = state.errors ?? {};
   const [enabled, setEnabled] = useState(initial.bookingEnabled);
@@ -58,51 +68,55 @@ export function AvailabilityForm({ initial, instructorId }: { initial: Availabil
       {instructorId && <input type="hidden" name="instructorId" value={instructorId} />}
       <input type="hidden" name="rules" value={JSON.stringify(rules)} />
 
-      <label className="flex items-start gap-3 surface p-4">
-        <input
-          type="checkbox"
-          name="bookingEnabled"
-          checked={enabled}
-          onChange={(ev) => setEnabled(ev.target.checked)}
-          className="mt-0.5 size-4 accent-[var(--primary)]"
-        />
-        <span className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Danışanlar randevu alabilsin</span>
-          <span className="text-xs text-muted-foreground">
-            Özel ders paketi olan danışanlar, aşağıdaki saatlerdeki boşlukları kendi sayfalarında görüp randevu alır.
-          </span>
-        </span>
-      </label>
+      {!hoursOnly && (
+        <>
+          <label className="flex items-start gap-3 surface p-4">
+            <input
+              type="checkbox"
+              name="bookingEnabled"
+              checked={enabled}
+              onChange={(ev) => setEnabled(ev.target.checked)}
+              className="mt-0.5 size-4 accent-[var(--primary)]"
+            />
+            <span className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Danışanlar randevu alabilsin</span>
+              <span className="text-xs text-muted-foreground">
+                Özel ders paketi olan danışanlar, aşağıdaki saatlerdeki boşlukları kendi sayfalarında görüp randevu alır.
+              </span>
+            </span>
+          </label>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Field id="bookingLessonMinutes" label="Ders süresi" error={e.bookingLessonMinutes}>
-          <NativeSelect id="bookingLessonMinutes" name="bookingLessonMinutes" defaultValue={initial.bookingLessonMinutes}>
-            {[30, 45, 50, 55, 60, 75, 90].map((m) => (
-              <option key={m} value={m}>
-                {m} dk
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field id="bookingMinNoticeHours" label="Kaç saat önceden" error={e.bookingMinNoticeHours}>
-          <NativeSelect id="bookingMinNoticeHours" name="bookingMinNoticeHours" defaultValue={initial.bookingMinNoticeHours}>
-            {[0, 1, 2, 3, 6, 12, 24, 48].map((h) => (
-              <option key={h} value={h}>
-                {h === 0 ? "Hemen" : `${h} saat`}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field id="bookingHorizonDays" label="Kaç gün ileriye" error={e.bookingHorizonDays}>
-          <NativeSelect id="bookingHorizonDays" name="bookingHorizonDays" defaultValue={initial.bookingHorizonDays}>
-            {[7, 14, 21, 30, 60].map((d) => (
-              <option key={d} value={d}>
-                {d} gün
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-      </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Field id="bookingLessonMinutes" label="Ders süresi" error={e.bookingLessonMinutes}>
+              <NativeSelect id="bookingLessonMinutes" name="bookingLessonMinutes" defaultValue={initial.bookingLessonMinutes}>
+                {[30, 45, 50, 55, 60, 75, 90].map((m) => (
+                  <option key={m} value={m}>
+                    {m} dk
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Field id="bookingMinNoticeHours" label="Kaç saat önceden" error={e.bookingMinNoticeHours}>
+              <NativeSelect id="bookingMinNoticeHours" name="bookingMinNoticeHours" defaultValue={initial.bookingMinNoticeHours}>
+                {[0, 1, 2, 3, 6, 12, 24, 48].map((h) => (
+                  <option key={h} value={h}>
+                    {h === 0 ? "Hemen" : `${h} saat`}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Field id="bookingHorizonDays" label="Kaç gün ileriye" error={e.bookingHorizonDays}>
+              <NativeSelect id="bookingHorizonDays" name="bookingHorizonDays" defaultValue={initial.bookingHorizonDays}>
+                {[7, 14, 21, 30, 60].map((d) => (
+                  <option key={d} value={d}>
+                    {d} gün
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+          </div>
+        </>
+      )}
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">Haftalık çalışma saatleri</legend>

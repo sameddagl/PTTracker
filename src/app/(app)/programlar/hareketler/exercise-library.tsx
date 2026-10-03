@@ -33,7 +33,7 @@ function cycle(d: Draft, m: MuscleKey): Draft {
 const names = (list: MuscleKey[]) => list.map((m) => MUSCLES[m]).join(", ");
 
 /** The library as a grid per category: name, muscles and the figure; a card opens the editor. */
-export function ExerciseLibrary({ exercises, categories }: { exercises: Exercise[]; categories: string[] }) {
+export function ExerciseLibrary({ exercises, categories, readOnly = false }: { exercises: Exercise[]; categories: string[]; /** Instructors without permission see the list but don't change it. */ readOnly?: boolean }) {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Draft | null>(null);
 
@@ -60,10 +60,12 @@ export function ExerciseLibrary({ exercises, categories }: { exercises: Exercise
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hareket ya da kas ara" className="pl-10" />
         </label>
-        <Button type="button" onClick={() => setEditing(toDraft())}>
-          <Plus />
-          Ekle
-        </Button>
+        {!readOnly && (
+          <Button type="button" onClick={() => setEditing(toDraft())}>
+            <Plus />
+            Ekle
+          </Button>
+        )}
       </div>
 
       {groups.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">“{q}” ile eşleşen hareket yok.</p>}
@@ -79,6 +81,7 @@ export function ExerciseLibrary({ exercises, categories }: { exercises: Exercise
               <li key={e.id}>
                 <button
                   type="button"
+                  disabled={readOnly}
                   onClick={() => setEditing(toDraft(e))}
                   className="flex h-full w-full flex-col gap-3 rounded-2xl border bg-card p-3 text-left shadow-card transition-shadow outline-none hover:shadow-float focus-visible:ring-3 focus-visible:ring-ring/50"
                 >

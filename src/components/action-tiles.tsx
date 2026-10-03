@@ -6,6 +6,7 @@ export type ActionTileItem = { href: string; icon: ReactNode; title: string; pri
 
 /** Shortcuts as labelled tiles (icon + title), so a phone never shows an unexplained icon button. */
 export function ActionTiles({ items, className }: { items: ActionTileItem[]; className?: string }) {
+  if (items.length === 0) return null;
   return (
     <nav aria-label="Kısayollar" className={cn("grid grid-cols-3 gap-3", className)}>
       {items.map((a) => (

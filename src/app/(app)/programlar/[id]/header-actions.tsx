@@ -8,7 +8,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { archiveProgramAction, saveAsTemplateAction } from "../actions";
 
-export function ProgramHeaderActions({ id, isTemplate }: { id: string; isTemplate: boolean }) {
+export function ProgramHeaderActions({ id, isTemplate, canTemplate = true }: { id: string; isTemplate: boolean; /** May save it as a shared template. */ canTemplate?: boolean }) {
   const [pending, start] = useTransition();
   const router = useRouter();
   const { confirm, dialog } = useConfirm();
@@ -20,7 +20,7 @@ export function ProgramHeaderActions({ id, isTemplate }: { id: string; isTemplat
           <Printer />
         </a>
       </Button>
-      {!isTemplate && (
+      {!isTemplate && canTemplate && (
         <Button
           type="button"
           size="icon"

@@ -111,12 +111,6 @@ export default async function TeamPage({ searchParams }: PageProps<"/ayarlar/eki
           <SectionTitle id="team-settings-heading">Ekip ayarları</SectionTitle>
           <div className="divide-y overflow-hidden surface">
             <TeamSetting
-              name="instructorsSeeAllClients"
-              initial={trainer.instructorsSeeAllClients}
-              title="Eğitmenler bütün danışanları görebilsin"
-              hint="Kapalıysa eğitmen sadece ders verdiği danışanları görür."
-            />
-            <TeamSetting
               name="payrollCountsMissed"
               initial={trainer.payrollCountsMissed}
               title="Geç iptal ve gelmeyenler hakedişe sayılsın"

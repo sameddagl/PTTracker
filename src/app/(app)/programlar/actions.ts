@@ -4,7 +4,8 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { can } from "@/lib/permissions";
+import { requirePermission, withTrainer } from "@/db";
 import {
   archiveExercise,
   archiveProgram,
@@ -41,7 +42,10 @@ export async function saveProgramAction(
   if (target.id && !uuid.safeParse(target.id).success) return { ok: false, error: FAIL };
   if (target.clientId && !uuid.safeParse(target.clientId).success) return { ok: false, error: FAIL };
 
-  const saved = await withTrainer(async (tx, trainerId) => {
+  const saved = await withTrainer(async (tx, trainerId, member) => {
+    // Templates (no client) are shared by the studio; changing them needs permission.
+    const editsTemplate = target.id ? (await getProgram(tx, trainerId, target.id))?.clientId === null : !target.clientId;
+    if (editsTemplate && !can(member, "editPrograms")) return null;
     if (target.id) {
       const p = await updateProgram(tx, trainerId, target.id, parsed.data);
       return p ? { id: target.id, clientId: p.clientId } : null;
@@ -69,7 +73,8 @@ export async function giveProgramAction(clientId: string, templateId: string) {
 /** Saves a client's program as a new template. */
 export async function saveAsTemplateAction(programId: string): Promise<Result> {
   if (!uuid.safeParse(programId).success) return { ok: false, error: FAIL };
-  const id = await withTrainer(async (tx, trainerId) => {
+  const id = await withTrainer(async (tx, trainerId, member) => {
+    if (!can(member, "editPrograms")) return null;
     const p = await getProgram(tx, trainerId, programId);
     if (!p) return null;
     return createProgram(tx, trainerId, {
@@ -111,7 +116,10 @@ export async function sendProgramAction(programId: string): Promise<Result> {
 
 export async function archiveProgramAction(programId: string): Promise<Result> {
   if (!uuid.safeParse(programId).success) return { ok: false, error: FAIL };
-  const p = await withTrainer((tx, trainerId) => archiveProgram(tx, trainerId, programId));
+  const p = await withTrainer(async (tx, trainerId, member) => {
+    if (!can(member, "editPrograms") && (await getProgram(tx, trainerId, programId))?.clientId === null) return null;
+    return archiveProgram(tx, trainerId, programId);
+  });
   if (!p) return { ok: false, error: FAIL };
   revalidatePath("/programlar");
   if (p.clientId) revalidatePath(`/danisanlar/${p.clientId}`);
@@ -136,6 +144,7 @@ const exerciseSchema = z.object({
 });
 
 export async function saveExerciseAction(input: unknown): Promise<Result> {
+  await requirePermission("editPrograms");
   const parsed = exerciseSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const id = await withTrainer((tx, trainerId) =>
@@ -155,6 +164,7 @@ export async function saveExerciseAction(input: unknown): Promise<Result> {
 }
 
 export async function archiveExerciseAction(id: string): Promise<Result> {
+  await requirePermission("editPrograms");
   if (!uuid.safeParse(id).success) return { ok: false, error: FAIL };
   const ok = await withTrainer((tx, trainerId) => archiveExercise(tx, trainerId, id));
   if (!ok) return { ok: false, error: FAIL };

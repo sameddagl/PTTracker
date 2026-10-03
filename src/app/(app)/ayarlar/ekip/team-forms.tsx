@@ -129,7 +129,7 @@ export function ReactivateButton({ id }: { id: string }) {
 }
 
 /** One studio-wide on/off setting with its explanation. */
-export function TeamSetting({ name, initial, title, hint }: { name: "instructorsSeeAllClients" | "payrollCountsMissed"; initial: boolean; title: string; hint: string }) {
+export function TeamSetting({ name, initial, title, hint }: { name: "payrollCountsMissed"; initial: boolean; title: string; hint: string }) {
   const [on, setOn] = useState(initial);
   const [pending, start] = useTransition();
   return (

@@ -12,7 +12,7 @@ import { profileImageUrl } from "@/lib/storage";
 import { setMemberPhotoByOwnerAction } from "../actions";
 import { setMemberPhotoAction } from "../../profil/actions";
 import { ImageUpload } from "../../profil/image-upload";
-import { InviteMemberForm, MemberForm, RemoveMemberButton } from "./member-form";
+import { InviteMemberForm, MemberForm, PermissionSwitches, RemoveMemberButton } from "./member-form";
 
 export const metadata: Metadata = { title: "Eğitmen" };
 
@@ -71,6 +71,21 @@ export default async function MemberPage({ params }: PageProps<"/ayarlar/ekip/[i
               </p>
             </div>
             <InviteMemberForm id={row.id} pendingEmail={invite?.email ?? null} />
+          </section>
+        )}
+        {row.role === "instructor" && (
+          <section aria-labelledby="perm-heading" className="flex flex-col gap-4 surface p-5">
+            <div>
+              <h2 id="perm-heading" className="text-base font-semibold">
+                Yetkiler
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {row.userId
+                  ? `${row.fullName.split(" ")[0]} uygulamada bunları yapabilir. Ödemeleri, fiyatları ve stüdyo ayarlarını hiçbir durumda görmez.`
+                  : "Giriş yaptığında geçerli olur. Ödemeleri, fiyatları ve stüdyo ayarlarını hiçbir durumda görmez."}
+              </p>
+            </div>
+            <PermissionSwitches id={row.id} permissions={row.permissions} />
           </section>
         )}
         <section className="surface p-5">

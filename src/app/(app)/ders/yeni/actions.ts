@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { withTrainer } from "@/db";
+import { requirePermission, withTrainer } from "@/db";
 import { createLessons, findConflicts, lessonDates } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { resolveInstructor } from "@/db/team";
@@ -54,6 +54,7 @@ const lessonSchema = z
   });
 
 export async function createLessonAction(_prev: LessonFormState, formData: FormData): Promise<LessonFormState> {
+  await requirePermission("manageLessons");
   const raw = {
     clientIds: formData.getAll("clientIds").map(String),
     date: formData.get("date")?.toString() ?? "",

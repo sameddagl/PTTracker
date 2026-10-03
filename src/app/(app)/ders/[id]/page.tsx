@@ -10,6 +10,7 @@ import { withTrainer } from "@/db";
 import { getLesson, listClientOptions } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { listMembers } from "@/db/team";
+import { can } from "@/lib/permissions";
 import { teamColor } from "@/lib/team";
 import { dayLong } from "@/lib/dates";
 import { SESSION_TYPE_LABELS } from "@/lib/format";
@@ -29,14 +30,18 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
     const trainer = await getTrainer(tx, trainerId);
     const lesson = await getLesson(tx, trainer, id);
     if (!lesson) return null;
+    // A colleague's lesson is off limits without permission to see others' lessons.
+    if (member.role !== "owner" && lesson.instructorId !== member.id && !can(member, "seeOthersLessons")) return null;
     return { lesson, member, team: await listMembers(tx, trainerId), clients: await listClientOptions(tx, trainerId) };
   });
   if (!data) notFound();
   const { lesson, member, team } = data;
   const studio = team.length > 1;
   const instructor = team.find((m) => m.id === lesson.instructorId);
-  // An instructor sees colleagues' lessons but changes only their own.
-  const canManage = member.role === "owner" || lesson.instructorId === member.id;
+  // An instructor takes attendance in their own lessons; changing them needs the owner's permission.
+  const own = member.role === "owner" || lesson.instructorId === member.id;
+  const canManage = own;
+  const canEdit = own && can(member, "manageLessons");
   const inLesson = new Set(lesson.attendees.filter((a) => a.status !== "cancelled").map((a) => a.clientId));
   const addable = data.clients.filter((c) => !inLesson.has(c.id));
   const full = lesson.capacity !== null && takenPlaces(lesson) >= lesson.capacity;
@@ -108,13 +113,15 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
           <CardContent className="flex items-center gap-3">
             <Ban className="size-4 text-muted-foreground" aria-hidden />
             <p className="flex-1 text-sm">Bu ders iptal edildi. Kimsenin paketinden düşmedi.</p>
-            <form action={restoreLessonAction}>
-              <input type="hidden" name="lessonId" value={lesson.lessonId} />
-              <SubmitButton variant="outline" size="sm">
-                <RotateCcw />
-                Geri al
-              </SubmitButton>
-            </form>
+            {canEdit && (
+              <form action={restoreLessonAction}>
+                <input type="hidden" name="lessonId" value={lesson.lessonId} />
+                <SubmitButton variant="outline" size="sm">
+                  <RotateCcw />
+                  Geri al
+                </SubmitButton>
+              </form>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -139,7 +146,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
               </CardContent>
             </Card>
           )}
-          {!full && (
+          {!full && canEdit && (
             <div className="mt-3">
               <AddAttendee lessonId={lesson.lessonId} clients={addable} />
             </div>
@@ -154,7 +161,7 @@ export default async function LessonPage({ params }: PageProps<"/ders/[id]">) {
         </section>
       )}
 
-      {!cancelled && canManage && (
+      {!cancelled && canEdit && (
         <section aria-label="Ders işlemleri" className="flex flex-col gap-3">
           <RescheduleForm
             lessonId={lesson.lessonId}

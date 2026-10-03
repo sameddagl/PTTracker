@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { LEGAL } from "@/lib/legal";
-import { requireOwner, type Tx, withTrainer } from "@/db";
+import { mayOpenClient } from "@/db/team";
+import { requireOwner, requirePermission, type Tx, withTrainer } from "@/db";
 import { archiveClient, deleteClient, restoreClient } from "@/db/clients";
 import { clients, consents } from "@/db/schema";
 import { fieldErrors, readForm, type FormState } from "@/lib/forms";
@@ -50,6 +51,7 @@ function parseClient(formData: FormData) {
 }
 
 export async function createClientAction(_prev: ClientFormState, formData: FormData): Promise<ClientFormState> {
+  await requirePermission("editClients");
   const { raw, parsed } = parseClient(formData);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
   if (parsed.data.healthNotes && !parsed.data.healthConsent) return { errors: { healthConsent: CONSENT_MESSAGE }, values: raw };
@@ -75,11 +77,13 @@ export async function createClientAction(_prev: ClientFormState, formData: FormD
 }
 
 export async function updateClientAction(clientId: string, _prev: ClientFormState, formData: FormData): Promise<ClientFormState> {
+  await requirePermission("editClients");
   const { raw, parsed } = parseClient(formData);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
 
   const { healthConsent, phone, ...data } = parsed.data;
-  const result = await withTrainer(async (tx, trainerId) => {
+  const result = await withTrainer(async (tx, trainerId, member) => {
+    if (!(await mayOpenClient(tx, member, clientId))) return "missing" as const;
     // Consent given earlier (in this form or at sign-up) still covers edits.
     const consented = await hasHealthConsent(tx, clientId);
     if (data.healthNotes && !consented && !healthConsent) return "consent" as const;

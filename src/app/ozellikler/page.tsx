@@ -198,8 +198,8 @@ const GROUPS: Group[] = [
     lead: "Birkaç eğitmenli bir stüdyonuz varsa ekibinizi aynı hesaba davet edin. Takvim ortak olur; ödemeler ve fiyatlar sizde kalır.",
     Demo: TeamCalendarDemo,
     features: [
-      { icon: UserPlus, title: "E-postayla davet", text: "Ayarlar → Ekip'ten eğitmeni e-postasıyla davet edin, kendi e-postasıyla giriş yapsın. Hem kendi hesabı hem stüdyonuzda dersi olan eğitmen, hesaplar arasında geçiş yapar." },
-      { icon: Lock, title: "Kim neyi görür", text: "Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını ve programları görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez. Bütün danışanları mı, yalnızca kendi danışanlarını mı göreceğini siz seçersiniz." },
+      { icon: UserPlus, title: "E-postayla davet", text: "Ayarlar → Ekip'ten eğitmeni ekleyin; isterseniz e-postasıyla davet edin, kendi e-postasıyla giriş yapsın. Giriş yapmayan eğitmenin derslerini siz yönetirsiniz. Hem kendi hesabı hem stüdyonuzda dersi olan eğitmen, hesaplar arasında geçiş yapar." },
+      { icon: Lock, title: "Kim neyi görür", text: "Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını ve programları görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez. Her eğitmen için ayrı ayrı seçersiniz: bütün danışanları görsün mü, danışan ekleyip düzenleyebilsin mi, derslerini kendisi planlasın mı, çalışma saatlerini değiştirsin mi." },
       { icon: CalendarDays, title: "Renkli ortak takvim", text: "Her dersin ve grup dersinin bir eğitmeni var, her eğitmenin de kendi rengi. Takvimi tek eğitmene göre süzün. Çakışmaya eğitmen bazında bakılır; iki eğitmen aynı saatte ders verebilir." },
       { icon: ArrowRightLeft, title: "Dersi devretme", text: "Bir dersi ya da bütün seriyi başka eğitmene verin. O dersteki danışanlara dersi kimin vereceği bildirilir." },
       { icon: CalendarClock, title: "Eğitmene göre randevu", text: "Her eğitmenin kendi çalışma saatleri ve izin günleri olur. Danışan randevu alırken eğitmen seçer ya da “Fark etmez” der; boş olan eğitmen dersi alır." },

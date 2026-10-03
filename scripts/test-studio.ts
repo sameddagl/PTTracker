@@ -14,7 +14,8 @@ import { pickPackage, sellPackage } from "../src/db/packages";
 import { addDays } from "../src/lib/dates";
 import { closePayrollMonth, payrollFor, setPayrollPaid } from "../src/db/payroll";
 import * as schema from "../src/db/schema";
-import { addMemberWithoutLogin, clientIdsTaughtBy, mayManageLesson, resolveInstructor, updateMember } from "../src/db/team";
+import { addMemberWithoutLogin, clientIdsTaughtBy, mayManageLesson, mayOpenClient, resolveInstructor, setMemberPermission, updateMember } from "../src/db/team";
+import { can } from "../src/lib/permissions";
 import { computePayroll, monthRange } from "../src/lib/payroll";
 import { addUsers, createTestDb } from "./pglite";
 
@@ -183,6 +184,33 @@ async function main() {
     "only the owner adds instructors",
   );
   console.log("instructors without a login ok");
+
+  // ---- Per-instructor permissions ----
+  assert.equal(can(owner, "editClients"), true, "the owner can do everything");
+  assert.deepEqual(
+    [can(inst, "seeAllClients"), can(inst, "editClients"), can(inst, "manageLessons"), can(inst, "editAvailability"), can(inst, "editPrograms"), can(inst, "seeOthersLessons")],
+    [true, false, true, false, true, true],
+    "defaults",
+  );
+  const [extra] = await as(A, A, (tx) => tx.insert(schema.clients).values({ trainerId: A, fullName: "Ece" }).returning({ id: schema.clients.id }));
+  assert.equal(await as(I, A, (tx) => mayOpenClient(tx, inst, extra.id)), true, "sees every client by default");
+  await as(A, A, (tx) => setMemberPermission(tx, A, inst.id, "seeAllClients", false));
+  await as(A, A, (tx) => setMemberPermission(tx, A, inst.id, "manageLessons", false));
+  const [permRow] = await asOwner((tx) => tx.select({ p: schema.accountMembers.permissions }).from(schema.accountMembers).where(sql`id = ${inst.id}`));
+  const limited: Member = { ...inst, permissions: permRow.p };
+  assert.equal(await as(I, A, (tx) => mayOpenClient(tx, limited, extra.id)), false, "only taught clients once turned off");
+  // Ali booked a lesson with Mert above (Zeynep's lesson was handed to the owner).
+  assert.equal(await as(I, A, (tx) => mayOpenClient(tx, limited, ali.id)), true);
+  const alisLesson = booked.ok ? booked.lessonId : "";
+  assert.equal(await as(I, A, (tx) => mayManageLesson(tx, inst, alisLesson)), true, "own lesson with permission");
+  assert.equal(await as(I, A, (tx) => mayManageLesson(tx, limited, alisLesson)), false, "can't change lessons without permission to plan");
+  assert.equal(await as(A, A, (tx) => setMemberPermission(tx, A, owner.id, "editClients", false)), false, "the owner has no switches");
+  // An instructor can't grant themselves anything.
+  await assert.rejects(
+    as(I, A, (tx) => tx.update(schema.accountMembers).set({ permissions: { editClients: true } }).where(sql`id = ${inst.id}`)),
+    (e: { cause?: unknown }) => /only the owner/.test(String(e.cause ?? e)),
+  );
+  console.log("per-instructor permissions ok");
   console.log("studio lessons, permissions and pay ok\n\nall studio checks passed");
 }
 

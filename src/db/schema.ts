@@ -20,6 +20,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import type { NotifyPrefs } from "../lib/notify-prefs";
+import type { Permissions } from "../lib/permissions";
 import type { MessageTemplates } from "../lib/templates";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
@@ -165,9 +166,7 @@ export const trainers = pgTable(
     clientsSelfWeigh: boolean("clients_self_weigh").notNull().default(true),
     ...timestamps,
 
-    // Studios: may instructors switch their client list to everyone in the
-    // studio, and do late cancels / no-shows count towards instructor pay.
-    instructorsSeeAllClients: boolean("instructors_see_all_clients").notNull().default(true),
+    // Studios: do late cancels / no-shows count towards instructor pay.
     payrollCountsMissed: boolean("payroll_counts_missed").notNull().default(false),
   },
   (t) => [
@@ -211,6 +210,8 @@ export const accountMembers = pgTable(
     // Calendar colour key (see src/lib/team.ts).
     color: text("color"),
     payRule: jsonb("pay_rule").$type<PayRule>(),
+    // What this instructor may do (src/lib/permissions.ts); missing keys use the defaults.
+    permissions: jsonb("permissions").$type<Permissions>().notNull().default({}),
     active: boolean("active").notNull().default(true),
     ...timestamps,
   },

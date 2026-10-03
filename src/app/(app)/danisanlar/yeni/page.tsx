@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requirePermission } from "@/db";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -6,7 +7,8 @@ import { ClientForm } from "./client-form";
 
 export const metadata: Metadata = { title: "Yeni danışan" };
 
-export default function NewClientPage() {
+export default async function NewClientPage() {
+  await requirePermission("editClients");
   return (
     <>
       <Link

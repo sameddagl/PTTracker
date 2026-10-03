@@ -2,6 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
+import { can, type Permission, type Permissions } from "@/lib/permissions";
 import { INVITE_DAYS, INVITE_TOKEN_PATTERN, nextTeamColor, type TeamColor } from "@/lib/team";
 import { adminDb, type Tx } from "./client";
 import type { Member } from "./membership";
@@ -23,6 +24,7 @@ export type TeamMember = {
   photoPath: string | null;
   color: string | null;
   payRule: PayRule | null;
+  permissions: Permissions;
   active: boolean;
 };
 
@@ -35,6 +37,7 @@ const memberCols = {
   photoPath: accountMembers.photoPath,
   color: accountMembers.color,
   payRule: accountMembers.payRule,
+  permissions: accountMembers.permissions,
   active: accountMembers.active,
 };
 
@@ -253,20 +256,32 @@ export async function myAccounts(userId: string) {
  * Who teaches a lesson being planned: an instructor always plans their own;
  * the owner may pick any active member (themselves by default).
  */
+/** Owner: switches one permission of an instructor on or off. */
+export async function setMemberPermission(tx: Tx, accountId: string, id: string, key: Permission, on: boolean) {
+  const row = await getMemberRow(tx, accountId, id);
+  if (!row || row.role !== "instructor") return false;
+  await tx
+    .update(accountMembers)
+    .set({ permissions: { ...row.permissions, [key]: on }, updatedAt: new Date() })
+    .where(and(eq(accountMembers.id, id), eq(accountMembers.accountId, accountId)));
+  return true;
+}
+
 export async function resolveInstructor(tx: Tx, member: Member, requested: string | null | undefined) {
   if (member.role !== "owner" || !requested || requested === member.id) return member.id;
   const row = await getMemberRow(tx, member.accountId, requested);
   return row?.active ? row.id : member.id;
 }
 
-/** The owner manages every lesson; an instructor only the ones they teach. */
+/** The owner manages every lesson; an instructor only the ones they teach, and only if allowed to plan lessons. */
 export async function mayManageLesson(tx: Tx, member: Member, lessonId: string) {
   if (member.role === "owner") return true;
+  if (!can(member, "manageLessons")) return false;
   const [row] = await tx.select({ instructorId: lessons.instructorId }).from(lessons).where(and(eq(lessons.id, lessonId), eq(lessons.trainerId, member.accountId)));
   return row?.instructorId === member.id;
 }
 
-/** Same rule, by a place in a lesson (attendance, notes). */
+/** Attendance and lesson notes: the owner, or the instructor teaching it (even without permission to plan). */
 export async function mayManageAttendee(tx: Tx, member: Member, attendeeId: string) {
   if (member.role === "owner") return true;
   const [row] = await tx
@@ -297,7 +312,6 @@ export async function clientIdsTaughtBy(tx: Tx, accountId: string, memberId: str
  * teach the client or the studio lets instructors see everyone.
  */
 export async function mayOpenClient(tx: Tx, member: Member, clientId: string) {
-  if (member.role === "owner") return true;
-  const [t] = await tx.select({ all: trainers.instructorsSeeAllClients }).from(trainers).where(eq(trainers.id, member.accountId));
-  return Boolean(t?.all) || (await clientIdsTaughtBy(tx, member.accountId, member.id)).has(clientId);
+  if (can(member, "seeAllClients")) return true;
+  return (await clientIdsTaughtBy(tx, member.accountId, member.id)).has(clientId);
 }

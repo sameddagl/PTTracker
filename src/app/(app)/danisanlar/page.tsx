@@ -10,7 +10,8 @@ import { withTrainer } from "@/db";
 import { ApplicationsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
 import { countArchivedClients } from "@/db/clients";
-import { getTrainer, listClients } from "@/db/queries";
+import { listClients } from "@/db/queries";
+import { can } from "@/lib/permissions";
 import { clientIdsTaughtBy } from "@/db/team";
 import { cn } from "@/lib/utils";
 import { formatTRY } from "@/lib/format";
@@ -19,15 +20,16 @@ export const metadata: Metadata = { title: "Danışanlar" };
 
 export default async function ClientsPage({ searchParams }: PageProps<"/danisanlar">) {
   const { kapsam } = await searchParams;
-  const { clients, pending, archived, owner, mineOnly, canSeeAll } = await withTrainer(async (tx, trainerId, member) => {
+  const { clients, pending, archived, owner, mineOnly, canSeeAll, canAdd } = await withTrainer(async (tx, trainerId, member) => {
     const owner = member.role === "owner";
     const all = await listClients(tx, trainerId);
-    if (owner) return { clients: all, pending: await countPendingApplications(tx, trainerId), archived: await countArchivedClients(tx, trainerId), owner, mineOnly: false, canSeeAll: true };
-    // Instructors start on the clients they teach; the studio decides whether they may list everyone.
-    const canSeeAll = (await getTrainer(tx, trainerId)).instructorsSeeAllClients;
+    if (owner)
+      return { clients: all, pending: await countPendingApplications(tx, trainerId), archived: await countArchivedClients(tx, trainerId), owner, mineOnly: false, canSeeAll: true, canAdd: true };
+    // Instructors start on the clients they teach; the owner decides whether they may list everyone.
+    const canSeeAll = can(member, "seeAllClients");
     const mineOnly = !(canSeeAll && kapsam === "tumu");
     const mine = mineOnly ? await clientIdsTaughtBy(tx, trainerId, member.id) : null;
-    return { clients: mine ? all.filter((c) => mine.has(c.id)) : all, pending: 0, archived: 0, owner, mineOnly, canSeeAll };
+    return { clients: mine ? all.filter((c) => mine.has(c.id)) : all, pending: 0, archived: 0, owner, mineOnly, canSeeAll, canAdd: can(member, "editClients") };
   });
 
   return (
@@ -36,6 +38,9 @@ export default async function ClientsPage({ searchParams }: PageProps<"/danisanl
         title="Danışanlar"
         description={clients.length > 0 ? `${clients.length} aktif danışan` : undefined}
       />
+      {!owner && canAdd && (
+        <ActionTiles className="mb-4" items={[{ href: "/danisanlar/yeni", icon: <UserPlus />, title: "Yeni danışan", primary: true }]} />
+      )}
       {!owner && canSeeAll && (
         <nav aria-label="Liste" className="mb-4 flex gap-2">
           {[

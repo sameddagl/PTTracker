@@ -7,14 +7,16 @@ import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Field, FormError, NativeSelect } from "@/components/field";
 import { FormSubmit } from "@/components/form-submit";
+import { Switch } from "@/components/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { PayRule } from "@/db/schema";
 import type { FormState } from "@/lib/forms";
 import { SESSION_LABELS } from "@/lib/payroll";
+import { PERMISSIONS, type Permission, type Permissions } from "@/lib/permissions";
 import { TEAM_COLORS, TEAM_COLOR_LABELS, teamColor } from "@/lib/team";
 import { cn } from "@/lib/utils";
-import { inviteMemberAction, saveMemberAction, setMemberActiveAction } from "../actions";
+import { inviteMemberAction, saveMemberAction, setMemberActiveAction, setMemberPermissionAction } from "../actions";
 
 type F = "payType" | "color" | "private" | "duet" | "trio" | "group" | "percent" | "form";
 const TYPES = ["private", "duet", "trio", "group"] as const;
@@ -175,5 +177,38 @@ export function InviteMemberForm({ id, pendingEmail }: { id: string; pendingEmai
         </FormSubmit>
       </div>
     </form>
+  );
+}
+
+/** Owner: what this instructor may do, one switch per permission; saved on each change. */
+export function PermissionSwitches({ id, permissions }: { id: string; permissions: Permissions }) {
+  const [state, setState] = useState(() => Object.fromEntries(PERMISSIONS.map((p) => [p.key, permissions[p.key] ?? p.default])) as Record<Permission, boolean>);
+  const [pending, start] = useTransition();
+  return (
+    <div className="divide-y">
+      {PERMISSIONS.map((p) => (
+        <div key={p.key} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{p.title}</p>
+            <p className="text-xs text-muted-foreground">{p.hint}</p>
+          </div>
+          <Switch
+            on={state[p.key]}
+            label={p.title}
+            disabled={pending}
+            onChange={(on) => {
+              setState((s) => ({ ...s, [p.key]: on }));
+              start(async () => {
+                const res = await setMemberPermissionAction(id, p.key, on);
+                if (!res.ok) {
+                  setState((s) => ({ ...s, [p.key]: !on }));
+                  toast.error(res.error);
+                }
+              });
+            }}
+          />
+        </div>
+      ))}
+    </div>
   );
 }

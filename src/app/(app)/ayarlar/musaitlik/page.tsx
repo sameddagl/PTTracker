@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { withTrainer } from "@/db";
+import { requirePermission, withTrainer } from "@/db";
 import { getAvailability } from "@/db/booking";
 import { getTrainer } from "@/db/queries";
 import { listMembers } from "@/db/team";
@@ -17,13 +17,16 @@ export const metadata: Metadata = { title: "Müsaitlik" };
 
 export default async function AvailabilityPage({ searchParams }: PageProps<"/ayarlar/musaitlik">) {
   const { egitmen } = await searchParams;
-  const { trainer, rules, off, team, selected } = await withTrainer(async (tx, trainerId, member) => {
+  await requirePermission("editAvailability");
+  const { trainer, rules, off, team, selected, owner } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
-    const team = await listMembers(tx, trainerId);
+    const owner = member.role === "owner";
+    // An instructor edits only their own hours.
+    const team = (await listMembers(tx, trainerId)).filter((m) => owner || m.id === member.id);
     // Studios: each instructor has their own hours; the page edits one at a time.
     const selected = team.find((m) => m.id === egitmen) ?? team.find((m) => m.id === member.id) ?? team[0];
     const { rules, off } = await getAvailability(tx, trainerId, selected.id);
-    return { trainer, rules, off, team, selected };
+    return { trainer, rules, off, team, selected, owner };
   });
   const studio = team.length > 1;
 
@@ -34,7 +37,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/aya
         Ayarlar
       </Link>
       <PageHeader
-        title="Müsaitlik"
+        title={owner ? "Müsaitlik" : "Çalışma saatlerim"}
         description={`Danışanlar bu saatlere randevu alır. ${
           trainer.lateCancelHours === 0
             ? "İstedikleri zaman ücretsiz iptal edebilirler."
@@ -67,6 +70,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/aya
       <AvailabilityForm
         key={selected.id}
         instructorId={studio ? selected.id : undefined}
+        hoursOnly={!owner}
         initial={{
           bookingEnabled: trainer.bookingEnabled,
           bookingLessonMinutes: trainer.bookingLessonMinutes,

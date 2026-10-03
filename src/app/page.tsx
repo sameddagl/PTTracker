@@ -200,7 +200,7 @@ const REASONS = [
   },
   {
     title: "Sağlık bilgisi rıza olmadan tutulmaz",
-    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her hesabın danışanları ayrı tutulur; stüdyoda eğitmen önce kendi danışanlarını görür, bütün danışanları görmesini isterseniz kapatabilirsiniz.",
+    text: "Sağlık soruları ve vücut ölçümleri danışanın açık rızasıyla kaydedilir. Her hesabın danışanları ayrı tutulur; stüdyoda eğitmen önce kendi danışanlarını görür, neleri görüp değiştirebileceğini her eğitmen için ayrı seçersiniz.",
   },
 ];
 
@@ -211,7 +211,7 @@ const FAQ = [
   },
   {
     q: "Stüdyomda birden fazla eğitmen var, birlikte kullanabilir miyiz?",
-    a: "Evet. Eğitmenlerinizi Ayarlar → Ekip'ten e-postayla davet edersiniz, her biri kendi e-postasıyla giriş yapar. Takvim ortaktır ve her eğitmenin kendi rengi vardır. Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını ve programları görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz. Resepsiyon hesabı, salon ve reformer planlaması ve birden fazla şube şu an yok.",
+    a: "Evet. Eğitmenlerinizi Ayarlar → Ekip'ten eklersiniz; isterseniz e-postayla davet edersiniz ve kendi e-postasıyla giriş yapar, istemezseniz derslerini siz yönetirsiniz. Takvim ortaktır ve her eğitmenin kendi rengi vardır. Eğitmen ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez; danışanları görme, ders planlama, çalışma saatlerini ve programları düzenleme gibi yetkileri her eğitmen için ayrı verirsiniz. Hakedişi ders başına sabit ücretle ya da dersin değerinden yüzdeyle hesaplar, ay sonunda Excel olarak indirirsiniz. Resepsiyon hesabı, salon ve reformer planlaması ve birden fazla şube şu an yok.",
   },
   {
     q: "Geç iptal ve telafi hakkı nasıl işliyor?",
@@ -243,7 +243,7 @@ const FAQ = [
   },
   {
     q: "Danışanlarımın sağlık bilgileri güvende mi?",
-    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Stüdyo hesabında eğitmen önce kendi danışanlarını görür; bütün danışanlara geçebilmesini Ekip ayarlarından kapatabilirsiniz. Ödemeleri ve fiyatları hiç görmez.",
+    a: "Sağlık bilgisi yalnızca danışan açık rıza verirse sorulur ve saklanır. Her hesabın danışanları birbirinden ayrı tutulur; bu ayrım doğrudan veritabanında yapılır. Stüdyo hesabında eğitmen önce kendi danışanlarını görür; bütün danışanları görüp göremeyeceğini, danışan bilgilerini değiştirip değiştiremeyeceğini her eğitmen için Ekip sayfasından seçersiniz. Ödemeleri ve fiyatları hiç görmez.",
   },
   {
     q: "Excel'deki danışan listemi aktarabilir miyim?",

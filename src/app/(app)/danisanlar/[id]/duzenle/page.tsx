@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { withTrainer } from "@/db";
+import { requirePermission, withTrainer } from "@/db";
+import { mayOpenClient } from "@/db/team";
 import { countUpcomingLessons } from "@/db/clients";
 import { clients, consents } from "@/db/schema";
 import { formatPhone } from "@/lib/whatsapp";
@@ -14,10 +15,12 @@ import { ArchiveCard } from "./archive-card";
 export const metadata: Metadata = { title: "Danışanı düzenle" };
 
 export default async function EditClientPage({ params }: PageProps<"/danisanlar/[id]/duzenle">) {
+  await requirePermission("editClients");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const data = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId, member) => {
+    if (!(await mayOpenClient(tx, member, id))) return null;
     const [client] = await tx
       .select()
       .from(clients)

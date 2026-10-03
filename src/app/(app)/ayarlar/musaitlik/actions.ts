@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireOwner, withTrainer } from "@/db";
+import { requirePermission, withTrainer } from "@/db";
 import { addTimeOff, deleteTimeOff, replaceAvailabilityRules } from "@/db/booking";
 import { trainers } from "@/db/schema";
 import { resolveInstructor } from "@/db/team";
@@ -31,12 +31,20 @@ export async function saveAvailabilityAction(
   _prev: FormState<AvailabilityField>,
   formData: FormData,
 ): Promise<FormState<AvailabilityField>> {
-  await requireOwner();
+  const member = await requirePermission("editAvailability");
   let rules: unknown;
   try {
     rules = JSON.parse(formData.get("rules")?.toString() ?? "[]");
   } catch {
     return { errors: { rules: "Saatler okunamadı." } };
+  }
+  if (member.role === "instructor") {
+    // An instructor changes only their own weekly hours; booking settings are the owner's.
+    const own = z.array(ruleSchema).max(50).safeParse(rules);
+    if (!own.success) return { errors: { rules: "Her aralığın bitişi başlangıcından sonra olmalı." } };
+    await withTrainer((tx, trainerId, m) => replaceAvailabilityRules(tx, trainerId, own.data, m.id));
+    revalidatePath("/ayarlar", "layout");
+    return { savedAt: Date.now() };
   }
   const parsed = settingsSchema.safeParse({
     bookingEnabled: formData.get("bookingEnabled") === "on",
@@ -77,7 +85,7 @@ const offSchema = z
   .refine((v) => v.endsOn >= v.startsOn, { path: ["endsOn"], message: "Bitiş tarihi başlangıçtan önce olamaz." });
 
 export async function addTimeOffAction(_prev: FormState<"startsOn" | "endsOn">, formData: FormData): Promise<FormState<"startsOn" | "endsOn">> {
-  await requireOwner();
+  await requirePermission("editAvailability");
   const parsed = offSchema.safeParse({
     startsOn: formData.get("startsOn")?.toString() ?? "",
     endsOn: formData.get("endsOn")?.toString() || formData.get("startsOn")?.toString() || "",
@@ -94,9 +102,10 @@ export async function addTimeOffAction(_prev: FormState<"startsOn" | "endsOn">, 
 }
 
 export async function deleteTimeOffAction(id: string) {
-  await requireOwner();
+  await requirePermission("editAvailability");
   const parsed = z.uuid().safeParse(id);
   if (!parsed.success) return;
-  await withTrainer((tx, trainerId) => deleteTimeOff(tx, trainerId, parsed.data));
+  // An instructor removes only their own days off.
+  await withTrainer((tx, trainerId, member) => deleteTimeOff(tx, trainerId, parsed.data, member.role === "owner" ? undefined : member.id));
   revalidatePath("/ayarlar/musaitlik");
 }

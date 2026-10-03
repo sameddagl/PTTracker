@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTrainer } from "@/db";
 import { getTrainer } from "@/db/queries";
-import { addMemberWithoutLogin, createInvite, getMemberRow, renewInvite, revokeInvite, setMemberActive, updateMember } from "@/db/team";
+import { addMemberWithoutLogin, createInvite, getMemberRow, renewInvite, revokeInvite, setMemberActive, setMemberPermission, updateMember } from "@/db/team";
+import { isPermission } from "@/lib/permissions";
 import { accountMembers, trainers, type PayRule } from "@/db/schema";
 import { fieldErrors, parseTRY, readForm, type FormState } from "@/lib/forms";
 import { isTeamColor, TEAM_COLORS } from "@/lib/team";
@@ -153,8 +154,8 @@ export async function setMemberActiveAction(id: string, active: boolean): Promis
   return ok ? { ok: true } : { ok: false, error: FAIL };
 }
 
-export async function saveTeamSettingAction(name: "instructorsSeeAllClients" | "payrollCountsMissed", on: boolean): Promise<Result> {
-  if (name !== "instructorsSeeAllClients" && name !== "payrollCountsMissed") return { ok: false, error: FAIL };
+export async function saveTeamSettingAction(name: "payrollCountsMissed", on: boolean): Promise<Result> {
+  if (name !== "payrollCountsMissed") return { ok: false, error: FAIL };
   const ok = await withTrainer(async (tx, trainerId, member) => {
     if (member.role !== "owner") return false;
     await tx.update(trainers).set({ [name]: Boolean(on) }).where(eq(trainers.id, trainerId));
@@ -187,4 +188,14 @@ export async function setMemberPhotoByOwnerAction(memberId: string, path: string
   }
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/** Owner: one thing an instructor may or may not do (src/lib/permissions.ts). */
+export async function setMemberPermissionAction(memberId: string, key: string, on: boolean): Promise<Result> {
+  if (!z.uuid().safeParse(memberId).success || !isPermission(key)) return { ok: false, error: FAIL };
+  const ok = await withTrainer((tx, trainerId, member) =>
+    member.role === "owner" ? setMemberPermission(tx, trainerId, memberId, key, Boolean(on)) : Promise.resolve(false),
+  );
+  revalidatePath("/", "layout");
+  return ok ? { ok: true } : { ok: false, error: FAIL };
 }

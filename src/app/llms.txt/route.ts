@@ -38,7 +38,7 @@ ${GUIDES.map((g) => `  - [${g.title}](${base}/rehber/${g.slug})`).join("\n")}
 - Programlar ve beslenme planları yazdırılabilir ya da PDF olarak kaydedilebilir.
 - Ders notları ve sağlık uyarısı; taksit hatırlatması; hatırlatma ve hazır mesaj metinleri eğitmenin kendi cümleleriyle.
 - Excel'den danışan aktarma ve bütün verileri Excel olarak indirme.
-- Stüdyo ekibi: sahip eğitmenleri e-postayla davet eder; her eğitmen kendi e-postasıyla girer. Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını, programları ve kendi danışanlarını (stüdyo izin verirse hepsini) görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez.
+- Stüdyo ekibi: sahip eğitmenleri ekler, isterse e-postayla giriş daveti gönderir (giriş yapmayan eğitmenin derslerini sahip yönetir). Eğitmen takvimi, kendi derslerini, yoklamayı, ders notlarını, programları ve danışanlarını görür; ödemeleri, fiyatları, paket ve stüdyo ayarlarını görmez. Sahip her eğitmen için ayrı yetki verir: bütün danışanları görme, danışan ekleme/düzenleme, ders planlama, çalışma saatlerini düzenleme, program şablonlarını düzenleme, diğer eğitmenlerin derslerini görme.
 - Ortak takvim: her dersin ve grup dersinin bir eğitmeni var, eğitmen başına renk ve filtre; çakışmaya eğitmen bazında bakılır. Ders ya da seri başka eğitmene devredilebilir, danışanlara bildirilir.
 - Eğitmen başına çalışma saatleri ve izin günleri; danışan randevu alırken eğitmen seçer ya da "Fark etmez" der. Seans paketi belirli eğitmenlerle sınırlanabilir.
 - Hakediş: ders türüne göre (özel, düet, trio, grup) ders başına sabit ücret ya da dersin değerinden yüzde; aylık görünüm, ay kapatma, ödendi işareti, Excel. Eğitmen yalnızca kendi hakedişini görür.

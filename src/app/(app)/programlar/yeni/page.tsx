@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { can } from "@/lib/permissions";
 import { ensureExerciseLibrary, listExercises } from "@/db/programs";
 import { getTrainer } from "@/db/queries";
 import { clients } from "@/db/schema";
@@ -18,7 +19,9 @@ export default async function NewProgramPage({ searchParams }: PageProps<"/progr
   const { tur, danisan } = await searchParams;
   const kind = tur === "beslenme" ? "nutrition" : "workout";
   const clientId = typeof danisan === "string" && /^[0-9a-f-]{36}$/i.test(danisan) ? danisan : null;
-  const data = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId, member) => {
+    // A new template needs permission; a program for a client doesn't.
+    if (!clientId && !can(member, "editPrograms")) return null;
     await ensureExerciseLibrary(tx, trainerId);
     const library = await listExercises(tx, trainerId);
     const trainer = await getTrainer(tx, trainerId);
@@ -27,7 +30,7 @@ export default async function NewProgramPage({ searchParams }: PageProps<"/progr
       : [];
     return { library, client: client ?? null, today: todayISO(trainer.timezone) };
   });
-  if (clientId && !data.client) notFound();
+  if (!data || (clientId && !data.client)) notFound();
   const workout = kind === "workout";
   const back = data.client ? `/danisanlar/${data.client.id}?sekme=${workout ? "program" : "beslenme"}` : `/programlar${workout ? "" : "?tur=beslenme"}`;
 

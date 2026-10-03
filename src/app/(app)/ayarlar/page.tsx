@@ -10,6 +10,7 @@ import { ActionTiles } from "@/components/action-tiles";
 import { getClaims, withTrainer } from "@/db";
 import { getTrainer, listClients } from "@/db/queries";
 import { listMembers, myAccounts } from "@/db/team";
+import { can } from "@/lib/permissions";
 import { countUnreadSupport } from "@/db/support";
 import { siteUrl } from "@/lib/config";
 import { signOut } from "../../giris/actions";
@@ -52,6 +53,9 @@ export default async function SettingsPage() {
             {[
               { href: "/ayarlar/profil", icon: Globe, title: "Profilin", hint: "Adın, fotoğrafın ve kısa tanıtımın" },
               { href: "/hakedis", icon: Wallet, title: "Hakedişim", hint: "Bu ay verdiğin dersler ve tutar" },
+              ...(can(member, "editAvailability")
+                ? [{ href: "/ayarlar/musaitlik", icon: CalendarClock, title: "Çalışma saatlerim", hint: "Randevu alınabilen saatlerin ve izin günlerin" }]
+                : []),
               { href: "/programlar", icon: Dumbbell, title: "Programlar", hint: "Antrenman ve beslenme şablonları, hareketler" },
               { href: "/ayarlar/bildirimler", icon: Bell, title: "Bildirimler", hint: "Bu cihazda bildirimleri aç" },
               { href: "/yardim", icon: CircleHelp, title: "Yardım", hint: "Yoklama, ders ve program adım adım" },

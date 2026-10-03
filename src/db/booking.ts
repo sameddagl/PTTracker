@@ -45,8 +45,8 @@ export async function addTimeOff(tx: Tx, trainerId: string, input: { startsOn: s
   await tx.insert(timeOff).values({ ...input, trainerId, instructorId: instructorId ?? null });
 }
 
-export async function deleteTimeOff(tx: Tx, trainerId: string, id: string) {
-  await tx.delete(timeOff).where(and(eq(timeOff.id, id), eq(timeOff.trainerId, trainerId)));
+export async function deleteTimeOff(tx: Tx, trainerId: string, id: string, instructorId?: string) {
+  await tx.delete(timeOff).where(and(eq(timeOff.id, id), eq(timeOff.trainerId, trainerId), instructorId ? eq(timeOff.instructorId, instructorId) : undefined));
 }
 
 // ---- Client side (owner connection, scoped to the client from the portal link) ----

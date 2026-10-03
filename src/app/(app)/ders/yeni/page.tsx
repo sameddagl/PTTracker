@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronLeft, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/page-header";
-import { withTrainer } from "@/db";
+import { requirePermission, withTrainer } from "@/db";
 import { listClientOptions } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { listMembers } from "@/db/team";
@@ -15,6 +15,7 @@ import { LessonForm } from "./lesson-form";
 export const metadata: Metadata = { title: "Ders planla" };
 
 export default async function NewLessonPage({ searchParams }: PageProps<"/ders/yeni">) {
+  await requirePermission("manageLessons");
   const { danisan, next, tarih, saat, egitmen } = await searchParams;
   const { clients, trainer, team, member } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader, SectionTitle } from "@/components/page-header";
 import { withTrainer } from "@/db";
 import { isStudio, listMembers } from "@/db/team";
+import { can } from "@/lib/permissions";
 import { teamColor } from "@/lib/team";
 import { ApplicationsBanner, AttendanceBanner, PaymentsBanner } from "@/components/applications-banner";
 import { countPendingApplications } from "@/db/applications";
@@ -47,7 +48,7 @@ export const metadata: Metadata = { title: "Bugün" };
 
 export default async function TodayPage({ searchParams }: PageProps<"/bugun">) {
   const { gorunum } = await searchParams;
-  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue, owner, studio, mine, name, team } = await withTrainer(async (tx, trainerId, member) => {
+  const { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue, owner, studio, mine, name, team, canPlan } = await withTrainer(async (tx, trainerId, member) => {
     const trainer = await getTrainer(tx, trainerId);
     const owner = member.role === "owner";
     const studio = await isStudio(tx, trainerId);
@@ -73,7 +74,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/bugun">) {
     // Skip the checklist counts once the trainer has hidden it.
     const guideFacts = !owner || trainer.guideDismissedAt ? null : await getGuideFacts(tx, trainer);
     const team = studio && !mine ? await listMembers(tx, trainerId) : [];
-    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue, owner, studio, mine, name: member.name, team };
+    return { trainer, lessons, alerts, portals, pending, pendingPayments, money, guideFacts, tomorrow, lost, unmarked, measureDue, owner, studio, mine, name: member.name, team, canPlan: can(member, "manageLessons") };
   });
 
   const now = new Date();
@@ -177,12 +178,14 @@ export default async function TodayPage({ searchParams }: PageProps<"/bugun">) {
         </SectionTitle>
         {lessons.length === 0 ? (
           <EmptyState icon={<Sunrise />} title="Bugün ders yok">
-            <Button asChild variant="outline" size="sm" className="mt-2">
-              <Link href="/ders/yeni?next=/bugun">
-                <CalendarPlus />
-                Ders planla
-              </Link>
-            </Button>
+            {canPlan && (
+              <Button asChild variant="outline" size="sm" className="mt-2">
+                <Link href="/ders/yeni?next=/bugun">
+                  <CalendarPlus />
+                  Ders planla
+                </Link>
+              </Button>
+            )}
           </EmptyState>
         ) : (
           <ol className="flex flex-col gap-3">

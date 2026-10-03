@@ -1,7 +1,17 @@
 // Which account a signed-in person works in. Pure, so tests can use it.
 
+import type { Permissions } from "../lib/permissions";
+
 /** The signed-in person inside the account a request works in. */
-export type Member = { id: string; userId: string; accountId: string; role: "owner" | "instructor"; name: string };
+export type Member = {
+  id: string;
+  userId: string;
+  accountId: string;
+  role: "owner" | "instructor";
+  name: string;
+  /** Instructors: what the owner allows (see `can` in src/lib/permissions.ts). */
+  permissions?: Permissions;
+};
 
 export type Membership = Member & { onboarded: boolean };
 

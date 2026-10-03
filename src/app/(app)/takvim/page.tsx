@@ -9,6 +9,7 @@ import { ensureGroupOccurrences } from "@/db/groups";
 import { getLessons, type CalendarLesson } from "@/db/lessons";
 import { getTrainer } from "@/db/queries";
 import { listMembers } from "@/db/team";
+import { can } from "@/lib/permissions";
 import { teamColor } from "@/lib/team";
 import {
   WEEKDAY_LABELS,
@@ -43,7 +44,18 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
   // Studios: colour per instructor and a filter. An instructor starts on their own lessons, the owner on everyone's.
   const studio = team.length > 1;
   const colors: Record<string, string> = Object.fromEntries(team.map((m, i) => [m.id, teamColor(m.color, i)]));
-  const filter = !studio ? "hepsi" : egitmen === "hepsi" || team.some((m) => m.id === egitmen) ? (egitmen as string) : member.role === "owner" ? "hepsi" : member.id;
+  const canPlan = can(member, "manageLessons");
+  // Without permission to see colleagues' lessons, an instructor's calendar is just theirs.
+  const seeOthers = can(member, "seeOthersLessons");
+  const filter = !studio
+    ? "hepsi"
+    : !seeOthers
+      ? member.id
+      : egitmen === "hepsi" || team.some((m) => m.id === egitmen)
+        ? (egitmen as string)
+        : member.role === "owner"
+          ? "hepsi"
+          : member.id;
   const shown = filter === "hepsi" ? lessons : lessons.filter((l) => l.instructorId === filter);
   const q = filter === "hepsi" && member.role === "owner" ? "" : `&egitmen=${filter}`;
 
@@ -62,7 +74,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
       <ActionTiles
         className="mb-6"
         items={[
-          { href: `/ders/yeni?tarih=${selected}&next=${back}`, icon: <CalendarPlus />, title: "Ders planla", primary: true },
+          ...(canPlan ? [{ href: `/ders/yeni?tarih=${selected}&next=${back}`, icon: <CalendarPlus />, title: "Ders planla", primary: true }] : []),
           ...(member.role === "owner"
             ? [
                 { href: "/takvim/grup", icon: <UsersRound />, title: "Grup dersleri" },
@@ -72,7 +84,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
         ]}
       />
 
-      {studio && (
+      {studio && seeOthers && (
         <nav aria-label="Eğitmen" className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
           {[{ id: "hepsi", name: "Hepsi", color: null as string | null }, ...team.map((m) => ({ id: m.id, name: m.id === member.id ? "Ben" : m.fullName.split(" ")[0] || "İsimsiz", color: colors[m.id] }))].map((o) => (
             <Link
@@ -147,11 +159,11 @@ export default async function CalendarPage({ searchParams }: PageProps<"/takvim"
         </ol>
 
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">{dayLong(selected)}</h2>
-        <DayAgenda lessons={byDay.get(selected)!} weekEmpty={shown.length === 0} addHref={`/ders/yeni?tarih=${selected}&next=${back}`} colors={studioColors} />
+        <DayAgenda lessons={byDay.get(selected)!} weekEmpty={shown.length === 0} addHref={canPlan ? `/ders/yeni?tarih=${selected}&next=${back}` : null} colors={studioColors} />
       </div>
 
       {/* Tablets and up: week grid */}
-      <WeekGrid days={days} byDay={byDay} today={today} timezone={trainer.timezone} back={back} colors={studioColors} />
+      <WeekGrid days={days} byDay={byDay} today={today} timezone={trainer.timezone} back={canPlan ? back : null} colors={studioColors} />
     </>
   );
 }
@@ -195,7 +207,7 @@ function LessonCard({ lesson: l, colors }: { lesson: CalendarLesson; colors: Col
   );
 }
 
-function DayAgenda({ lessons, addHref, weekEmpty, colors }: { lessons: CalendarLesson[]; addHref: string; weekEmpty: boolean; colors: Colors }) {
+function DayAgenda({ lessons, addHref, weekEmpty, colors }: { lessons: CalendarLesson[]; addHref: string | null; weekEmpty: boolean; colors: Colors }) {
   if (lessons.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center">
@@ -204,12 +216,14 @@ function DayAgenda({ lessons, addHref, weekEmpty, colors }: { lessons: CalendarL
             ? "Bu hafta ders yok. Her hafta tekrar eden bir ders ya da grup dersi planlarsan takvim kendiliğinden dolar."
             : "Bu gün ders yok."}
         </p>
-        <Button asChild variant={weekEmpty ? "default" : "outline"} size="sm">
-          <Link href={addHref}>
-            <CalendarPlus />
-            Ders planla
-          </Link>
-        </Button>
+        {addHref && (
+          <Button asChild variant={weekEmpty ? "default" : "outline"} size="sm">
+            <Link href={addHref}>
+              <CalendarPlus />
+              Ders planla
+            </Link>
+          </Button>
+        )}
       </div>
     );
   }
@@ -236,7 +250,8 @@ function WeekGrid({
   byDay: Map<string, CalendarLesson[]>;
   today: string;
   timezone: string;
-  back: string;
+  /** Where "Ders planla" returns to; null when the member can't plan lessons (the grid isn't clickable). */
+  back: string | null;
   colors: Colors;
 }) {
   const all = [...byDay.values()].flat();
@@ -271,15 +286,19 @@ function WeekGrid({
         </div>
         {days.map((d) => (
           <div key={d} className={cn("relative border-l", d === today && "bg-primary/[0.03]")}>
-            {hours.map((h) => (
-              <Link
-                key={h}
-                href={`/ders/yeni?tarih=${d}&saat=${String(h).padStart(2, "0")}:00&next=${back}`}
-                aria-label={`${dayLong(d)} ${String(h).padStart(2, "0")}:00 için ders planla`}
-                style={{ height: HOUR_PX }}
-                className="block border-b border-dashed border-border/60 transition-colors hover:bg-muted/40"
-              />
-            ))}
+            {hours.map((h) =>
+              back ? (
+                <Link
+                  key={h}
+                  href={`/ders/yeni?tarih=${d}&saat=${String(h).padStart(2, "0")}:00&next=${back}`}
+                  aria-label={`${dayLong(d)} ${String(h).padStart(2, "0")}:00 için ders planla`}
+                  style={{ height: HOUR_PX }}
+                  className="block border-b border-dashed border-border/60 transition-colors hover:bg-muted/40"
+                />
+              ) : (
+                <div key={h} style={{ height: HOUR_PX }} className="border-b border-dashed border-border/60" />
+              ),
+            )}
             {d === today && nowMinute >= firstHour * 60 && nowMinute <= lastHour * 60 && (
               <div
                 aria-hidden

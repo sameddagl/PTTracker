@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/page-header";
 import { withTrainer } from "@/db";
-import { clientIdsTaughtBy } from "@/db/team";
+import { mayOpenClient } from "@/db/team";
+import { can } from "@/lib/permissions";
 import { listRecentPayments } from "@/db/payments";
 import { listIntakeAnswers } from "@/db/intake";
 import { getActivePortalLink } from "@/db/portal";
@@ -81,9 +82,11 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
       .from(clients)
       .where(and(eq(clients.id, id), eq(clients.trainerId, trainerId)));
     if (!client) return null;
-    // A studio may keep instructors to the clients they teach.
+    // A studio may keep an instructor to the clients they teach.
     const owner = member.role === "owner";
-    if (!owner && !(await getTrainer(tx, trainerId)).instructorsSeeAllClients && !(await clientIdsTaughtBy(tx, trainerId, member.id)).has(id)) return null;
+    if (!(await mayOpenClient(tx, member, id))) return null;
+    const canEdit = can(member, "editClients");
+    const canPlan = can(member, "manageLessons");
     const packages = await tx
       .select({
         id: clientPackages.id,
@@ -153,11 +156,11 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
           checkins: kind === "workout" ? await recentCheckins(tx, id) : [],
         }
       : null;
-    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout, owner };
+    return { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout, owner, canEdit, canPlan };
   });
   if (!data) notFound();
 
-  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout, owner } = data;
+  const { client, packages, upcoming, history, paymentHistory, portal, intake, timezone, messageTemplates, notes, progress, workout, owner, canEdit, canPlan } = data;
   const firstName = client.fullName.split(" ")[0];
   const today = todayISO(timezone);
   // Answers are ordered oldest first, so the latest answer to each question wins.
@@ -183,7 +186,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
               {[formatPhone(client.phone), client.goals].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}
             </p>
           </div>
-          {!client.archivedAt && (
+          {!client.archivedAt && canEdit && (
             <Button asChild variant="outline" size="icon" aria-label="Düzenle">
               <Link href={`/danisanlar/${client.id}/duzenle`}>
                 <Pencil />
@@ -199,7 +202,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/d
             >
               {/* Selling packages and taking payments are the owner's (instructors don't see money). */}
               {owner && <QuickAction href={`/danisanlar/${client.id}/paket-sat`} icon={<PackagePlus />} label="Paket sat" primary />}
-              <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" primary={!owner} />
+              {canPlan && <QuickAction href={`/ders/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`} icon={<CalendarPlus />} label="Ders ekle" primary={!owner} />}
               {owner && (
                 <QuickAction
                   href={`/odemeler/yeni?danisan=${client.id}&next=/danisanlar/${client.id}`}

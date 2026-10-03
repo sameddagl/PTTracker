@@ -4,6 +4,7 @@ import { ChevronRight, Dumbbell, ListChecks, Plus, Salad } from "lucide-react";
 import { ActionTiles } from "@/components/action-tiles";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { can } from "@/lib/permissions";
 import { ensureExerciseLibrary, listTemplates } from "@/db/programs";
 import { formatShortDate } from "@/lib/format";
 
@@ -12,9 +13,9 @@ export const metadata: Metadata = { title: "Programlar" };
 export default async function ProgramsPage({ searchParams }: PageProps<"/programlar">) {
   const { tur } = await searchParams;
   const kind = tur === "beslenme" ? "nutrition" : "workout";
-  const templates = await withTrainer(async (tx, trainerId) => {
+  const { templates, canEdit } = await withTrainer(async (tx, trainerId, member) => {
     await ensureExerciseLibrary(tx, trainerId);
-    return listTemplates(tx, trainerId, kind);
+    return { templates: await listTemplates(tx, trainerId, kind), canEdit: can(member, "editPrograms") };
   });
   const workout = kind === "workout";
 
@@ -43,7 +44,9 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
       <ActionTiles
         className="mb-6"
         items={[
-          { href: `/programlar/yeni${workout ? "" : "?tur=beslenme"}`, icon: <Plus />, title: workout ? "Yeni şablon" : "Yeni plan şablonu", primary: true },
+          ...(canEdit
+            ? [{ href: `/programlar/yeni${workout ? "" : "?tur=beslenme"}`, icon: <Plus />, title: workout ? "Yeni şablon" : "Yeni plan şablonu", primary: true }]
+            : []),
           ...(workout ? [{ href: "/programlar/hareketler", icon: <ListChecks />, title: "Hareketler" }] : []),
           { href: "/danisanlar", icon: workout ? <Dumbbell /> : <Salad />, title: "Danışana ver" },
         ]}
@@ -59,15 +62,25 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/program
         <ul className="divide-y overflow-hidden surface">
           {templates.map((t) => (
             <li key={t.id}>
-              <Link href={`/programlar/${t.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50">
-                <span className="min-w-0 flex-1">
+              {canEdit ? (
+                <Link href={`/programlar/${t.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{t.name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {t.days} {workout ? "gün" : "öğün"} · {formatShortDate(t.updatedAt.toISOString().slice(0, 10))} güncellendi
+                    </span>
+                  </span>
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </Link>
+              ) : (
+                // Without permission to change templates, an instructor uses them from the client's page.
+                <span className="block px-4 py-3.5">
                   <span className="block truncate font-medium">{t.name}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {t.days} {workout ? "gün" : "öğün"} · {formatShortDate(t.updatedAt.toISOString().slice(0, 10))} güncellendi
+                    {t.days} {workout ? "gün" : "öğün"} · danışanın sayfasından kopyalarsın
                   </span>
                 </span>
-                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-              </Link>
+              )}
             </li>
           ))}
         </ul>

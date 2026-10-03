@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { withTrainer } from "@/db";
+import { can } from "@/lib/permissions";
 import { getProgram, listExercises } from "@/db/programs";
 import { clients } from "@/db/schema";
 import { toInputDays } from "@/lib/programs";
@@ -16,17 +17,19 @@ export const metadata: Metadata = { title: "Program" };
 export default async function ProgramPage({ params }: PageProps<"/programlar/[id]">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const data = await withTrainer(async (tx, trainerId) => {
+  const data = await withTrainer(async (tx, trainerId, member) => {
     const program = await getProgram(tx, trainerId, id);
     if (!program) return null;
+    // Shared templates are editable only with permission; a client's own program always.
+    if (program.clientId === null && !can(member, "editPrograms")) return null;
     const library = program.kind === "workout" ? await listExercises(tx, trainerId) : [];
     const [client] = program.clientId
       ? await tx.select({ id: clients.id, name: clients.fullName }).from(clients).where(and(eq(clients.id, program.clientId), eq(clients.trainerId, trainerId)))
       : [];
-    return { program, library, client: client ?? null };
+    return { program, library, client: client ?? null, canTemplate: can(member, "editPrograms") };
   });
   if (!data) notFound();
-  const { program, library, client } = data;
+  const { program, library, client, canTemplate } = data;
   const workout = program.kind === "workout";
   const back = client ? `/danisanlar/${client.id}?sekme=${workout ? "program" : "beslenme"}` : `/programlar${workout ? "" : "?tur=beslenme"}`;
 
@@ -45,7 +48,7 @@ export default async function ProgramPage({ params }: PageProps<"/programlar/[id
               : `Taslak: ${client.name.split(" ")[0]} henüz görmüyor. Danışanın Program sekmesinden gönderebilirsin.`
             : "Şablon. Danışana verdiğinde kopyası oluşur; şablonu değiştirmek verilen programları etkilemez."
         }
-        action={<ProgramHeaderActions id={program.id} isTemplate={!client} />}
+        action={<ProgramHeaderActions id={program.id} isTemplate={!client} canTemplate={canTemplate} />}
       />
       <ProgramEditor
         kind={program.kind}
