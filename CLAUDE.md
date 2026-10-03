@@ -3,6 +3,7 @@
 # Project conventions
 - UI copy is Turkish; code, identifiers and comments are English. Route segments are Turkish (`/bugun`, `/danisanlar`).
 - Server data access goes through `withTrainer()` in `src/db/index.ts` (RLS applies). Use `adminDb` only for signed-out paths and filter by an id you resolved yourself.
+- Accounts and studios (`docs/urun/studyo-destegi.md`): `trainer_id` is the account (a trainer alone or a studio; its id is the owner's user id). People are `account_members` (owner | instructor); RLS is `trainer_id = current_account()`, which `withTrainer` pins with `app.account_id`. `withTrainer((tx, trainerId, member) => …)`: owner-only pages sit under `src/components/owner-only-layout.tsx` layouts, owner-only actions call `requireOwner()`, and money tables (payments, receipts, payroll, support) are owner-only in RLS too. Lessons, series, group classes and availability carry `instructor_id` (a trigger fills the owner when left out); instructors manage only their own lessons (`mayManageLesson`) and see their own clients (`clientIdsTaughtBy`, all if `trainers.instructors_see_all_clients`). Studio UI shows only when the account has more than one active member (`isStudio`).
 - Inside `withTrainer`, run queries sequentially — a transaction holds one connection.
 - Schema changes: edit `src/db/schema.ts`, run `pnpm db:generate`, then `pnpm test:db`. Views/triggers live in custom migrations.
 - Package balances come from the `client_package_balances` view; never store a separate remaining-count.

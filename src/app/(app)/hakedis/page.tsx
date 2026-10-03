@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -124,7 +124,10 @@ export default async function PayrollPage({ searchParams }: PageProps<"/hakedis"
               </dl>
               {r.summary.lines.length > 0 && (
                 <details className="mt-4 group">
-                  <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-muted-foreground hover:text-foreground">Dersler</summary>
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+                    Dersleri göster
+                    <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+                  </summary>
                   <ul className="mt-2 divide-y text-sm">
                     {r.summary.lines.map((l) => (
                       <li key={l.lessonId} className="flex items-center gap-3 py-2">

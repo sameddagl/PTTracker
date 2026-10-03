@@ -62,11 +62,19 @@ export default function KvkkPage() {
           <strong>Toplama yöntemi:</strong> kayıt, profil ve ayar formları aracılığıyla sizden; oturum kayıtları ise hizmeti
           kullanırken otomatik yollarla elektronik ortamda toplanır.
         </p>
+        <p>
+          <strong>Bir stüdyonun ekibine davetle katılan eğitmenler:</strong> adınız, e-postanız, fotoğrafınız ve kısa
+          tanıtımınız stüdyonun hesabında ve sayfasında görünür; verdiğiniz dersler ile stüdyonun belirlediği ücret kuralına
+          göre hesaplanan hakediş bilgileriniz stüdyo sahibiyle paylaşılır. Bu bilgiler stüdyo adına işlenir; giriş ve oturum
+          kayıtlarınızın veri sorumlusu biziz.
+        </p>
       </Section>
 
       <Section id="danisanlar" title="2. Danışanların kişisel verileri">
         <p>
-          Danışan verileri bakımından <strong>veri sorumlusu, danışanın kayıt olduğu ya da ders aldığı eğitmendir</strong>.{" "}
+          Danışan verileri bakımından <strong>veri sorumlusu, danışanın kayıt olduğu ya da ders aldığı eğitmendir</strong>; birden
+          fazla eğitmenin çalıştığı bir stüdyoda veri sorumlusu stüdyodur ve stüdyonun eğitmenleri verilerinizi stüdyo adına
+          görür.{" "}
           {APP_NAME}, bu verileri eğitmen adına ve onun talimatları doğrultusunda işleyen <strong>veri işleyendir</strong>. Bu
           nedenle haklarınızla ilgili başvurularınızı öncelikle eğitmeninize yapabilirsiniz; bize ulaşan başvuruları eğitmeninize
           iletir, yerine getirmesi için destek oluruz.

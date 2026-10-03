@@ -1,6 +1,6 @@
 # Stüdyo desteği: birden fazla eğitmenli hesap
 
-> Çalışma notu, 3 Ekim 2026. Henüz kod yok. İlk üç karar verildi (aşağıda "Verilen kararlar"); 0. aşamadan başlanabilir.
+> Çalışma notu, 3 Ekim 2026. 0., 1. ve 2. aşama yapıldı (aşağıda "Durum"); 3. aşama bekliyor.
 
 ## Neden
 
@@ -102,6 +102,13 @@ Plan: **`trainers` satırı "hesap/stüdyo" olarak kalır**, kullanıcılar bu h
 - Tek kişilik hesap = tek üyeli stüdyo; arayüzde ekip ögeleri sadece birden fazla üye olunca görünür.
 
 Riskler: RLS değişikliği bütün veriye dokunur; `test:db` ve izolasyon testleri (bir stüdyonun eğitmeni başka stüdyoyu göremez, eğitmen ödemeleri göremez) bu aşamanın asıl işi.
+
+## Durum (3 Ekim 2026)
+
+- **0. Altyapı:** yapıldı. `account_members`, `current_account()` RLS'i, `withTrainer` üyeliği çözüyor, para tabloları sadece sahipte.
+- **1. Stüdyo MVP:** yapıldı. Ekip sayfası ve davet e-postası, `/davet/<token>`, eğitmen profili, menü ve sayfalar role göre, derste eğitmen, eğitmene göre çakışma, takvim renk ve filtresi, Bugün ve yoklama eğitmene göre, danışan listesi ve mesajlar eğitmene göre, dersin eğitmenini değiştirme (danışana bildirim), grup dersinde eğitmen, hakediş (ders başı / yüzde, ayı kapatma, ödendi, Excel), başlangıçta "tek başıma / başka eğitmenlerle", stüdyo sayfasında ekip, hesap değiştirici, KVKK ve koşullar.
+- **2. Randevu ve paket:** yapıldı. Eğitmen başına çalışma saatleri ve izin, danışanın eğitmen seçerek ya da "Fark etmez" ile randevu alması, pakete eğitmen kısıtı.
+- **3.:** bekliyor (resepsiyon rolü, oda/reformer planlama, Ekip planı fiyatı).
 
 ## Aşamalar
 

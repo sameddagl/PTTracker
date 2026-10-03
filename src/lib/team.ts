@@ -21,8 +21,9 @@ export function teamColor(color: string | null | undefined, index = 0) {
   return `var(--team-${key})`;
 }
 
-/** The first colour nobody in the team uses yet. */
-export function nextTeamColor(used: (string | null)[]): TeamColor {
+/** The first colour nobody in the team uses yet (a member without one shows the colour of their position). */
+export function nextTeamColor(colors: (string | null)[]): TeamColor {
+  const used = colors.map((c, i) => (isTeamColor(c) ? c : TEAM_COLORS[i % TEAM_COLORS.length]));
   return TEAM_COLORS.find((c) => !used.includes(c)) ?? TEAM_COLORS[used.length % TEAM_COLORS.length];
 }
 

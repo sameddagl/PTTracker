@@ -33,6 +33,15 @@ export default function TermsPage() {
           <li>Hesabınıza e-postanıza gönderilen kodla girilir; e-posta hesabınızın güvenliğinden siz sorumlusunuz.</li>
           <li>Hesabınızda girdiğiniz bilgilerin doğruluğu ve yayımladığınız içerik (fotoğraf, tanıtım, fiyatlar) size aittir.</li>
           <li>Hizmeti hukuka aykırı amaçlarla ya da başkalarının haklarını ihlal edecek şekilde kullanamazsınız.</li>
+          <li>
+            Stüdyo hesabında ekibinize davet ettiğiniz eğitmenler hesabınızdaki danışan ve ders bilgilerini görür. Onların hesap
+            içindeki işlemlerinden ve ne kadarına erişeceklerine karar vermekten siz sorumlusunuz; bir eğitmenin erişimini
+            istediğiniz an Ekip sayfasından kapatabilirsiniz.
+          </li>
+          <li>
+            Bir stüdyonun ekibine katılan eğitmenler stüdyonun verilerini yalnızca o stüdyo adına ve derslerini yürütmek için
+            kullanabilir.
+          </li>
         </ul>
       </Section>
 
